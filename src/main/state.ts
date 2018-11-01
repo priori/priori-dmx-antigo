@@ -3,7 +3,6 @@ import {AppState, Equipamento} from "../state";
 const DMX = require('dmx'),
     dmx = new DMX;
 
-
 interface IpcEvent {
     sender: IpcSender
 }
@@ -84,6 +83,90 @@ on('dmx-conectar',(e:any)=>{
     })
 });
 
+let uidCount=1;
+on('create-equipamento',({nome,inicio,tipo})=>{
+    setState({
+        ...state,
+        equipamentos: [
+            ...state.equipamentos,
+            {
+                uid: uidCount++,
+                nome,
+                inicio,
+                tipo,
+                cor: '#000000'
+            }
+        ]
+    })
+});
+
+on('change-color',(e)=>{
+    const {cor} = e;
+    const uid = e.equipamento;
+    const equipamento = state.equipamentos.filter(e=>e.uid == uid)[0] || null;
+    let r = parseInt(cor.substr(1,2),16),
+        g = parseInt(cor.substr(3,2),16),
+        b = parseInt(cor.substr(5,2),16);
+
+    if ( equipamento.tipo == 'glow64' ) {
+        const brancoDosOutros = 3;
+        let w = Math.min(r, g, b);
+        r -= w;
+        g -= w;
+        b -= w;
+        w = w * (brancoDosOutros+1);
+        if ( w > 255 ) {
+            const inc = Math.floor((w-255) / (brancoDosOutros) );
+            r += inc;
+            g += inc;
+            b += inc;
+            w = 255;
+        }
+
+        const data = {
+            [equipamento.inicio]: r,
+            [equipamento.inicio + 1]: g,
+            [equipamento.inicio + 2]: b,
+            [equipamento.inicio + 3]: w,
+            [equipamento.inicio + 4]: r || g|| b|| w ? 255 : 0
+        };
+        dmx.update('main',data);
+        setState({
+            ...state,
+            canais: {
+                ...state.canais,
+                ...data
+            },
+            equipamentos: state.equipamentos.map(e=> e.uid == uid ? {
+                ...e,
+                cor
+            }: e)
+        });
+    } else if ( equipamento.tipo == 'par16' ) {
+
+        const data = {
+            [equipamento.inicio]: r||g||b  ? 255 : 0,
+            [equipamento.inicio + 1]: r,
+            [equipamento.inicio + 2]: g,
+            [equipamento.inicio + 3]: b
+        };
+        dmx.update('main',data);
+        setState({
+            ...state,
+            canais: {
+                ...state.canais,
+                ...data
+            },
+            equipamentos: state.equipamentos.map(e=> e.uid == uid ? {
+                ...e,
+                cor
+            }: e)
+        });
+    } else {
+        console.error(equipamento,cor,r,g,b);
+    }
+})
+
 on('dmx-desconectar',()=>{
     dmx.universes.main.close();
     delete dmx.universes.main;
@@ -97,17 +180,27 @@ on('dmx-desconectar',()=>{
 });
 
 on('slide',(e:any)=>{
-    if ( !state.dmx.conectado )
-        throw 'conexão DMX não encontrada';
-    if ( typeof e.index != 'number' )
-        throw 'index inválido '+e.index+' typeof'+typeof e.index;
-    if ( typeof e.value != 'number' )
-        throw 'index inválido '+e.value+' typeof'+typeof e.value;
-    if ( e.index < 1 || e.index > 255 )
-        throw 'index fora da faixa '+e.index;
-    if ( e.value < 1 || e.value > 255 )
-        throw 'index fora da faixa '+e.index;
-    dmx.update({[e.index]: e.value});
+    if ( !state.dmx.conectado ) {
+        console.error('conexao DMX nao encontrada');
+        return;
+    }
+    if ( typeof e.index != 'number' ) {
+        console.error('index invalido ' + e.index + '. typeof ' + (typeof e.index));
+        return;
+    }
+    if ( typeof e.value != 'number' ) {
+        console.error('value invalido ' + e.value + '. typeof ' + (typeof e.value));
+        return;
+    }
+    if ( e.index < 0 || e.index > 255 ) {
+        console.error('index fora da faixa. ' + e.index);
+        return;
+    }
+    if ( e.value < 0 || e.value > 255 ) {
+        console.error('value fora da faixa. ' + e.value);
+        return;
+    }
+    dmx.update('main',{[e.index]: e.value});
     setState({
         ...state,
         canais: {

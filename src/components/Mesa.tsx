@@ -4,7 +4,9 @@ export interface MesaState{
 
 }
 export interface MesaProps{
-
+    canais: {
+        [index:number]: number
+    }
 }
 
 function times(c:number){
@@ -14,33 +16,39 @@ function times(c:number){
     return a;
 }
 
-export class Mesa extends React.Component<any,MesaProps> {
+export class Mesa extends React.Component<MesaProps,{}> {
     constructor(props:MesaProps){
         super(props);
-        this.state = {};
+        this.state = {}
     }
 
     changeSlider(index:number,e:any){
-        const value = e.target.value;
+        const value = parseInt(e.target.value);
         this.setState({
-            [index]: Math.floor(value)
-        },()=>this.ready());
+            [index]: value
+        });
+        require('electron').ipcRenderer.send('slide',{index,value});
     }
 
-    ready(){
-        require('electron').ipcRenderer.send('dmx-update',this.state );
+    componentWillReceiveProps(nextProps:MesaProps){
+        this.setState({...nextProps.canais});
     }
 
     render(){
         return <div className="mesa"><div>{times(255).map((_,index)=>
             <div key={index}>
                 <div className="mesa__label">{index+1}</div>
-                <div className="mesa__value">{this.state[index+1] || 0}</div>
+                <div className="mesa__value">{
+                    typeof this.state[index+1] != 'undefined' ? this.state[index+1] :
+                    this.props.canais[index+1] || 0
+                }</div>
                 <div className="slider">
                     <input
                         min="0" max="255" type="range"
-                           defaultValue="0"
-                           onChange={(e) => this.changeSlider(index+1,e)}/>
+                        value={
+                            typeof this.state[index+1] != 'undefined' ? this.state[index+1] :
+                            this.props.canais[index+1]||'0'}
+                        onChange={(e) => this.changeSlider(index+1,e)}/>
                 </div>
             </div>)
         }</div>

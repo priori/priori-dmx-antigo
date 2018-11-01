@@ -5,7 +5,7 @@ const ifaces = os.networkInterfaces();
 const express = require('express');
 const app = express();
 
-app.get('/',(req,res)=>{
+app.get('/',(_:any,res:any)=>{
     res.json({asdfasdf:1});
 });
 
@@ -14,11 +14,11 @@ export interface ServerState{
     fechando: boolean
 }
 
-let listening = null;
+let listening:any = null;
 
-export class Server extends React.Component<undefined,ServerState> {
+export class Server extends React.Component<{},ServerState> {
 
-    constructor(props:undefined){
+    constructor(props:{}){
         super(props);
         this.state = {
             executando: false,

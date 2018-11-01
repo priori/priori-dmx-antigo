@@ -4,9 +4,9 @@ import {ipcRenderer,screen} from 'electron';
 export interface MonitorState{
     monitorCriado: boolean
 }
-export class Monitor extends React.Component<undefined, MonitorState> {
+export class Monitor extends React.Component<{}, MonitorState> {
 
-  constructor(props:undefined){
+  constructor(props:{}){
       super(props);
       this.state = {monitorCriado:false};
       ipcRenderer.on('screen-closed',()=>{
@@ -15,6 +15,7 @@ export class Monitor extends React.Component<undefined, MonitorState> {
           });
       });
   }
+  select:any = null;
 
   render () {
     return <div className="monitor">

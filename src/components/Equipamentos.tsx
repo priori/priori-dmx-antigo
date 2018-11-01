@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {ipcRenderer} from 'electron';
+import {Equipamento} from "../state";
 
 export interface EquipamentosState{
     monitorCriado: boolean
@@ -21,8 +22,11 @@ class AddForm extends React.Component<any,any> {
                 Nome: <input type="text"
                              value={this.state.nome}
                              onChange={e=>this.setState({nome:(e.target as any).value})}/><br/>
-                Início: <input type="number" value={this.state.inicio} onChange={e=>this.setState({inicio:parseInt((e.target as any).value)})}/><br/>
-                Tipo: <select onChange={e=>this.setState({tipo:e.target.value})} value={this.state.tipo}>
+                Início: <input
+                type="number"
+                value={this.state.inicio}
+                onChange={e=>this.setState({inicio:parseInt((e.target as any).value)})}/><br/>
+                Tipo: <select onChange={(e:any)=>this.setState({tipo:e.target.value})} value={this.state.tipo}>
                 <option value="glow64">LED 64 GLOW</option>
                 <option value="par16">PAR LED 16</option>
             </select><br/>
@@ -33,8 +37,8 @@ class AddForm extends React.Component<any,any> {
 
 }
 
-export class Equipamentos extends React.Component<any,any> {
-    constructor(props:any){
+export class Equipamentos extends React.Component<{equipamentos:Equipamento[]},any> {
+    constructor(props:{equipamentos:Equipamento[]}){
         super(props);
         this.state = {
             equipamentos: []
@@ -45,39 +49,8 @@ export class Equipamentos extends React.Component<any,any> {
         this.setState({add:true});
     }
 
-    changeColor (equipamento,cor){
-        let r = parseInt(cor.substr(1,2),16),
-            g = parseInt(cor.substr(3,2),16),
-            b = parseInt(cor.substr(5,2),16);
-        console.log(equipamento,cor,r,g,b);
-
-        if ( equipamento.tipo == 'glow64' ) {
-            const w = Math.min(r, g, b);
-            r -= w;
-            g -= w;
-            b -= w;
-            const data = {
-                [equipamento.inicio]: r,
-                [equipamento.inicio + 1]: g,
-                [equipamento.inicio + 2]: b,
-                [equipamento.inicio + 3]: w,
-                [equipamento.inicio + 4]: 255
-            };
-            console.log(data);
-            require('electron').ipcRenderer.send('dmx-update', data);
-        } else if ( equipamento.tipo == 'par16' ) {
-
-            const data = {
-                [equipamento.inicio]: 255,
-                [equipamento.inicio + 1]: r,
-                [equipamento.inicio + 2]: g,
-                [equipamento.inicio + 3]: b
-            };
-            console.log(data);
-            require('electron').ipcRenderer.send('dmx-update', data);
-        } else {
-            console.error(equipamento,cor,r,g,b);
-        }
+    changeColor (equipamento:Equipamento,cor:string){
+        ipcRenderer.send('change-color',{equipamento:equipamento.uid,cor})
     }
 
     render() {
@@ -88,23 +61,18 @@ export class Equipamentos extends React.Component<any,any> {
             {this.state.add ?
 
                 <AddForm onSubmit={(nome:string,tipo:string,inicio:string)=>{
-                    this.setState({
-                        equipamentos: [
-                            ...this.state.equipamentos,
-                            {nome,inicio,tipo}
-                        ],
-                        add: false
-                    })
+                    ipcRenderer.send('create-equipamento',{nome,inicio,tipo})
+                    this.setState({add: false});
                 }} />
-
-
                 : undefined }
             <div className="equipamentos">
-                {this.state.equipamentos.map((e:any,index:number)=><div className="equipamento" key={index}>
+                {this.props.equipamentos.map((e:Equipamento,index:number)=><div className="equipamento" key={index}>
                     <strong style={{fontSize:'12px'}}>{e.nome}</strong>
                     <strong style={{fontSize:'20px'}}>{e.inicio}</strong>
                     <br/>
-                    <input type="color" onChange={(event)=>this.changeColor(e,event.target.value)} />
+                    <input type="color"
+                           value={e.cor}
+                           onChange={(event:any)=>this.changeColor(e,event.target.value)} />
                     <select>
                         <option></option>
                         <option>askldjfhasdf</option>

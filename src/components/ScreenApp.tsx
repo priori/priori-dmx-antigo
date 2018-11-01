@@ -12,7 +12,7 @@ export class ScreenApp extends React.Component<undefined, ScreenAppState> {
       this.state = {state:undefined};
   }
   componentDidMount(){
-    ipcRenderer.on('state',(event,state:AppState)=>{
+    ipcRenderer.on('state',(_:any,state:AppState)=>{
       this.setState({
           state
       });

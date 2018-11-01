@@ -23,7 +23,7 @@ export class Arquivos extends React.Component<ArquivosProps,ArquivosState> {
         };
     }
 
-    onDragOver(e){
+    onDragOver(e:any){
         e.preventDefault();
         e.stopPropagation();
         this.setState({
@@ -32,7 +32,7 @@ export class Arquivos extends React.Component<ArquivosProps,ArquivosState> {
         });
     }
 
-    onDrop(e){
+    onDrop(e:any){
         e.preventDefault();
         e.stopPropagation();
         const fs = e.dataTransfer.files;
@@ -55,7 +55,7 @@ export class Arquivos extends React.Component<ArquivosProps,ArquivosState> {
         this.props.onChange(files);
     }
 
-    onDragEnter(e){
+    onDragEnter(e:any){
         e.preventDefault();
         e.stopPropagation();
         this.setState({
@@ -64,7 +64,7 @@ export class Arquivos extends React.Component<ArquivosProps,ArquivosState> {
         });
     }
 
-    onDragLeave(e){
+    onDragLeave(e:any){
         e.preventDefault();
         e.stopPropagation();
         this.setState({

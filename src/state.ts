@@ -1,6 +1,10 @@
 
 export interface Equipamento {
-    
+    inicio: number,
+    tipo: 'glow64' | 'par16',
+    uid: number,
+    cor: string,
+    nome: string
 }
 
 export interface AppState{
