@@ -1,0 +1,92 @@
+.arquivos { height: 400px; background: #ddd; }
+.arquivos.over { background: #ccc; }
+.arquivos img { max-width: 100px; max-height: 100px; }
+.arquivos h2 { padding: 20px; }
+
+.conexao-dmx input { width: 50px; }
+.conexao-dmx select { width: 200px; }
+.servidor-http input { width: 50px }
+
+.servidor-http, .monitor { padding-top: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+.conexao-dmx { padding-top: 10px; padding-bottom: 10px; }
+
+body { font-family: sans-serif; margin: 10px; }
+
+.mesa {
+    height: 264px;
+    overflow: auto;
+}
+.mesa>div { width: 10200px; margin-left: -1px; }
+.mesa>div>div {
+    width: 40px;
+    height: 220px;
+    float: left;
+    font-size: 11px; font-weight: bold; text-align: center;
+}
+.mesa__label {
+    padding-bottom: 3px;
+}
+.slider {
+    background: #ddd;
+    height: 210px;
+    border-left: 1px solid #bbb;
+    position: relative;
+}
+.mesa__value {
+    font-size: 20px;
+    font-weight: bolder;
+    letter-spacing: -2px;
+    line-height: 1.1em;
+}
+
+/*
+input[type="range"] {
+    -webkit-appearance: slider-vertical;
+    width: 34px;
+    height: 206px;
+}
+input[type="range"]::-webkit-slider-thumb {
+    width: 34px; height: 34px;
+}
+*/
+input[type="range"] {
+    transform: rotate(-90deg); margin: 0; width: 210px; top: 84px; left: -85px; position: absolute;
+    -webkit-appearance: none; background: transparent; }
+input[type="range"]:focus { outline: none; }
+input[type="range"]::-webkit-slider-runnable-track { }
+input[type="range"]:active::-webkit-slider-thumb { opacity: .5; }
+input[type="range"]::-webkit-slider-thumb { border-right: 1px solid #ccc;
+    border-top: 1px solid #ccc; height: 42px; width: 42px; border-radius: 0px;
+    background: #ffffff; -webkit-appearance: none; margin-top: 0px; }
+input[type="range"]:focus::-webkit-slider-runnable-track { background: transparent; }
+
+
+select {
+    padding: 4px;
+    border: solid 1px rgba(0, 0, 0, .2);
+    border-radius: 3px;
+}
+button {
+    border-radius: 4px;
+    outline: none;
+    padding: 5px 8px;
+    background: rgba(0,0,0,.05);
+    border: solid 1px rgba(0,0,0,.22);
+}
+button:focus, button:active {
+    background: rgba(0,0,0,.12);
+}
+input[type="number"], input[type="text"] {
+    padding: 5px;
+    border: rgba(0,0,0,.25) solid 1px;
+    border-radius: 3px;
+}
+input[type="number"]:focus, input[type="text"]:focus, select:focus, button:focus {
+    outline: none; border-color: #555;
+    box-shadow: 0 1px 1px #555, 0 -1px 1px #555, 0 1px -1px #555, 0 -1px -1px #555;
+}
+.equipamentos {
+    padding: 10px;
+    background: #ddd;
+}
+
