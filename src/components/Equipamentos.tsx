@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {ipcRenderer} from 'electron';
 import {Equipamento} from "../state";
+import {times} from "../util";
 
 export interface EquipamentosState{
     monitorCriado: boolean
@@ -37,16 +38,33 @@ class AddForm extends React.Component<any,any> {
 
 }
 
-export class Equipamentos extends React.Component<{equipamentos:Equipamento[]},any> {
+export interface EquipamentosProps{
+    equipamentos:Equipamento[],
+    canais: {
+        [key:number]: number
+    }
+}
+
+export class Equipamentos extends React.Component<EquipamentosProps,any> {
     constructor(props:{equipamentos:Equipamento[]}){
         super(props);
         this.state = {
-            equipamentos: []
+            add: false,
+            canais: {}
         };
     }
 
     add(){
-        this.setState({add:true});
+        this.setState({
+            ...this.state,
+            add:true});
+    }
+
+    componentWillReceiveProps(nextProps:EquipamentosProps){
+        this.setState({
+            ...this.state,
+            canais:{...nextProps.canais}
+        });
     }
 
     changeColor (equipamento:Equipamento,cor:string){
@@ -67,23 +85,74 @@ export class Equipamentos extends React.Component<{equipamentos:Equipamento[]},a
                 : undefined }
             <div className="equipamentos">
                 {this.props.equipamentos.map((e:Equipamento,index:number)=><div className="equipamento" key={index}>
-                    <strong style={{fontSize:'12px'}}>{e.nome}</strong>
-                    <strong style={{fontSize:'20px'}}>{e.inicio}</strong>
+                    <div className="equipamento__main">
+                        <strong style={{fontSize:'12px'}}>{e.nome}</strong>
                     <br/>
                     <input type="color"
                            value={e.cor}
-                           onChange={(event:any)=>this.changeColor(e,event.target.value)} />
-                    <select>
-                        <option></option>
-                        <option>askldjfhasdf</option>
-                    </select>
-
-                    <input type="checkbox" checked={true} title="Envio Automático"/>{' '}
-                    <button>Enviar</button>
+                           onChange={(event:any)=>this.changeColor(e,event.target.value)} /><br/>
+                        {/*<select>*/}
+                            {/*<option></option>*/}
+                            {/*<option>askldjfhasdf</option>*/}
+                        {/*</select><br/>*/}
+                        {/*<input type="checkbox" checked={true} title="Envio Automático"/>{' '}*/}
+                        <button>Enviar</button>
+                        <br/>
+                        <strong style={{fontSize:'20px'}}>{e.inicio}</strong>
+                    </div>
+                    <div className="equipamento__canais">
+                    <strong>Canais</strong><br/>
+                    {
+                        e.tipo == 'glow64' ?
+                            times(8).map((_:any,index:number) => <div key={index } className="equipamento__canal">
+                                <span className="equipamento__canal__index">{e.inicio + index}</span>
+                                <input
+                                    onChange={(event:any)=>this.updateCanal(index+e.inicio,event.target.value)}
+                                    type="range"
+                                    min="0"
+                                    className="equipamento__canal__input"
+                                    max="255"
+                                    value={typeof this.state.canais[index+e.inicio] != 'undefined' ? this.state.canais[e.inicio+index] :
+                                        this.props.canais[index+e.inicio]||'0'}
+                            />
+                                <span className="equipamento__canal__valor">
+                                    {typeof this.state.canais[index+e.inicio] != 'undefined' ? this.state.canais[e.inicio+index] :
+                                        this.props.canais[index+e.inicio]||'0'}
+                                </span>
+                            </div>) :
+                            times(4).map((_:any,index:number) => <div key={index} className="equipamento__canal">
+                                <span className="equipamento__canal__index">{e.inicio + index}
+                                </span><input
+                                    onChange={(event:any)=>this.updateCanal(index+e.inicio,event.target.value)}
+                                    type="range"
+                                    className="equipamento__canal__input"
+                                    min="0"
+                                    max="255"
+                                    value={typeof this.state.canais[index+e.inicio] != 'undefined' ? this.state.canais[e.inicio+index] :
+                                            this.props.canais[index+e.inicio]||'0'}
+                            />
+                                <span className="equipamento__canal__valor">
+                                    {typeof this.state.canais[index+e.inicio] != 'undefined' ? this.state.canais[e.inicio+index] :
+                                            this.props.canais[index+e.inicio]||'0'}
+                                </span>
+                            </div>) 
+                            
+                    }
+                    </div>
                 </div>)}
-
             </div>
-
         </div>
+    }
+
+    private updateCanal(index: number, val: string) {
+        const value = parseInt(val);
+        this.setState({
+            ...this.state,
+            canais: {
+                ...this.state.canais,
+                [index]: val
+            }
+        });
+        require('electron').ipcRenderer.send('slide',{index,value});
     }
 }

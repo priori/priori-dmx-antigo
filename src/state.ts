@@ -7,6 +7,16 @@ export interface Equipamento {
     nome: string
 }
 
+export interface Cena {
+    tipo: 'mesa',
+    uid: number,
+    nome: string,
+    transicaoTempo: number,
+    canais: {
+        [key:number]: number
+    }
+}
+
 export interface AppState{
 
     window: {
@@ -23,6 +33,16 @@ export interface AppState{
     canais: {
         [key:number]: number
     },
+    
+    cenas: Cena[],
+
+    ultimaCena: number|null,
+
+    animacao: {
+        de: Date,
+        ate: Date,
+        cena: number
+    }|null,
     
     equipamentos: Equipamento[]
 }

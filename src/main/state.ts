@@ -1,5 +1,7 @@
 import { BrowserWindow, ipcMain} from 'electron';
-import {AppState, Equipamento} from "../state";
+import {AppState, Cena, Equipamento} from "../state";
+import * as path from "path";
+import * as fs from "fs";
 const DMX = require('dmx'),
     dmx = new DMX;
 
@@ -9,8 +11,9 @@ interface IpcEvent {
 interface IpcSender {
     send(name:string,val?:any):void
 }
-let screen:BrowserWindow|undefined;
-let appSender:IpcSender|undefined = undefined;
+let screen:BrowserWindow|null;
+let appSender:IpcSender|null = null;
+
 let state:AppState = {
     window: {
         criando: false,
@@ -21,10 +24,39 @@ let state:AppState = {
         driver: 'enttec-usb-dmx-pro',
         deviceId: 'COM5'
     },
+    ultimaCena: null,
+    animacao: null,
     canais: {},
-    equipamentos: []
+    equipamentos: [],
+    cenas: []
 };
-let screenSender:IpcSender|undefined;
+
+function getDir() {
+    if ((global as any).process.env.APPDATA) {
+        return (global as any).process.env.APPDATA;
+    } else if ((global as any).process.env.HOME) {
+        return (global as any).process.env.HOME;
+    } else {
+        return null;
+    }
+}
+const dir = getDir();
+if ( !fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+}
+const file = path.join(dir,'priori-dmx.json');
+if ( !fs.existsSync(file)){
+    fs.writeFileSync(file,JSON.stringify(state));
+} else {
+    state = JSON.parse(fs.readFileSync(file).toString()) as AppState;
+    state.animacao = null;
+    if ( state.dmx.conectado ) {
+        dmx.addUniverse('main',state.dmx.driver,state.dmx.deviceId);
+        dmx.update('main',state.canais);
+    }
+}
+
+let screenSender:IpcSender|null;
 // ipcMain.on('state',(_:IpcEvent,newState:any)=>{
 //     state = newState;
 //     if ( screenSender )
@@ -51,12 +83,32 @@ ipcMain.on('app-start',(event:IpcEvent)=>{
     appSender.send('state',state);
 });
 
+const maxThrotle = 1000;
+let timeoutThrotle:any;
+let firstThrotle:Date|null = null;
 function setState(newState:AppState){
     if ( !appSender )throw 'Sem appSender.';
     state = newState;
-    appSender.send('state',state);
-    if ( screenSender )
-        screenSender.send('state',state);
+    if ( timeoutThrotle )
+        clearTimeout(timeoutThrotle);
+    if ( !firstThrotle )
+        firstThrotle = new Date;
+    else if ( (new Date).getTime() - firstThrotle.getTime() > maxThrotle ){
+        firstThrotle = null;
+        if ( !appSender )throw 'Sem appSender.';
+        fs.writeFileSync(file,JSON.stringify(state));
+        appSender.send('state',state);
+        if ( screenSender )
+            screenSender.send('state',state);
+        return;
+    }
+    timeoutThrotle = setTimeout(()=>{
+        if ( !appSender )throw 'Sem appSender.';
+        fs.writeFileSync(file,JSON.stringify(state));
+        appSender.send('state',state);
+        if ( screenSender )
+            screenSender.send('state',state);
+    },20);
 }
 
 function on(name:string,func:(e:any)=>void){
@@ -72,6 +124,7 @@ function on(name:string,func:(e:any)=>void){
 
 on('dmx-conectar',(e:any)=>{
     dmx.addUniverse('main',e.driver,e.deviceId);
+    dmx.update('main',state.canais);
     setState({
         ...state,
         dmx: {
@@ -83,7 +136,7 @@ on('dmx-conectar',(e:any)=>{
     })
 });
 
-let uidCount=1;
+let uidCount= Math.max(...state.equipamentos.map(e=>e.uid),...state.cenas.map(c=>c.uid))+1;
 on('create-equipamento',({nome,inicio,tipo})=>{
     setState({
         ...state,
@@ -100,15 +153,37 @@ on('create-equipamento',({nome,inicio,tipo})=>{
     })
 });
 
-on('change-color',(e)=>{
-    const {cor} = e;
-    const uid = e.equipamento;
-    const equipamento = state.equipamentos.filter(e=>e.uid == uid)[0] || null;
+// function corParte(s:number){
+//     s = Math.floor(s);
+//     return (s > 16 ? '0':'')+s.toString(16);
+// }
+// function buildCor(e:Equipamento,canais:{[k:number]:number}) {
+//     if ( e.tipo == 'glow64' ) {
+//         if ( canais[e.inicio+6] || canais[e.inicio+7] ) {
+//             return null;
+//         }
+//         const master = canais[e.inicio+4] / 255;
+//         const w = canais[e.inicio+3] * master;
+//
+//         let r = canais[e.inicio] * master + w/3,
+//             g = canais[e.inicio+1] * master + w/3,
+//             b = canais[e.inicio+2] * master + w/3;
+//
+//         return '#'+corParte(r)+corParte(g)+corParte(b);
+//     } else {
+//         const master = canais[e.inicio] / 255;
+//         let r = Math.floor(canais[e.inicio+1] * master),
+//             g = Math.floor(canais[e.inicio+2] * master),
+//             b = Math.floor(canais[e.inicio+3] * master);
+//         return '#'+corParte(r)+corParte(g)+corParte(b);
+//     }
+// }
+
+function buildCanaisFromCor(e:Equipamento,cor:string) {
     let r = parseInt(cor.substr(1,2),16),
         g = parseInt(cor.substr(3,2),16),
         b = parseInt(cor.substr(5,2),16);
-
-    if ( equipamento.tipo == 'glow64' ) {
+    if ( e.tipo == 'glow64' ) {
         const brancoDosOutros = 3;
         let w = Math.min(r, g, b);
         r -= w;
@@ -122,49 +197,46 @@ on('change-color',(e)=>{
             b += inc;
             w = 255;
         }
-
-        const data = {
-            [equipamento.inicio]: r,
-            [equipamento.inicio + 1]: g,
-            [equipamento.inicio + 2]: b,
-            [equipamento.inicio + 3]: w,
-            [equipamento.inicio + 4]: r || g|| b|| w ? 255 : 0
+        return {
+            [e.inicio]: r,
+            [e.inicio + 1]: g,
+            [e.inicio + 2]: b,
+            [e.inicio + 3]: w,
+            [e.inicio + 4]: r || g|| b|| w ? 255 : 0
         };
-        dmx.update('main',data);
-        setState({
-            ...state,
-            canais: {
-                ...state.canais,
-                ...data
-            },
-            equipamentos: state.equipamentos.map(e=> e.uid == uid ? {
-                ...e,
-                cor
-            }: e)
-        });
-    } else if ( equipamento.tipo == 'par16' ) {
-
-        const data = {
-            [equipamento.inicio]: r||g||b  ? 255 : 0,
-            [equipamento.inicio + 1]: r,
-            [equipamento.inicio + 2]: g,
-            [equipamento.inicio + 3]: b
+    } else if ( e.tipo == 'par16' ) {
+        return {
+            [e.inicio]: r||g||b  ? 255 : 0,
+            [e.inicio + 1]: r,
+            [e.inicio + 2]: g,
+            [e.inicio + 3]: b
         };
-        dmx.update('main',data);
-        setState({
-            ...state,
-            canais: {
-                ...state.canais,
-                ...data
-            },
-            equipamentos: state.equipamentos.map(e=> e.uid == uid ? {
-                ...e,
-                cor
-            }: e)
-        });
     } else {
-        console.error(equipamento,cor,r,g,b);
+        console.error('Tipo desconhecido. '+JSON.stringify(e));
+        return {};
     }
+}
+
+
+on('change-color',(e)=>{
+    const {cor} = e;
+    const uid = e.equipamento;
+    const equipamento = state.equipamentos.filter(e=>e.uid == uid)[0] || null;
+    const data = buildCanaisFromCor(equipamento,cor);
+
+    if ( state.dmx.conectado)
+        dmx.update('main',data);
+    setState({
+        ...state,
+        canais: {
+            ...state.canais,
+            ...data
+        },
+        equipamentos: state.equipamentos.map(e=> e.uid == uid ? {
+            ...e,
+            cor
+        }: e)
+    });
 })
 
 on('dmx-desconectar',()=>{
@@ -180,10 +252,6 @@ on('dmx-desconectar',()=>{
 });
 
 on('slide',(e:any)=>{
-    if ( !state.dmx.conectado ) {
-        console.error('conexao DMX nao encontrada');
-        return;
-    }
     if ( typeof e.index != 'number' ) {
         console.error('index invalido ' + e.index + '. typeof ' + (typeof e.index));
         return;
@@ -200,7 +268,8 @@ on('slide',(e:any)=>{
         console.error('value fora da faixa. ' + e.value);
         return;
     }
-    dmx.update('main',{[e.index]: e.value});
+    if ( state.dmx.conectado )
+        dmx.update('main',{[e.index]: e.value});
     setState({
         ...state,
         canais: {
@@ -216,6 +285,127 @@ on('novo-equipamento',(e:any)=>{
         equipamentos: [...state.equipamentos,e as Equipamento]
     })
 });
+
+on('salvar-cena',({uid}:{uid:number})=>{
+    const save = {};
+    for(let c=1;c<=255;c++){
+        save[c] = state.canais[c]||0
+    }
+    const cenaIndex = state.cenas.findIndex((cena)=>cena.uid == uid);
+    const cena = state.cenas[cenaIndex];
+    setState({
+        ...state,
+        cenas: [
+            ...state.cenas.filter((_:any,index:number) => index < cenaIndex ),
+            {
+                ...cena,
+                canais: save
+            },
+            ...state.cenas.filter((_:any,index:number)=> index > cenaIndex )
+        ]
+    });
+});
+
+on('salvar-mesa',({nome}:{nome:string})=>{
+    const save = {};
+    for(let c=1;c<=255;c++){
+        save[c] = state.canais[c]||0
+    }
+    setState({
+        ...state,
+        cenas: [
+            ...state.cenas,
+            {
+                transicaoTempo: 0,
+                nome,
+                uid: uidCount++,
+                tipo: 'mesa',
+                canais: save
+            }
+        ]
+    })
+});
+
+on('editar-tempo-da-cena',({uid,tempo}:{uid:number,tempo:number})=>{
+    const cenaIndex = state.cenas.findIndex((cena)=>cena.uid == uid);
+    const cena = state.cenas[cenaIndex] as Cena;
+    setState({
+        ...state,
+        cenas: [
+            ...state.cenas.filter((_:any,index:number) => index < cenaIndex ),
+            {
+                ...cena,
+                transicaoTempo: tempo
+            },
+            ...state.cenas.filter((_:any,index:number)=> index > cenaIndex )
+        ]
+    });
+});
+
+// let canaisPrecisos:any = null;
+on('aplicar-cena',({uid}:{uid:number})=>{
+    // canaisPrecisos = null;
+    const cena = state.cenas.find((cena)=>cena.uid == uid) as Cena;
+    const tempo = cena.transicaoTempo;
+    if ( tempo ) {
+        const de = new Date;
+        const ate = new Date;
+        ate.setTime(de.getTime() + parseInt(tempo+''));
+        setState({
+            ...state,
+            ultimaCena: cena.uid,
+            animacao: {
+                de,
+                cena: cena.uid,
+                ate
+            }
+        });
+    } else {
+        if ( state.dmx.conectado )
+            dmx.update('main',cena.canais);
+        setState({
+            ...state,
+            canais: cena.canais,
+            ultimaCena: cena.uid,
+            animacao: null
+        })
+    }
+});
+
+const intervalTime = 10;
+const animationInterval = setInterval(()=>{
+    if ( state.animacao ) {
+        const animacao = state.animacao;
+        const now = new Date;
+        const cena = state.cenas.find(c=>c.uid == animacao.cena) as Cena;
+        const falta =  animacao.ate.getTime()  - now.getTime();
+        if ( now.getTime() + intervalTime +1 >= animacao.ate.getTime() || falta < 0 ) {
+            // canaisPrecisos = null;
+            setState({
+                ...state,
+                animacao: null,
+                canais: cena.canais
+            });
+            if ( state.dmx.conectado )
+                dmx.update('main',cena.canais);
+            return;
+        }
+        const canais = {...state.canais};
+        for ( const index in canais ) {
+            const valorAtual = canais[index];
+            const valorObjetivo = cena.canais[index];
+            const proximoValor = valorAtual + ( valorObjetivo - valorAtual ) * intervalTime / falta;
+            // canaisPrecisos[index] = proximoValor;
+            canais[index] = Math.round(proximoValor);
+        }
+        if ( state.dmx.conectado )
+          dmx.update('main',canais);
+        setState({
+            ...state,
+            canais
+        });
+    }
+},intervalTime );
 
 on('new-screen-request',(args:any)=> {
     if ( state.window.criada )
@@ -247,9 +437,9 @@ on('new-screen-request',(args:any)=> {
         // screen.setResizable(false);
         screen.loadURL(`file://${__dirname}/screen.html`);
         screen.on('closed', () => {
-            screen = undefined;
-            screenSender = undefined;
-            appSender = undefined;
+            screen = null;
+            screenSender = null;
+            appSender = null;
             setState({
                 ...state,
                 window: {
@@ -268,9 +458,10 @@ on('new-screen-request',(args:any)=> {
 });
 
 export function close(){
-    appSender = undefined;
+    clearInterval(animationInterval);
+    appSender = null;
     if ( screen ) {
         screen.close();
-        screen = undefined;
+        screen = null;
     }
 }

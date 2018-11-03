@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {times} from "../util";
 
 export interface MesaState{
 
@@ -7,13 +8,6 @@ export interface MesaProps{
     canais: {
         [index:number]: number
     }
-}
-
-function times(c:number){
-    var a = [];
-    while(c--)
-    a.push({});
-    return a;
 }
 
 export class Mesa extends React.Component<MesaProps,{}> {
@@ -36,7 +30,7 @@ export class Mesa extends React.Component<MesaProps,{}> {
 
     render(){
         return <div className="mesa"><div>{times(255).map((_,index)=>
-            <div key={index}>
+            <div key={index} className="mesa__canal">
                 <div className="mesa__label">{index+1}</div>
                 <div className="mesa__value">{
                     typeof this.state[index+1] != 'undefined' ? this.state[index+1] :
@@ -44,6 +38,7 @@ export class Mesa extends React.Component<MesaProps,{}> {
                 }</div>
                 <div className="slider">
                     <input
+                        className="mesa__canal__input"
                         min="0" max="255" type="range"
                         value={
                             typeof this.state[index+1] != 'undefined' ? this.state[index+1] :
