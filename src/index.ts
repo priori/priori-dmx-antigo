@@ -21,6 +21,7 @@ const createWindow = async () => {
     mainWindow.setMenu(null);
     mainWindow.loadURL(`file://${__dirname}/index.html`);
     if (isDevMode) {
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
         await installExtension(REACT_DEVELOPER_TOOLS);
         mainWindow.webContents.openDevTools();
     }

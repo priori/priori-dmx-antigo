@@ -48,11 +48,16 @@ const file = path.join(dir,'priori-dmx.json');
 if ( !fs.existsSync(file)){
     fs.writeFileSync(file,JSON.stringify(state));
 } else {
-    state = JSON.parse(fs.readFileSync(file).toString()) as AppState;
-    state.animacao = false;
-    if ( state.dmx.conectado ) {
-        dmx.addUniverse('main',state.dmx.driver,state.dmx.deviceId);
-        dmx.update('main',state.canais);
+    const fileContent = fs.readFileSync(file).toString();
+    if ( fileContent ) {
+        const json = JSON.parse(fileContent) as AppState;
+        if ( json ) {
+            state = json;
+            if ( state.dmx.conectado ) {
+                dmx.addUniverse('main',state.dmx.driver,state.dmx.deviceId);
+                dmx.update('main',state.canais);
+            }
+        }
     }
 }
 
@@ -84,6 +89,7 @@ ipcMain.on('app-start',(event:IpcEvent)=>{
 });
 
 const maxThrotle = 1000;
+const throtleTime = 20;
 let timeoutThrotle:any;
 let firstThrotle:Date|null = null;
 function setState(newState:AppState){
@@ -108,7 +114,7 @@ function setState(newState:AppState){
         appSender.send('state',state);
         if ( screenSender )
             screenSender.send('state',state);
-    },20);
+    },throtleTime);
 }
 
 function on(name:string,func:(e:any)=>void){
@@ -136,7 +142,8 @@ on('dmx-conectar',(e:any)=>{
     })
 });
 
-let uidCount= Math.max(...state.equipamentos.map(e=>e.uid),...state.cenas.map(c=>c.uid))+1;
+let uidCount = state.equipamentos.length || state.cenas.length ? 
+	Math.max(...state.equipamentos.map(e=>e.uid),...state.cenas.map(c=>c.uid))+1 : 1;
 on('create-equipamento',({nome,inicio,tipo})=>{
     setState({
         ...state,
@@ -157,6 +164,7 @@ function buildCanaisFromCor(e:Equipamento,cor:string) {
     let r = parseInt(cor.substr(1,2),16),
         g = parseInt(cor.substr(3,2),16),
         b = parseInt(cor.substr(5,2),16);
+
     if ( e.tipo == 'glow64' ) {
         const brancoDosOutros = 3;
         let w = Math.min(r, g, b);
@@ -250,13 +258,6 @@ on('slide',(e:any)=>{
             ...state.canais,
             [e.index]: e.value
         }
-    })
-});
-
-on('novo-equipamento',(e:any)=>{
-    setState({
-        ...state,
-        equipamentos: [...state.equipamentos,e as Equipamento]
     })
 });
 
