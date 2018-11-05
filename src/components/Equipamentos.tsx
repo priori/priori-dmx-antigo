@@ -1,11 +1,19 @@
 import * as React from 'react';
 import {ipcRenderer} from 'electron';
 import {Equipamento} from "../state";
-import {times} from "../util";
 
 export interface EquipamentosState{
     monitorCriado: boolean
 }
+
+interface EquipamentoCanal {
+    name: string
+}
+
+const glow64Canais:EquipamentoCanal[] = [ { name: 'red' }, { name: 'green' }, { name: 'blue' }, { name: 'white' }, { name: 'master' },
+    { name: 'piscar' }, { name: 'hue' }, { name: 'animacao' } ];
+
+const par16Canais:EquipamentoCanal[] = [ { name: 'red' }, { name: 'green' }, { name: 'blue' }, { name: 'master' } ];
 
 class AddForm extends React.Component<any,any> {
     constructor(props:any) {
@@ -89,23 +97,23 @@ export class Equipamentos extends React.Component<EquipamentosProps,any> {
                         <strong style={{fontSize:'12px'}}>{e.nome}</strong>
                     <br/>
                     <input type="color"
-                           value={e.cor}
+                           value={this.cor(e)||'#000000'}
                            onChange={(event:any)=>this.changeColor(e,event.target.value)} /><br/>
                         {/*<select>*/}
                             {/*<option></option>*/}
                             {/*<option>askldjfhasdf</option>*/}
                         {/*</select><br/>*/}
                         {/*<input type="checkbox" checked={true} title="Envio Automático"/>{' '}*/}
-                        <button>Enviar</button>
+                        {/*<button>Enviar</button>*/}
                         <br/>
                         <strong style={{fontSize:'20px'}}>{e.inicio}</strong>
                     </div>
                     <div className="equipamento__canais">
-                    <strong>Canais</strong><br/>
                     {
                         e.tipo == 'glow64' ?
-                            times(8).map((_:any,index:number) => <div key={index } className="equipamento__canal">
-                                <span className="equipamento__canal__index">{e.inicio + index}</span>
+                            glow64Canais.map((ec:EquipamentoCanal,index:number) => <div key={index }
+                                                                          className={"equipamento__canal "+(ec.name)}>
+                                <span className="equipamento__canal__index ">{e.inicio + index}</span>
                                 <input
                                     onChange={(event:any)=>this.updateCanal(index+e.inicio,event.target.value)}
                                     type="range"
@@ -120,7 +128,8 @@ export class Equipamentos extends React.Component<EquipamentosProps,any> {
                                         this.props.canais[index+e.inicio]||'0'}
                                 </span>
                             </div>) :
-                            times(4).map((_:any,index:number) => <div key={index} className="equipamento__canal">
+                            par16Canais.map((ec:EquipamentoCanal,index:number) => <div key={index}
+                                className={"equipamento__canal "+(ec.name)}>
                                 <span className="equipamento__canal__index">{e.inicio + index}
                                 </span><input
                                     onChange={(event:any)=>this.updateCanal(index+e.inicio,event.target.value)}
@@ -154,5 +163,51 @@ export class Equipamentos extends React.Component<EquipamentosProps,any> {
             }
         });
         require('electron').ipcRenderer.send('slide',{index,value});
+    }
+
+    private cor(e: Equipamento) {
+        return buildCor(e,this.props.canais);
+    }
+}
+
+function corParte(s:number){
+    const str = Math.round(s).toString(16);
+    return (str.length == 1 ? '0':'')+str;
+}
+
+function buildCor(e:Equipamento,canais:{[k:number]:number}) {
+    if ( e.tipo == 'glow64' ) {
+        if ( canais[e.inicio+6] || canais[e.inicio+7] ) {
+            return null;
+        }
+        const master = canais[e.inicio+4] / 255;
+        // const w = canais[e.inicio+3] * master;
+        let r = canais[e.inicio] * master,
+            g = canais[e.inicio+1] * master,
+            b = canais[e.inicio+2] * master;
+        // let w = canais[e.inicio+3] * master;
+
+        // const min = Math.min(r,g,b);
+        // w += 3*min;
+        // w = w/4;
+        // let scale = 255 - min;
+        // r -= min;
+        // g -= min;
+        // b -= min;
+
+        // const cores = [
+        //     { valor: r, tipo: 'r' },
+        //     { valor: g, tipo: 'g' },
+        //     { valor: b, tipo: 'b' }
+        // ];
+        // cores.sort((a,b)=> a.valor - b.valor );
+
+        return '#'+corParte(r)+corParte(g)+corParte(b);
+    } else {
+        const master = canais[e.inicio] / 255;
+        let r = canais[e.inicio+1] * master,
+            g = canais[e.inicio+2] * master,
+            b = canais[e.inicio+3] * master;
+        return '#'+corParte(r)+corParte(g)+corParte(b);
     }
 }

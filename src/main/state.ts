@@ -25,7 +25,7 @@ let state:AppState = {
         deviceId: 'COM5'
     },
     ultimaCena: null,
-    animacao: null,
+    animacao: false,
     canais: {},
     equipamentos: [],
     cenas: []
@@ -49,7 +49,7 @@ if ( !fs.existsSync(file)){
     fs.writeFileSync(file,JSON.stringify(state));
 } else {
     state = JSON.parse(fs.readFileSync(file).toString()) as AppState;
-    state.animacao = null;
+    state.animacao = false;
     if ( state.dmx.conectado ) {
         dmx.addUniverse('main',state.dmx.driver,state.dmx.deviceId);
         dmx.update('main',state.canais);
@@ -146,38 +146,12 @@ on('create-equipamento',({nome,inicio,tipo})=>{
                 uid: uidCount++,
                 nome,
                 inicio,
-                tipo,
-                cor: '#000000'
+                tipo
             }
         ]
     })
 });
 
-// function corParte(s:number){
-//     s = Math.floor(s);
-//     return (s > 16 ? '0':'')+s.toString(16);
-// }
-// function buildCor(e:Equipamento,canais:{[k:number]:number}) {
-//     if ( e.tipo == 'glow64' ) {
-//         if ( canais[e.inicio+6] || canais[e.inicio+7] ) {
-//             return null;
-//         }
-//         const master = canais[e.inicio+4] / 255;
-//         const w = canais[e.inicio+3] * master;
-//
-//         let r = canais[e.inicio] * master + w/3,
-//             g = canais[e.inicio+1] * master + w/3,
-//             b = canais[e.inicio+2] * master + w/3;
-//
-//         return '#'+corParte(r)+corParte(g)+corParte(b);
-//     } else {
-//         const master = canais[e.inicio] / 255;
-//         let r = Math.floor(canais[e.inicio+1] * master),
-//             g = Math.floor(canais[e.inicio+2] * master),
-//             b = Math.floor(canais[e.inicio+3] * master);
-//         return '#'+corParte(r)+corParte(g)+corParte(b);
-//     }
-// }
 
 function buildCanaisFromCor(e:Equipamento,cor:string) {
     let r = parseInt(cor.substr(1,2),16),
@@ -326,6 +300,22 @@ on('salvar-mesa',({nome}:{nome:string})=>{
     })
 });
 
+on('editar-nome-da-cena',({uid,nome}:{uid:number,nome:string})=>{
+    const cenaIndex = state.cenas.findIndex((cena)=>cena.uid == uid);
+    const cena = state.cenas[cenaIndex] as Cena;
+    setState({
+        ...state,
+        cenas: [
+            ...state.cenas.filter((_:any,index:number) => index < cenaIndex ),
+            {
+                ...cena,
+                nome
+            },
+            ...state.cenas.filter((_:any,index:number)=> index > cenaIndex )
+        ]
+    });
+});
+
 on('editar-tempo-da-cena',({uid,tempo}:{uid:number,tempo:number})=>{
     const cenaIndex = state.cenas.findIndex((cena)=>cena.uid == uid);
     const cena = state.cenas[cenaIndex] as Cena;
@@ -343,7 +333,25 @@ on('editar-tempo-da-cena',({uid,tempo}:{uid:number,tempo:number})=>{
 });
 
 // let canaisPrecisos:any = null;
-on('aplicar-cena',({uid}:{uid:number})=>{
+on('aplicar-cena-agora',({uid}:{uid:number})=>{
+    // canaisPrecisos = null;
+    const cena = state.cenas.find((cena)=>cena.uid == uid) as Cena;
+    if ( state.dmx.conectado )
+        dmx.update('main',cena.canais);
+    setState({
+        ...state,
+        canais: cena.canais,
+        ultimaCena: cena.uid,
+        animacao: false
+    });
+});
+let animacao:{
+    de: Date,
+    ate: Date,
+    cena: number,
+    canaisIniciais: {[key:number]:number}
+}| null = null;
+on('transicao-para-cena',({uid}:{uid:number})=>{
     // canaisPrecisos = null;
     const cena = state.cenas.find((cena)=>cena.uid == uid) as Cena;
     const tempo = cena.transicaoTempo;
@@ -351,39 +359,44 @@ on('aplicar-cena',({uid}:{uid:number})=>{
         const de = new Date;
         const ate = new Date;
         ate.setTime(de.getTime() + parseInt(tempo+''));
+        animacao = {
+            de,
+            cena: cena.uid,
+            ate,
+            canaisIniciais: state.canais
+        };
         setState({
             ...state,
             ultimaCena: cena.uid,
-            animacao: {
-                de,
-                cena: cena.uid,
-                ate
-            }
+            animacao: true
         });
     } else {
         if ( state.dmx.conectado )
             dmx.update('main',cena.canais);
+        animacao = null;
         setState({
             ...state,
             canais: cena.canais,
             ultimaCena: cena.uid,
-            animacao: null
+            animacao: false
         })
     }
 });
 
-const intervalTime = 10;
+const intervalTime = 100;
 const animationInterval = setInterval(()=>{
-    if ( state.animacao ) {
-        const animacao = state.animacao;
+    if ( animacao ) {
+        // const animacao = state.animacao;
         const now = new Date;
-        const cena = state.cenas.find(c=>c.uid == animacao.cena) as Cena;
-        const falta =  animacao.ate.getTime()  - now.getTime();
-        if ( now.getTime() + intervalTime +1 >= animacao.ate.getTime() || falta < 0 ) {
+        const cena = state.cenas.find(c=>c.uid == (animacao as any).cena) as Cena;
+        const passouTime = now.getTime() - animacao.de.getTime();
+        const totalTime = animacao.ate.getTime() - animacao.de.getTime();
+        if ( passouTime > totalTime ) {
             // canaisPrecisos = null;
+            animacao = null;
             setState({
                 ...state,
-                animacao: null,
+                animacao: false,
                 canais: cena.canais
             });
             if ( state.dmx.conectado )
@@ -392,9 +405,10 @@ const animationInterval = setInterval(()=>{
         }
         const canais = {...state.canais};
         for ( const index in canais ) {
-            const valorAtual = canais[index];
+            // const valorAtual = canais[index];
+            const valorInicial = animacao.canaisIniciais[index];
             const valorObjetivo = cena.canais[index];
-            const proximoValor = valorAtual + ( valorObjetivo - valorAtual ) * intervalTime / falta;
+            const proximoValor = valorInicial + ( valorObjetivo - valorInicial ) * passouTime / totalTime;
             // canaisPrecisos[index] = proximoValor;
             canais[index] = Math.round(proximoValor);
         }

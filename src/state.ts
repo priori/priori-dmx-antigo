@@ -3,7 +3,6 @@ export interface Equipamento {
     inicio: number,
     tipo: 'glow64' | 'par16',
     uid: number,
-    cor: string,
     nome: string
 }
 
@@ -38,11 +37,7 @@ export interface AppState{
 
     ultimaCena: number|null,
 
-    animacao: {
-        de: Date,
-        ate: Date,
-        cena: number
-    }|null,
+    animacao: boolean,
     
     equipamentos: Equipamento[]
 }

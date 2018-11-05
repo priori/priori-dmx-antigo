@@ -59,7 +59,26 @@ input[type="range"].mesa__canal__input:focus::-webkit-slider-runnable-track { ba
 .equipamento__main{ float: left; }
 .equipamento__canais  { float: right; }
 .equipamento__canal { width: 22px; float: left; }
-.equipamento__canal__input{ -webkit-appearance: slider-vertical; width: 20px; }
+.equipamento__canal__input{ -webkit-appearance: slider-vertical; width: 18px; }
 
 
 .selected { background: #fe0 }
+
+.equipamento__canal { text-align: center;}
+.equipamento__canal.red, .equipamento__canal.green, .equipamento__canal.blue {
+     color: white; text-shadow: 0 1px 1px rgba(0,0,0,.5)
+}
+.equipamento__canal.white { background: linear-gradient(#fff,#444); }
+.equipamento__canal.master .equipamento__canal__valor, .equipamento__canal.white .equipamento__canal__valor { color: white; text-shadow: 0 1px 1px rgba(0,0,0,.5) }
+.equipamento__canal.red { background: #fbb; background: linear-gradient(#f66,#444) }
+.equipamento__canal.green { background: #bfb; background: linear-gradient(#6f6,#444) }
+.equipamento__canal.blue { background: #bbf; background: linear-gradient(#66f,#444) }
+.equipamento__canal.master {
+    background: linear-gradient( rgba(256,256,256,.9), rgba(256,256,256,0) 80%, rgba(64,64,64,0.7)),
+        linear-gradient(90deg, red, green, blue);
+}
+
+input[type="color"] { width: 70px; height: 70px; }
+.cenas table { width: 100%; border-collapse: collapse;}
+.cenas table th { text-align: left;}
+.cena input[type="text"] { width: calc(100% - 50px); display: block; }
