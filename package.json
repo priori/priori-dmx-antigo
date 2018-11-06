@@ -10,7 +10,8 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "tslint --project tsconfig.json --type-check --force",
-    "watchpage": "./node_modules/.bin/tsc -p ./tsconfig-page.json"
+    "watchpage": "./node_modules/.bin/tsc -p ./tsconfig-page.json",
+    "prettier": "./node_modules/.bin/prettier --write \"./src/**/*.{ts,tsx}\""
   },
   "keywords": [],
   "author": "Leonardo",
@@ -56,6 +57,7 @@
     "electron-devtools-installer": "^2.1.0",
     "electron-squirrel-startup": "^1.0.0",
     "express": "^4.16.3",
+    "prettier": "^1.14.3",
     "react": "^15.4.1",
     "react-dom": "^15.4.1",
     "react-hot-loader": "^3.0.0-beta.6",
