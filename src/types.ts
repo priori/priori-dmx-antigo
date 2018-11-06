@@ -68,4 +68,8 @@ export type AppAction =
       tipo: EquipamentoTipo;
     }
   | { type: "screen-started" }
-  | { type: "slide"; index: number; value: number };
+  | { type: "slide"; index: number; value: number }
+  | { type: "remove-equipamento", uid: number }
+  | { type: "editar-equipamento-nome", uid: number, nome: string }
+  | { type: "remove-cena", uid: number }
+  | { type: "equipamento-editar-inicio", uid: number, inicio: number};

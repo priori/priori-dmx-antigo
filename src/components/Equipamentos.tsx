@@ -2,10 +2,7 @@ import * as React from "react";
 import { Equipamento, EquipamentoTipo } from "../types";
 import { rgb2Color, rgbw2Color } from "../util/cores";
 import { action } from "../util/action";
-
-export interface EquipamentosState {
-  monitorCriado: boolean;
-}
+import {FastInput} from "./util/FastInput";
 
 interface EquipamentoCanal {
   name: string;
@@ -31,7 +28,8 @@ const par16Canais: EquipamentoCanal[] = [
 
 class AddForm extends React.Component<
   {
-    onSubmit: (nome: string, tipo: EquipamentoTipo, inicio: number) => void;
+    onSubmit: (nome: string, tipo: EquipamentoTipo, inicio: number) => void,
+      onCancelar: ()=>void
   },
   {
     tipo: EquipamentoTipo;
@@ -44,13 +42,14 @@ class AddForm extends React.Component<
     this.state = {
       inicio: 1,
       nome: "",
-      tipo: "glow64"
+      tipo: "glow64",
+
     };
   }
 
   render() {
     return (
-      <div>
+      <div className="add-form">
         Nome:{" "}
         <input
           type="text"
@@ -93,7 +92,8 @@ class AddForm extends React.Component<
           }
         >
           Incluir
-        </button>
+        </button>{' '}
+          <button onClick={()=>this.props.onCancelar()}>Cancelar</button>
       </div>
     );
   }
@@ -106,12 +106,21 @@ export interface EquipamentosProps {
   };
 }
 
-export class Equipamentos extends React.Component<EquipamentosProps, any> {
-  constructor(props: { equipamentos: Equipamento[] }) {
+export interface EquipamentosState {
+    add: boolean,
+    canais: {[key:number]: number},
+    editNome: number,
+    editInicio: number
+}
+
+export class Equipamentos extends React.Component<EquipamentosProps,EquipamentosState> {
+  constructor(props:EquipamentosProps) {
     super(props);
     this.state = {
       add: false,
-      canais: {}
+      canais: {},
+      editNome: -1,
+        editInicio: -1
     };
   }
 
@@ -136,18 +145,19 @@ export class Equipamentos extends React.Component<EquipamentosProps, any> {
   render() {
     return (
       <div>
-        <h2 style={{ margin: 0, marginTop: "10px", fontSize: "inherit" }}>
-          Equipamentos{" "}
-          <strong style={{ float: "right" }} onClick={() => this.add()}>
-            +
-          </strong>
-        </h2>
+        <div style={{textAlign:'right',marginTop:'11px'}}>
+          {/*Equipamentos{" "}*/}
+          <button onClick={() => this.add()}>
+            Novo Equipamento
+          </button>
+        </div>
         {this.state.add ? (
           <AddForm
             onSubmit={(nome: string, tipo: EquipamentoTipo, inicio: number) => {
               action({ type: "create-equipamento", nome, inicio, tipo });
-              this.setState({ add: false });
+              this.setState({ ...this.state, add: false });
             }}
+            onCancelar={()=>this.setState({ ...this.state, add:false})}
           />
         ) : (
           undefined
@@ -156,8 +166,24 @@ export class Equipamentos extends React.Component<EquipamentosProps, any> {
           {this.props.equipamentos.map((e: Equipamento, index: number) => (
             <div className="equipamento" key={index}>
               <div className="equipamento__main">
-                <strong style={{ fontSize: "12px" }}>{e.nome}</strong>
-                <br />
+                  {
+                      this.state.editNome == e.uid ?
+                          <FastInput className="equipamento__nome"
+                                 initialValue={e.nome}
+                                 style={{ width: "60px" }}
+                                 onChange={(value:string) =>
+                                     this.novoNome(e.uid, value)
+                                 }
+                                 onCancel={()=>{
+                                     this.setState({
+                                         ...this.state,
+                                         editNome: -1
+                                     });
+                                 }}
+                          />
+                          :
+                          <div className="equipamento__nome">{e.nome} <i className="fa fa-pencil" onClick={()=>this.editNome(e.uid)} /></div>
+                  }
                 <input
                   type="color"
                   value={this.cor(e) || "#000000"}
@@ -165,20 +191,41 @@ export class Equipamentos extends React.Component<EquipamentosProps, any> {
                     this.changeColor(e, event.target.value)
                   }
                 />
-                <br />
-                <br />
-                <strong style={{ fontSize: "20px" }}>{e.inicio}</strong>
+                  {this.state.editInicio == e.uid ?
+                      <FastInput
+                          className="equipamento__inicio"
+                          initialValue={e.inicio+''}
+                          type="number"
+                          onChange={(val)=>{
+                              const i = parseInt(val);
+                              if ( i <= 0 || !i || i > 255 ) {
+                                  alert('Valor inválido!');
+                              } else {
+                                  action({type:'equipamento-editar-inicio',uid:e.uid,inicio:i});
+                              }
+                              this.setState({...this.state,editInicio:-1});
+                          }}
+                          onCancel={()=>{
+                              this.setState({...this.state,editInicio:-1});
+                          }}
+                      />
+                  :
+                      <span className="equipamento__inicio"
+                            onDoubleClick={()=>this.setState({...this.state,
+                                editInicio: e.uid})}>{e.inicio}</span>
+                  }
               </div>
               <div className="equipamento__canais">
-                {e.tipo == "glow64"
-                  ? glow64Canais.map((ec: EquipamentoCanal, index: number) => (
+                {(e.tipo == "glow64"
+                  ? glow64Canais : par16Canais).map((ec: EquipamentoCanal, index: number) => (
                       <div
                         key={index}
                         className={"equipamento__canal " + ec.name}
                       >
-                        <span className="equipamento__canal__index ">
+                        <div className="equipamento__canal__index ">
                           {e.inicio + index}
-                        </span>
+                        </div>
+                          <div className="equipamento__canal__input__wrapper">
                         <input
                           onChange={(event: any) =>
                             this.updateCanal(
@@ -197,48 +244,16 @@ export class Equipamentos extends React.Component<EquipamentosProps, any> {
                               : this.props.canais[index + e.inicio] || "0"
                           }
                         />
-                        <span className="equipamento__canal__valor">
+                          </div>
+                        <div className="equipamento__canal__valor">
                           {typeof this.state.canais[index + e.inicio] !=
                           "undefined"
                             ? this.state.canais[e.inicio + index]
                             : this.props.canais[index + e.inicio] || "0"}
-                        </span>
+                        </div>
                       </div>
-                    ))
-                  : par16Canais.map((ec: EquipamentoCanal, index: number) => (
-                      <div
-                        key={index}
-                        className={"equipamento__canal " + ec.name}
-                      >
-                        <span className="equipamento__canal__index">
-                          {e.inicio + index}
-                        </span>
-                        <input
-                          onChange={(event: any) =>
-                            this.updateCanal(
-                              index + e.inicio,
-                              event.target.value
-                            )
-                          }
-                          type="range"
-                          className="equipamento__canal__input"
-                          min="0"
-                          max="255"
-                          value={
-                            typeof this.state.canais[index + e.inicio] !=
-                            "undefined"
-                              ? this.state.canais[e.inicio + index]
-                              : this.props.canais[index + e.inicio] || "0"
-                          }
-                        />
-                        <span className="equipamento__canal__valor">
-                          {typeof this.state.canais[index + e.inicio] !=
-                          "undefined"
-                            ? this.state.canais[e.inicio + index]
-                            : this.props.canais[index + e.inicio] || "0"}
-                        </span>
-                      </div>
-                    ))}
+                    )) }
+                  <i className="fa fa-close" onClick={()=>this.removeEquipamento(e.uid)}/>
               </div>
             </div>
           ))}
@@ -247,13 +262,19 @@ export class Equipamentos extends React.Component<EquipamentosProps, any> {
     );
   }
 
+  private removeEquipamento(uid:number){
+      if ( confirm('Realmente deseja remover este equipamento?') ){
+          action({type:'remove-equipamento',uid})
+      }
+  }
+
   private updateCanal(index: number, val: string) {
     const value = parseInt(val);
     this.setState({
       ...this.state,
       canais: {
         ...this.state.canais,
-        [index]: val
+        [index]: value
       }
     });
     action({ type: "slide", index, value });
@@ -261,6 +282,21 @@ export class Equipamentos extends React.Component<EquipamentosProps, any> {
 
   private cor(e: Equipamento) {
     return buildCor(e, this.props.canais);
+  }
+
+  private editNome(uid: number) {
+    return this.setState({
+      ...this.state,
+      editNome: uid
+    });
+  }
+
+  private novoNome(uid: any, value: any) {
+    action({type:"editar-equipamento-nome",uid,nome:value});
+    this.setState({
+        ...this.state,
+        editNome: -1
+    });
   }
 }
 

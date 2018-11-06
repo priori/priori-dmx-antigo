@@ -1,6 +1,7 @@
 import * as React from "react";
 import { AppState, Cena } from "../types";
 import { action } from "../util/action";
+import {FastInput} from "./util/FastInput";
 
 export interface CenasState {
   editandoTempo: number;
@@ -38,6 +39,10 @@ export class Cenas extends React.Component<AppState, CenasState> {
   }
 
   novoTempo(uid: number, tempo: number) {
+    if ( tempo < 0 ) {
+      alert('Valor inválido!');
+      return;
+    }
     action({ type: "editar-tempo-da-cena", uid, tempo });
     this.setState({
       ...this.state,
@@ -48,7 +53,7 @@ export class Cenas extends React.Component<AppState, CenasState> {
   render() {
     return (
       <div style={{ lineHeight: "2.5em" }} className="cenas">
-        <h1 style={{ margin: "0" }}>Cenas</h1>
+        {/*<h1 style={{ margin: "0" }}>Cenas</h1>*/}
         {this.props.cenas && this.props.cenas.length ? (
           <table>
             <tbody>
@@ -61,29 +66,19 @@ export class Cenas extends React.Component<AppState, CenasState> {
                   }
                 >
                   <th>
-                    <span
-                      style={{
-                        fontWeight: "bold",
-                        color: "rgba(0,0,0,.5)",
-                        float: "right",
-                        marginRight: "10px"
-                      }}
-                    >
-                      {cena.uid}
-                    </span>
                     {this.state.editandoNome == cena.uid ? (
-                      <input
-                        type="text"
-                        defaultValue={cena.nome}
-                        ref={el => {
-                          if (el) {
-                            el.focus();
-                            el.select();
-                          }
+                      <FastInput
+                          className="cena__nome"
+                        initialValue={cena.nome}
+                        onChange={(value:string) => {
+                          this.novoNome(cena.uid, value)
+                        } }
+                        onCancel={()=>{
+                            this.setState({
+                                ...this.state,
+                                editandoNome: -1
+                            });
                         }}
-                        onBlur={(e: any) =>
-                          this.novoNome(cena.uid, e.target.value)
-                        }
                       />
                     ) : (
                       <span
@@ -97,22 +92,18 @@ export class Cenas extends React.Component<AppState, CenasState> {
                         {cena.nome}
                       </span>
                     )}
+                      <i className="fa fa-close" onClick={()=>this.removeCena(cena.uid)}/>
                   </th>
                   <td style={{ width: "74px" }}>
                     {this.state.editandoTempo == cena.uid ? (
-                      <input
+                      <FastInput
                         type="number"
-                        defaultValue={cena.transicaoTempo + "" || "0"}
-                        ref={el => {
-                          if (el) {
-                            el.focus();
-                            el.select();
-                          }
-                        }}
+                        initialValue={cena.transicaoTempo + "" || "0"}
                         style={{ width: "60px" }}
-                        onBlur={(e: any) =>
-                          this.novoTempo(cena.uid, parseInt(e.target.value))
+                        onChange={ value =>
+                          this.novoTempo(cena.uid, parseInt(value))
                         }
+                        onCancel={()=> this.setState({ ...this.state, editandoTempo: -1 }) }
                       />
                     ) : (
                       <span
@@ -153,4 +144,10 @@ export class Cenas extends React.Component<AppState, CenasState> {
       </div>
     );
   }
+
+    private removeCena(uid: number) {
+        if ( confirm('Realmente deseja remover esta cena?') ){
+            action({type:'remove-cena',uid})
+        }
+    }
 }

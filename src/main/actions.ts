@@ -1,9 +1,8 @@
 import { dialog } from "electron";
-import { AppState, Cena, Equipamento, EquipamentoTipo } from "../types";
-import * as fs from "fs";
+import { Cena, Equipamento, EquipamentoTipo } from "../types";
 import { color2rgb, color2rgbw } from "../util/cores";
 import * as dmx from "./dmx";
-import { currentState, emptyState, on, setState } from "./state";
+import {currentState, emptyState, on, readState, saveState, setState, uid} from "./state";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
@@ -23,17 +22,6 @@ function dmxConectar(e: { driver: string; deviceId: string }): void {
   });
 }
 
-function initialIdCount() {
-  const state = currentState();
-  return state.equipamentos.length || state.cenas.length
-    ? Math.max(
-        ...state.equipamentos.map(e => e.uid),
-        ...state.cenas.map(c => c.uid)
-      ) + 1
-    : 1;
-}
-
-let uidCount = initialIdCount();
 function createEquipamento({
   nome,
   inicio,
@@ -49,7 +37,7 @@ function createEquipamento({
     equipamentos: [
       ...state.equipamentos,
       {
-        uid: uidCount++,
+        uid: uid(),
         nome,
         inicio,
         tipo
@@ -188,7 +176,7 @@ function salvarMesa({ nome }: { nome: string }): void {
       {
         transicaoTempo: 0,
         nome,
-        uid: uidCount++,
+        uid: uid(),
         tipo: "mesa",
         canais: save
       }
@@ -335,30 +323,26 @@ function abrir() {
   if (!names.length) return;
   let name = names[0];
   if (!name.endsWith(".priori-dmx")) name = name + ".priori-dmx";
-  const fileContent = fs.readFileSync(name).toString();
-  if (fileContent) {
-    const json = JSON.parse(fileContent) as AppState;
-    if (json) {
-      if (
-        json.dmx.conectado == state.dmx.conectado &&
-        json.dmx.deviceId == state.dmx.deviceId &&
-        json.dmx.driver == state.dmx.driver
-      ) {
-        setState(json);
-        return;
-      }
-      if (state.dmx.conectado) {
-        dmx.close();
-      }
+  const json = readState(name);
+  if (json) {
+    if (
+      json.dmx.conectado == state.dmx.conectado &&
+      json.dmx.deviceId == state.dmx.deviceId &&
+      json.dmx.driver == state.dmx.driver
+    ) {
       setState(json);
-      uidCount = initialIdCount();
-      if (state.dmx.conectado) {
-        dmx.connect(
-          state.dmx.driver,
-          state.dmx.deviceId
-        );
-        dmx.update(state.canais);
-      }
+      return;
+    }
+    if (state.dmx.conectado) {
+      dmx.close();
+    }
+    setState(json);
+    if (state.dmx.conectado) {
+      dmx.connect(
+        state.dmx.driver,
+        state.dmx.deviceId
+      );
+      dmx.update(state.canais);
     }
   }
 }
@@ -369,7 +353,7 @@ function salvar() {
     filters: [{ name: "Configurações Priori DMX", extensions: ["priori-dmx"] }]
   });
   if (!name.endsWith(".priori-dmx")) name = name + ".priori-dmx";
-  fs.writeFileSync(name, JSON.stringify(currentState()));
+  saveState(name);
 }
 
 function novo() {
@@ -377,7 +361,38 @@ function novo() {
     dmx.close();
   }
   setState(emptyState);
-  uidCount = initialIdCount();
+}
+
+function removeEquipamento({uid}: { uid: number}) {
+  const state = currentState();
+  setState({
+      ...state,
+      equipamentos: state.equipamentos.filter(e=>e.uid!= uid)
+  });
+}
+
+function editarEquipamentoNome({uid,nome}: { uid: number; nome: string }) {
+    const state = currentState();
+    setState({
+        ...state,
+        equipamentos: state.equipamentos.map(e=>e.uid== uid? {...e,nome}: e)
+    });
+}
+
+function removeCena({uid}: { uid: number}) {
+    const state = currentState();
+    setState({
+        ...state,
+        cenas: state.cenas.filter(e=>e.uid!= uid)
+    });
+}
+
+function equipamentoEditarInicio({uid,inicio}: {uid: number; inicio: number}) {
+    const state = currentState();
+    setState({
+        ...state,
+        equipamentos: state.equipamentos.map(e=>e.uid== uid? {...e,inicio}: e)
+    });
 }
 
 on(action => {
@@ -398,4 +413,8 @@ on(action => {
   // screenStarted
   else if (action.type == "slide") slide(action);
   else if (action.type == "transicao-para-cena") transicaoParaCena(action);
+  else if (action.type == "remove-equipamento") removeEquipamento(action);
+  else if (action.type == "editar-equipamento-nome") editarEquipamentoNome(action);
+  else if (action.type == "remove-cena") removeCena(action);
+  else if (action.type == "equipamento-editar-inicio") equipamentoEditarInicio(action);
 });

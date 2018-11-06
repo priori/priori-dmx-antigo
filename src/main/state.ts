@@ -35,26 +35,47 @@ function getDir() {
     return null;
   }
 }
-const dir = getDir();
-if (!fs.existsSync(dir)) {
-  fs.mkdirSync(dir);
+
+export function uid() {
+    const state = currentState();
+    return state.equipamentos.length || state.cenas.length
+        ? Math.max(
+        ...state.equipamentos.map(e => e.uid),
+        ...state.cenas.map(c => c.uid)
+    ) + 1
+        : 1;
 }
-const file = path.join(dir, "priori-dmx.json");
+
+function getFile(){
+  const dir = getDir();
+  if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+  }
+  return path.join(dir, "priori-dmx.json");
+}
+export function saveState(file:string){
+    fs.writeFileSync(file, JSON.stringify(state));
+}
+export function readState(file:string):AppState|undefined{
+    const fileContent = fs.readFileSync(file).toString();
+    if (fileContent) {
+        return JSON.parse(fileContent) as AppState;
+    }
+    return undefined;
+}
+const file = getFile();
 if (!fs.existsSync(file)) {
-  fs.writeFileSync(file, JSON.stringify(state));
+  saveState(file);
 } else {
-  const fileContent = fs.readFileSync(file).toString();
-  if (fileContent) {
-    const json = JSON.parse(fileContent) as AppState;
-    if (json) {
-      state = json;
-      if (state.dmx.conectado) {
-        dmx.connect(
-          state.dmx.driver,
-          state.dmx.deviceId
-        );
-        dmx.update(state.canais);
-      }
+  const json = readState(file);
+  if (json) {
+    state = json;
+    if (state.dmx.conectado) {
+      dmx.connect(
+        state.dmx.driver,
+        state.dmx.deviceId
+      );
+      dmx.update(state.canais);
     }
   }
 }
@@ -101,14 +122,14 @@ export function setState(newState: AppState) {
   else if (new Date().getTime() - firstThrotle.getTime() > maxThrotle) {
     firstThrotle = null;
     if (!appSender) throw "Sem appSender.";
-    fs.writeFileSync(file, JSON.stringify(state));
+    saveState(file);
     appSender.send("state", state);
     if (screenSender) screenSender.send("state", state);
     return;
   }
   timeoutThrotle = setTimeout(() => {
     if (!appSender) throw "Sem appSender.";
-    fs.writeFileSync(file, JSON.stringify(state));
+    saveState(file);
     appSender.send("state", state);
     if (screenSender) screenSender.send("state", state);
   }, throtleTime);
