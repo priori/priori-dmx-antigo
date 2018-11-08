@@ -174,9 +174,9 @@ export class Equipamentos extends React.Component<
   render() {
     let equipamentos = this.props.equipamentos;
     if (this.state.equipamentosSort) {
-        equipamentos = [...equipamentos];
-        const sort = this.state.equipamentosSort as number[];
-        equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
+      equipamentos = [...equipamentos];
+      const sort = this.state.equipamentosSort as number[];
+      equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
     }
     return (
       <div>
@@ -202,7 +202,7 @@ export class Equipamentos extends React.Component<
           axis="xy"
           distance={5}
         />
-          {/*getHelperDimensions={}*/}
+        {/*getHelperDimensions={}*/}
       </div>
     );
   }

@@ -3,7 +3,7 @@ import { FastInput } from "./util/FastInput";
 import { Equipamento } from "../types";
 import { action } from "../util/action";
 import { rgb2Color, rgbw2Color } from "../util/cores";
-import {SoftPanel} from "./util/SoftPanel";
+import { SoftPanel } from "./util/SoftPanel";
 
 interface EquipamentoCanal {
   name: string;
@@ -34,48 +34,74 @@ export interface EquipamentoComponentState {
   canais: { [key: number]: number };
   editNome: boolean;
   editInicio: boolean;
-  salvarConfiguracao: boolean
+  salvarConfiguracao: boolean;
 }
 
 interface SalvarConfiguracaoProps {
-  equipamento: Equipamento,
-    onClose: ()=>void
+  equipamento: Equipamento;
+  onClose: () => void;
 }
 interface SalvarConfiguracaoState {
-
-  tipo: string
+  tipo: string;
 }
-class SalvarConfiguracao extends React.Component<SalvarConfiguracaoProps,SalvarConfiguracaoState> {
-    constructor(props:SalvarConfiguracaoProps){
-      super(props);
-      this.state = {
-        tipo: ""
-      }
-    }
-  render(){
-    return <SoftPanel onBlur={()=>{
-        this.props.onClose();
-      }}>
-          <div>
-              <input type="text"/>
-              <br/>
-              <select onChange={(e:any)=>this.setState({...this.state,tipo:e.target.value})}>
-                  <option value=""></option>
-                  <option value="neste">Neste Equipamento</option>
-                  <option value="tipo">Para Todos {this.props.equipamento.tipo == 'glow64' ? 'LED 64 GLOW' : 'PAR LED 16'}</option>
-                  <option value="cena">Cena Existente</option>
-                  <option value="novacena">Nova Cena</option>
+class SalvarConfiguracao extends React.Component<
+  SalvarConfiguracaoProps,
+  SalvarConfiguracaoState
+> {
+  constructor(props: SalvarConfiguracaoProps) {
+    super(props);
+    this.state = {
+      tipo: ""
+    };
+  }
+  render() {
+    return (
+      <SoftPanel
+        onBlur={() => {
+          this.props.onClose();
+        }}
+      >
+        <div>
+          <input type="text" />
+          <br />
+          <select
+            onChange={(e: any) =>
+              this.setState({ ...this.state, tipo: e.target.value })
+            }
+          >
+            <option value="" />
+            <option value="neste">Neste Equipamento</option>
+            <option value="tipo">
+              Para Todos{" "}
+              {this.props.equipamento.tipo == "glow64"
+                ? "LED 64 GLOW"
+                : "PAR LED 16"}
+            </option>
+            <option value="cena">Cena Existente</option>
+            <option value="novacena">Nova Cena</option>
+          </select>
+          {this.state.tipo == "novacena" ? (
+            <div>
+              {" "}
+              <input type="text" />{" "}
+            </div>
+          ) : null}
+          {this.state.tipo == "cena" ? (
+            <div>
+              <select>
+                <option value="" />
               </select>
-              {this.state.tipo == 'novacena' ? <div> <input type="text"/> </div> : null }
-              {this.state.tipo == 'cena' ? <div><select>
-                  <option value=""></option>
-              </select></div>: null }
-              <div><button>Salvar</button>{' '}<button onClick={()=>this.props.onClose()}>Cancelar</button></div>
+            </div>
+          ) : null}
+          <div>
+            <button>Salvar</button>{" "}
+            <button onClick={() => this.props.onClose()}>Cancelar</button>
           </div>
+        </div>
       </SoftPanel>
+    );
   }
 }
-
 
 export class EquipamentoComponent extends React.Component<
   EquipamentoComponentProps,
@@ -87,7 +113,7 @@ export class EquipamentoComponent extends React.Component<
       canais: {},
       editNome: false,
       editInicio: false,
-      salvarConfiguracao : false
+      salvarConfiguracao: false
     };
   }
 
@@ -144,8 +170,8 @@ export class EquipamentoComponent extends React.Component<
     action({ type: "pulsar-equipamento", uid });
   }
 
-  private salvar(){
-      this.setState({...this.state,salvarConfiguracao: true});
+  private salvar() {
+    this.setState({ ...this.state, salvarConfiguracao: true });
   }
 
   render() {
@@ -191,19 +217,21 @@ export class EquipamentoComponent extends React.Component<
               textAlign: "center"
             }}
           >
-            <button onClick={() => this.pulsar()}>Pulsar</button>
-              {' '}
+            <button onClick={() => this.pulsar()}>Pulsar</button>{" "}
             <button onClick={() => this.piscar()}>Piscar</button>
-              <br/>
-              {
-                this.state.salvarConfiguracao ?
-                    <SalvarConfiguracao equipamento={e} onClose={()=>this.setState({
-                        ...this.state,
-                        salvarConfiguracao: false
-                    })} />
-                    : null
-              }
-              <button onClick={()=>this.salvar()}>Salvar</button>
+            <br />
+            {this.state.salvarConfiguracao ? (
+              <SalvarConfiguracao
+                equipamento={e}
+                onClose={() =>
+                  this.setState({
+                    ...this.state,
+                    salvarConfiguracao: false
+                  })
+                }
+              />
+            ) : null}
+            <button onClick={() => this.salvar()}>Salvar</button>
           </div>
           {this.state.editInicio ? (
             <FastInput

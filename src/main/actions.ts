@@ -493,13 +493,13 @@ function piscarEquipamento({ uid }: { uid: number }) {
 }
 
 function equipamentosSort({ sort }: { sort: number[] }) {
-    const state = currentState();
-    const equipamentos = [...state.equipamentos];
-    equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
-    setState({
-        ...state,
-        equipamentos
-    });
+  const state = currentState();
+  const equipamentos = [...state.equipamentos];
+  equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
+  setState({
+    ...state,
+    equipamentos
+  });
 }
 
 function cenasSort({ sort }: { sort: number[] }) {
