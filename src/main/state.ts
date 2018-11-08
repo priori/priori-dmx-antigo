@@ -37,31 +37,31 @@ function getDir() {
 }
 
 export function uid() {
-    const state = currentState();
-    return state.equipamentos.length || state.cenas.length
-        ? Math.max(
+  const state = currentState();
+  return state.equipamentos.length || state.cenas.length
+    ? Math.max(
         ...state.equipamentos.map(e => e.uid),
         ...state.cenas.map(c => c.uid)
-    ) + 1
-        : 1;
+      ) + 1
+    : 1;
 }
 
-function getFile(){
+function getFile() {
   const dir = getDir();
   if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
+    fs.mkdirSync(dir);
   }
   return path.join(dir, "priori-dmx.json");
 }
-export function saveState(file:string){
-    fs.writeFileSync(file, JSON.stringify(state));
+export function saveState(file: string) {
+  fs.writeFileSync(file, JSON.stringify(state));
 }
-export function readState(file:string):AppState|undefined{
-    const fileContent = fs.readFileSync(file).toString();
-    if (fileContent) {
-        return JSON.parse(fileContent) as AppState;
-    }
-    return undefined;
+export function readState(file: string): AppState | undefined {
+  const fileContent = fs.readFileSync(file).toString();
+  if (fileContent) {
+    return JSON.parse(fileContent) as AppState;
+  }
+  return undefined;
 }
 const file = getFile();
 if (!fs.existsSync(file)) {

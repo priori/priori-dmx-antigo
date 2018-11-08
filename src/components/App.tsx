@@ -44,7 +44,12 @@ export class App extends React.Component<{}, AppState | {}> {
     const state = this.state as AppState;
     return (
       <div>
-        <div>
+        <div
+          style={{
+            borderBottom: "1px solid #ddd",
+            paddingBottom: "10px"
+          }}
+        >
           <button onClick={() => action({ type: "novo" })}>Novo</button>{" "}
           <button onClick={() => action({ type: "abrir" })}>Abrir</button>{" "}
           <button onClick={() => action({ type: "salvar" })}>Salvar</button>{" "}
@@ -74,39 +79,43 @@ export class App extends React.Component<{}, AppState | {}> {
         {/*<Monitor />*/}
         <Server />
         <ConexaoDMX {...state.dmx} />
+        <Cenas {...state} />
         <div style={{ textAlign: "right", paddingBottom: "5px" }}>
           <input type="text" ref={el => (this.inputEl = el)} />{" "}
           <button onClick={() => this.salvarMesa()}>Salvar</button>
         </div>
         <Mesa canais={state.canais} />
         <Equipamentos equipamentos={state.equipamentos} canais={state.canais} />
-
-        <Cenas {...state} />
         {/*<Arquivos onChange={arquivos=>this.setArquivos(arquivos)} />*/}
       </div>
     );
   }
 }
 
-if ( (window as any).destoryGlobalListeners ) {
-    (window as any).destoryGlobalListeners();
+if ((window as any).destoryGlobalListeners) {
+  (window as any).destoryGlobalListeners();
 }
 (window as any).globalListenersStarted = true;
-const listener = (e:any) =>{
-    const el = e.target
-    if ( el instanceof HTMLElement && !(el.tagName in {'INPUT':1,'TEXTAREA':1,'SELECT':1, 'OPTION': 1}) ) {
-        const el2 = el.closest('[tabindex]')
-        if ( el2 && el2.getAttribute('tabindex') != '-1' ) {
-            (el2 as any).focus()
-        } else if ( document.activeElement && !(document.activeElement.tagName in {'HTML':1,'BODY':1}) ) {
-            const el = document.activeElement;
-            if (el && (el as any).blur)
-                (el as any).blur();
-        }
-        e.preventDefault()
+const listener = (e: any) => {
+  const el = e.target;
+  if (
+    el instanceof HTMLElement &&
+    !(el.tagName in { INPUT: 1, TEXTAREA: 1, SELECT: 1, OPTION: 1 })
+  ) {
+    const el2 = el.closest("[tabindex]");
+    if (el2 && el2.getAttribute("tabindex") != "-1") {
+      (el2 as any).focus();
+    } else if (
+      document.activeElement &&
+      !(document.activeElement.tagName in { HTML: 1, BODY: 1 })
+    ) {
+      const el = document.activeElement;
+      if (el && (el as any).blur) (el as any).blur();
     }
-}
-window.addEventListener('mousedown', listener);
+    e.preventDefault();
+  }
+};
+window.addEventListener("mousedown", listener);
 (window as any).destoryGlobalListeners = () => {
-    window.removeEventListener ('mousedown',listener);
+  window.removeEventListener("mousedown", listener);
 };

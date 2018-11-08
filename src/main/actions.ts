@@ -1,8 +1,16 @@
 import { dialog } from "electron";
-import { Cena, Equipamento, EquipamentoTipo } from "../types";
+import { Animacao, Cena, Equipamento, EquipamentoTipo } from "../types";
 import { color2rgb, color2rgbw } from "../util/cores";
 import * as dmx from "./dmx";
-import {currentState, emptyState, on, readState, saveState, setState, uid} from "./state";
+import {
+  currentState,
+  emptyState,
+  on,
+  readState,
+  saveState,
+  setState,
+  uid
+} from "./state";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
@@ -231,12 +239,7 @@ function aplicarCenaAgora({ uid }: { uid: number }) {
     animacao: false
   });
 }
-let animacao: {
-  de: Date;
-  ate: Date;
-  cena: number;
-  canaisIniciais: { [key: number]: number };
-} | null = null;
+let animacao: Animacao | null = null;
 
 function transicaoParaCena({ uid }: { uid: number }): void {
   const state = currentState();
@@ -248,6 +251,7 @@ function transicaoParaCena({ uid }: { uid: number }): void {
     const ate = new Date();
     ate.setTime(de.getTime() + parseInt(tempo + ""));
     animacao = {
+      type: "transicao",
       de,
       cena: cena.uid,
       ate,
@@ -270,40 +274,93 @@ function transicaoParaCena({ uid }: { uid: number }): void {
   }
 }
 
+function smoth(val: number) {
+  return (Math.sin(val * Math.PI - Math.PI / 2) + 1) / 2;
+}
 const intervalTime = 100;
 const animationInterval = setInterval(() => {
   const state = currentState();
   if (animacao) {
-    // const animacao = state.animacao;
-    const now = new Date();
-    const cena = state.cenas.find(c => c.uid == (animacao as any).cena) as Cena;
-    const passouTime = now.getTime() - animacao.de.getTime();
-    const totalTime = animacao.ate.getTime() - animacao.de.getTime();
-    if (passouTime > totalTime) {
-      // canaisPrecisos = null;
-      animacao = null;
+    if (animacao.type == "transicao") {
+      const now = new Date();
+      const cena = state.cenas.find(
+        c => c.uid == (animacao as any).cena
+      ) as Cena;
+      const passouTime = now.getTime() - animacao.de.getTime();
+      const totalTime = animacao.ate.getTime() - animacao.de.getTime();
+      if (passouTime > totalTime) {
+        // canaisPrecisos = null;
+        animacao = null;
+        setState({
+          ...state,
+          animacao: false,
+          canais: cena.canais
+        });
+        if (state.dmx.conectado) dmx.update(cena.canais);
+        return;
+      }
+      const canais = { ...state.canais };
+      for (const index in canais) {
+        const valorInicial = animacao.canaisIniciais[index],
+          valorObjetivo = cena.canais[index],
+          proximoValor =
+            valorInicial +
+            ((valorObjetivo - valorInicial) * passouTime) / totalTime;
+        canais[index] = Math.round(proximoValor);
+      }
+      if (state.dmx.conectado) dmx.update(canais);
       setState({
         ...state,
-        animacao: false,
-        canais: cena.canais
+        canais
       });
-      if (state.dmx.conectado) dmx.update(cena.canais);
-      return;
+    } else if (animacao.type == "pulsar") {
+      const inicial = animacao.valorInicial;
+      const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
+      // const de = inicial;
+      // const ate = inicial - 40;
+      const index =
+        animacao.equipamento.inicio +
+        (animacao.equipamento.tipo == "glow64" ? 4 : 0);
+      const state = currentState();
+
+      const tamanhoDoCiclo = 2000;
+      const aux = (tempoQuePassou % tamanhoDoCiclo) / (tamanhoDoCiclo / 2);
+      const perc = aux > 1 ? 2 - aux : aux;
+      const smothPerc = smoth(perc);
+
+      const value = inicial - ((3 * inicial) / 4) * smothPerc;
+      if (value == state[index]) return;
+      const canais = {
+        ...state.canais,
+        [index]: Math.round(value)
+      };
+      if (state.dmx.conectado) dmx.update(canais);
+      setState({
+        ...state,
+        canais
+      });
+    } else if (animacao.type == "piscar") {
+      const inicial = animacao.valorInicial;
+      const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
+      // const de = inicial;
+      // const ate = inicial - 40;
+      const index =
+        animacao.equipamento.inicio +
+        (animacao.equipamento.tipo == "glow64" ? 4 : 0);
+
+      const state = currentState();
+      const value = Math.floor(tempoQuePassou / 1000) % 2 ? inicial : 0;
+      if (value == state[index]) return;
+      const canais = {
+        ...state.canais,
+        [index]: value
+      };
+      if (state.dmx.conectado) dmx.update(canais);
+      setState({
+        ...state,
+        canais
+      });
     }
-    const canais = { ...state.canais };
-    for (const index in canais) {
-      const valorInicial = animacao.canaisIniciais[index],
-        valorObjetivo = cena.canais[index],
-        proximoValor =
-          valorInicial +
-          ((valorObjetivo - valorInicial) * passouTime) / totalTime;
-      canais[index] = Math.round(proximoValor);
-    }
-    if (state.dmx.conectado) dmx.update(canais);
-    setState({
-      ...state,
-      canais
-    });
   }
 }, intervalTime);
 
@@ -363,36 +420,96 @@ function novo() {
   setState(emptyState);
 }
 
-function removeEquipamento({uid}: { uid: number}) {
+function removeEquipamento({ uid }: { uid: number }) {
   const state = currentState();
   setState({
-      ...state,
-      equipamentos: state.equipamentos.filter(e=>e.uid!= uid)
+    ...state,
+    equipamentos: state.equipamentos.filter(e => e.uid != uid)
   });
 }
 
-function editarEquipamentoNome({uid,nome}: { uid: number; nome: string }) {
+function editarEquipamentoNome({ uid, nome }: { uid: number; nome: string }) {
+  const state = currentState();
+  setState({
+    ...state,
+    equipamentos: state.equipamentos.map(
+      e => (e.uid == uid ? { ...e, nome } : e)
+    )
+  });
+}
+
+function removeCena({ uid }: { uid: number }) {
+  const state = currentState();
+  setState({
+    ...state,
+    cenas: state.cenas.filter(e => e.uid != uid)
+  });
+}
+
+function equipamentoEditarInicio({
+  uid,
+  inicio
+}: {
+  uid: number;
+  inicio: number;
+}) {
+  const state = currentState();
+  setState({
+    ...state,
+    equipamentos: state.equipamentos.map(
+      e => (e.uid == uid ? { ...e, inicio } : e)
+    )
+  });
+}
+
+function pulsarEquipamento({ uid }: { uid: number }) {
+  const state = currentState();
+  const equipamento = state.equipamentos.find(e => e.uid == uid) as Equipamento;
+  const valorInicial =
+    equipamento.tipo == "glow64"
+      ? state.canais[equipamento.inicio + 4]
+      : state.canais[equipamento.inicio];
+  animacao = {
+    type: "pulsar",
+    equipamento,
+    inicio: new Date(),
+    valorInicial
+  };
+}
+
+function piscarEquipamento({ uid }: { uid: number }) {
+  const state = currentState();
+  const equipamento = state.equipamentos.find(e => e.uid == uid) as Equipamento;
+  const valorInicial =
+    equipamento.tipo == "glow64"
+      ? state.canais[equipamento.inicio + 4]
+      : state.canais[equipamento.inicio];
+  animacao = {
+    type: "piscar",
+    equipamento,
+    inicio: new Date(),
+    valorInicial
+  };
+}
+
+function equipamentosSort({ sort }: { sort: number[] }) {
     const state = currentState();
+    const equipamentos = [...state.equipamentos];
+    equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
     setState({
         ...state,
-        equipamentos: state.equipamentos.map(e=>e.uid== uid? {...e,nome}: e)
+        equipamentos
     });
 }
 
-function removeCena({uid}: { uid: number}) {
-    const state = currentState();
-    setState({
-        ...state,
-        cenas: state.cenas.filter(e=>e.uid!= uid)
-    });
-}
-
-function equipamentoEditarInicio({uid,inicio}: {uid: number; inicio: number}) {
-    const state = currentState();
-    setState({
-        ...state,
-        equipamentos: state.equipamentos.map(e=>e.uid== uid? {...e,inicio}: e)
-    });
+function cenasSort({ sort }: { sort: number[] }) {
+  const state = currentState();
+  const cenas = [...state.cenas];
+  cenas.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
+  setState({
+    ...state,
+    cenas
+  });
 }
 
 on(action => {
@@ -414,7 +531,13 @@ on(action => {
   else if (action.type == "slide") slide(action);
   else if (action.type == "transicao-para-cena") transicaoParaCena(action);
   else if (action.type == "remove-equipamento") removeEquipamento(action);
-  else if (action.type == "editar-equipamento-nome") editarEquipamentoNome(action);
+  else if (action.type == "editar-equipamento-nome")
+    editarEquipamentoNome(action);
   else if (action.type == "remove-cena") removeCena(action);
-  else if (action.type == "equipamento-editar-inicio") equipamentoEditarInicio(action);
+  else if (action.type == "equipamento-editar-inicio")
+    equipamentoEditarInicio(action);
+  else if (action.type == "piscar-equipamento") piscarEquipamento(action);
+  else if (action.type == "pulsar-equipamento") pulsarEquipamento(action);
+  else if (action.type == "cenas-sort") cenasSort(action);
+  else if (action.type == "equipamentos-sort") equipamentosSort(action);
 });

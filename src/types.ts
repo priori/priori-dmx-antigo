@@ -47,6 +47,7 @@ export interface IpcEvent {
 export interface IpcSender {
   send(name: string, val?: any): void;
 }
+
 export type AppAction =
   | { type: "app-start" }
   | { type: "salvar-mesa"; nome: string }
@@ -69,7 +70,32 @@ export type AppAction =
     }
   | { type: "screen-started" }
   | { type: "slide"; index: number; value: number }
-  | { type: "remove-equipamento", uid: number }
-  | { type: "editar-equipamento-nome", uid: number, nome: string }
-  | { type: "remove-cena", uid: number }
-  | { type: "equipamento-editar-inicio", uid: number, inicio: number};
+  | { type: "remove-equipamento"; uid: number }
+  | { type: "editar-equipamento-nome"; uid: number; nome: string }
+  | { type: "remove-cena"; uid: number }
+  | { type: "equipamento-editar-inicio"; uid: number; inicio: number }
+  | { type: "piscar-equipamento"; uid: number }
+  | { type: "pulsar-equipamento"; uid: number }
+  | { type: "cenas-sort"; sort: number[] }
+  | { type: "equipamentos-sort"; sort: number[] };
+
+export type Animacao =
+  | {
+      type: "transicao";
+      de: Date;
+      ate: Date;
+      cena: number;
+      canaisIniciais: { [key: number]: number };
+    }
+  | {
+      type: "pulsar";
+      equipamento: Equipamento;
+      inicio: Date;
+      valorInicial: number;
+    }
+  | {
+      type: "piscar";
+      equipamento: Equipamento;
+      inicio: Date;
+      valorInicial: number;
+    };

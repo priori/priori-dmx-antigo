@@ -1,35 +1,48 @@
 import * as React from "react";
 import { Equipamento, EquipamentoTipo } from "../types";
-import { rgb2Color, rgbw2Color } from "../util/cores";
 import { action } from "../util/action";
-import {FastInput} from "./util/FastInput";
+import { EquipamentoComponent } from "./EquipamentoComponent";
+import {
+  SortableContainer,
+  SortableElement,
+  arrayMove
+} from "react-sortable-hoc";
 
-interface EquipamentoCanal {
-  name: string;
-}
+const SortableItem = SortableElement(
+  ({
+    equipamento,
+    canais
+  }: {
+    equipamento: Equipamento;
+    canais: { [key: number]: number };
+  }) => <EquipamentoComponent equipamento={equipamento} canais={canais} />
+);
 
-const glow64Canais: EquipamentoCanal[] = [
-  { name: "red" },
-  { name: "green" },
-  { name: "blue" },
-  { name: "white" },
-  { name: "master" },
-  { name: "piscar" },
-  { name: "hue" },
-  { name: "animacao" }
-];
-
-const par16Canais: EquipamentoCanal[] = [
-  { name: "master" },
-  { name: "red" },
-  { name: "green" },
-  { name: "blue" }
-];
+const SortableList = SortableContainer(
+  ({
+    equipamentos,
+    canais
+  }: {
+    equipamentos: Equipamento[];
+    canais: { [key: number]: number };
+  }) => (
+    <div className="equipamentos">
+      {equipamentos.map((e: Equipamento, index: number) => (
+        <SortableItem
+          equipamento={e}
+          key={e.uid}
+          canais={canais}
+          index={index}
+        />
+      ))}
+    </div>
+  )
+);
 
 class AddForm extends React.Component<
   {
-    onSubmit: (nome: string, tipo: EquipamentoTipo, inicio: number) => void,
-      onCancelar: ()=>void
+    onSubmit: (nome: string, tipo: EquipamentoTipo, inicio: number) => void;
+    onCancelar: () => void;
   },
   {
     tipo: EquipamentoTipo;
@@ -42,8 +55,7 @@ class AddForm extends React.Component<
     this.state = {
       inicio: 1,
       nome: "",
-      tipo: "glow64",
-
+      tipo: "glow64"
     };
   }
 
@@ -62,6 +74,8 @@ class AddForm extends React.Component<
         Início:{" "}
         <input
           type="number"
+          min={1}
+          max={255}
           value={this.state.inicio}
           onChange={e =>
             this.setState({
@@ -92,8 +106,8 @@ class AddForm extends React.Component<
           }
         >
           Incluir
-        </button>{' '}
-          <button onClick={()=>this.props.onCancelar()}>Cancelar</button>
+        </button>{" "}
+        <button onClick={() => this.props.onCancelar()}>Cancelar</button>
       </div>
     );
   }
@@ -107,20 +121,19 @@ export interface EquipamentosProps {
 }
 
 export interface EquipamentosState {
-    add: boolean,
-    canais: {[key:number]: number},
-    editNome: number,
-    editInicio: number
+  add: boolean;
+  equipamentosSort: number[] | null;
 }
 
-export class Equipamentos extends React.Component<EquipamentosProps,EquipamentosState> {
-  constructor(props:EquipamentosProps) {
+export class Equipamentos extends React.Component<
+  EquipamentosProps,
+  EquipamentosState
+> {
+  constructor(props: EquipamentosProps) {
     super(props);
     this.state = {
       add: false,
-      canais: {},
-      editNome: -1,
-        editInicio: -1
+      equipamentosSort: null
     };
   }
 
@@ -132,24 +145,44 @@ export class Equipamentos extends React.Component<EquipamentosProps,Equipamentos
   }
 
   componentWillReceiveProps(nextProps: EquipamentosProps) {
-    this.setState({
-      ...this.state,
-      canais: { ...nextProps.canais }
-    });
+    this.setState(Equipamentos.getDerivedStateFromProps(nextProps, this.state));
   }
 
-  changeColor(equipamento: Equipamento, cor: string) {
-    action({ type: "change-color", equipamento: equipamento.uid, cor });
+  static getDerivedStateFromProps(
+    _: EquipamentosProps,
+    state: EquipamentosState
+  ) {
+    return {
+      ...state,
+      equipamentosSort: null
+    };
   }
+
+  onSortEnd = ({
+    oldIndex,
+    newIndex
+  }: {
+    oldIndex: number;
+    newIndex: number;
+  }) => {
+    let sort = this.props.equipamentos.map(c => c.uid);
+    sort = arrayMove(sort, oldIndex, newIndex);
+    this.setState({ ...this.state, equipamentosSort: sort });
+    action({ type: "equipamentos-sort", sort });
+  };
 
   render() {
+    let equipamentos = this.props.equipamentos;
+    if (this.state.equipamentosSort) {
+        equipamentos = [...equipamentos];
+        const sort = this.state.equipamentosSort as number[];
+        equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
+    }
     return (
       <div>
-        <div style={{textAlign:'right',marginTop:'11px'}}>
+        <div style={{ textAlign: "right", marginTop: "11px" }}>
           {/*Equipamentos{" "}*/}
-          <button onClick={() => this.add()}>
-            Novo Equipamento
-          </button>
+          <button onClick={() => this.add()}>Novo Equipamento</button>
         </div>
         {this.state.add ? (
           <AddForm
@@ -157,165 +190,20 @@ export class Equipamentos extends React.Component<EquipamentosProps,Equipamentos
               action({ type: "create-equipamento", nome, inicio, tipo });
               this.setState({ ...this.state, add: false });
             }}
-            onCancelar={()=>this.setState({ ...this.state, add:false})}
+            onCancelar={() => this.setState({ ...this.state, add: false })}
           />
         ) : (
           undefined
         )}
-        <div className="equipamentos">
-          {this.props.equipamentos.map((e: Equipamento, index: number) => (
-            <div className="equipamento" key={index}>
-              <div className="equipamento__main">
-                  {
-                      this.state.editNome == e.uid ?
-                          <FastInput className="equipamento__nome"
-                                 initialValue={e.nome}
-                                 style={{ width: "60px" }}
-                                 onChange={(value:string) =>
-                                     this.novoNome(e.uid, value)
-                                 }
-                                 onCancel={()=>{
-                                     this.setState({
-                                         ...this.state,
-                                         editNome: -1
-                                     });
-                                 }}
-                          />
-                          :
-                          <div className="equipamento__nome">{e.nome} <i className="fa fa-pencil" onClick={()=>this.editNome(e.uid)} /></div>
-                  }
-                <input
-                  type="color"
-                  value={this.cor(e) || "#000000"}
-                  onChange={(event: any) =>
-                    this.changeColor(e, event.target.value)
-                  }
-                />
-                  {this.state.editInicio == e.uid ?
-                      <FastInput
-                          className="equipamento__inicio"
-                          initialValue={e.inicio+''}
-                          type="number"
-                          onChange={(val)=>{
-                              const i = parseInt(val);
-                              if ( i <= 0 || !i || i > 255 ) {
-                                  alert('Valor inválido!');
-                              } else {
-                                  action({type:'equipamento-editar-inicio',uid:e.uid,inicio:i});
-                              }
-                              this.setState({...this.state,editInicio:-1});
-                          }}
-                          onCancel={()=>{
-                              this.setState({...this.state,editInicio:-1});
-                          }}
-                      />
-                  :
-                      <span className="equipamento__inicio"
-                            onDoubleClick={()=>this.setState({...this.state,
-                                editInicio: e.uid})}>{e.inicio}</span>
-                  }
-              </div>
-              <div className="equipamento__canais">
-                {(e.tipo == "glow64"
-                  ? glow64Canais : par16Canais).map((ec: EquipamentoCanal, index: number) => (
-                      <div
-                        key={index}
-                        className={"equipamento__canal " + ec.name}
-                      >
-                        <div className="equipamento__canal__index ">
-                          {e.inicio + index}
-                        </div>
-                          <div className="equipamento__canal__input__wrapper">
-                        <input
-                          onChange={(event: any) =>
-                            this.updateCanal(
-                              index + e.inicio,
-                              event.target.value
-                            )
-                          }
-                          type="range"
-                          min="0"
-                          className="equipamento__canal__input"
-                          max="255"
-                          value={
-                            typeof this.state.canais[index + e.inicio] !=
-                            "undefined"
-                              ? this.state.canais[e.inicio + index]
-                              : this.props.canais[index + e.inicio] || "0"
-                          }
-                        />
-                          </div>
-                        <div className="equipamento__canal__valor">
-                          {typeof this.state.canais[index + e.inicio] !=
-                          "undefined"
-                            ? this.state.canais[e.inicio + index]
-                            : this.props.canais[index + e.inicio] || "0"}
-                        </div>
-                      </div>
-                    )) }
-                  <i className="fa fa-close" onClick={()=>this.removeEquipamento(e.uid)}/>
-              </div>
-            </div>
-          ))}
-        </div>
+        <SortableList
+          equipamentos={equipamentos}
+          canais={this.props.canais}
+          onSortEnd={this.onSortEnd}
+          axis="xy"
+          distance={5}
+        />
+          {/*getHelperDimensions={}*/}
       </div>
     );
-  }
-
-  private removeEquipamento(uid:number){
-      if ( confirm('Realmente deseja remover este equipamento?') ){
-          action({type:'remove-equipamento',uid})
-      }
-  }
-
-  private updateCanal(index: number, val: string) {
-    const value = parseInt(val);
-    this.setState({
-      ...this.state,
-      canais: {
-        ...this.state.canais,
-        [index]: value
-      }
-    });
-    action({ type: "slide", index, value });
-  }
-
-  private cor(e: Equipamento) {
-    return buildCor(e, this.props.canais);
-  }
-
-  private editNome(uid: number) {
-    return this.setState({
-      ...this.state,
-      editNome: uid
-    });
-  }
-
-  private novoNome(uid: any, value: any) {
-    action({type:"editar-equipamento-nome",uid,nome:value});
-    this.setState({
-        ...this.state,
-        editNome: -1
-    });
-  }
-}
-
-function buildCor(e: Equipamento, canais: { [k: number]: number }) {
-  if (e.tipo == "glow64") {
-    if (canais[e.inicio + 6] || canais[e.inicio + 7]) {
-      return null;
-    }
-    const master = canais[e.inicio + 4] / 255,
-      r = canais[e.inicio] * master,
-      g = canais[e.inicio + 1] * master,
-      b = canais[e.inicio + 2] * master,
-      w = canais[e.inicio + 3] * master;
-    return rgbw2Color(r, g, b, w);
-  } else {
-    const master = canais[e.inicio] / 255,
-      r = canais[e.inicio + 1] * master,
-      g = canais[e.inicio + 2] * master,
-      b = canais[e.inicio + 3] * master;
-    return rgb2Color(r, g, b);
   }
 }
