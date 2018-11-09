@@ -85,7 +85,12 @@ export class App extends React.Component<{}, AppState | {}> {
           <button onClick={() => this.salvarMesa()}>Salvar</button>
         </div>
         <Mesa canais={state.canais} />
-        <Equipamentos equipamentos={state.equipamentos} canais={state.canais} />
+        <Equipamentos
+          equipamentoTipos={state.equipamentoTipos}
+          equipamentos={state.equipamentos}
+          canais={state.canais}
+          cenas={state.cenas}
+        />
         {/*<Arquivos onChange={arquivos=>this.setArquivos(arquivos)} />*/}
       </div>
     );

@@ -1,26 +1,65 @@
-export type EquipamentoTipo = "glow64" | "par16";
-export interface Equipamento {
-  inicio: number;
-  tipo: EquipamentoTipo;
+export type CanaisTipo =
+  | "red"
+  | "green"
+  | "blue"
+  | "white"
+  | "master"
+  | "piscar"
+  | "hue"
+  | "animacao"
+  | "animacao-velocidade"
+  | "other";
+
+export interface EquipamentoTipoConfiguracao {
+  nome: string;
+  canais: number[];
+}
+export type EquipamentoTipo = {
   uid: number;
   nome: string;
+  configuracoes: EquipamentoTipoConfiguracao[];
+  canais: {
+    tipo: CanaisTipo;
+  }[];
+};
+export interface Equipamento {
+  inicio: number;
+  tipoUid: number;
+  uid: number;
+  nome: string;
+  configuracoes: {
+    nome: string;
+    canais: number[];
+  }[];
 }
 
-export interface Cena {
-  tipo: "mesa";
+export interface EquipamentosCena {
   uid: number;
+  tipo: "equipamentos";
+  nome: string;
+  equipamentos: {
+    uid: number;
+    canais: number[];
+  }[];
+}
+export interface MesaCena {
+  uid: number;
+  tipo: "mesa";
   nome: string;
   transicaoTempo: number;
   canais: {
     [key: number]: number;
   };
 }
+export type Cena = MesaCena | EquipamentosCena;
 
 export interface AppState {
   window: {
     criando: boolean;
     criada: boolean;
   };
+
+  equipamentoTipos: EquipamentoTipo[];
 
   dmx: {
     conectado: boolean;
@@ -66,7 +105,7 @@ export type AppAction =
       type: "create-equipamento";
       nome: string;
       inicio: number;
-      tipo: EquipamentoTipo;
+      tipoUid: number;
     }
   | { type: "screen-started" }
   | { type: "slide"; index: number; value: number }
@@ -77,7 +116,20 @@ export type AppAction =
   | { type: "piscar-equipamento"; uid: number }
   | { type: "pulsar-equipamento"; uid: number }
   | { type: "cenas-sort"; sort: number[] }
-  | { type: "equipamentos-sort"; sort: number[] };
+  | { type: "equipamentos-sort"; sort: number[] }
+  | { type: "criar-cena-equipamento"; uid: number; nome: string }
+  | {
+      type: "salvar-equipamento-tipo-configuracao";
+      uid: number;
+      nome: string;
+    }
+  | { type: "salvar-equipamento-configuracao"; uid: number; nome: string }
+  | {
+      type: "adicionar-equipamento-a-cena";
+      uid: number;
+      nome: string;
+      cenaUid: number;
+    };
 
 export type Animacao =
   | {
@@ -90,12 +142,14 @@ export type Animacao =
   | {
       type: "pulsar";
       equipamento: Equipamento;
+      tipo: EquipamentoTipo;
       inicio: Date;
       valorInicial: number;
     }
   | {
       type: "piscar";
       equipamento: Equipamento;
+      tipo: EquipamentoTipo;
       inicio: Date;
       valorInicial: number;
     };

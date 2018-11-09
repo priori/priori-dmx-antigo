@@ -1,3 +1,5 @@
+import { Equipamento, EquipamentoTipo } from "../types";
+
 function corParte(s: number) {
   const str = Math.round(s).toString(16);
   return (str.length == 1 ? "0" : "") + str;
@@ -50,4 +52,81 @@ export function color2rgbw(cor: string) {
 
 export function rgb2Color(r: number, g: number, b: number) {
   return "#" + corParte(r) + corParte(g) + corParte(b);
+}
+
+export interface ColorInfo {
+  r: number;
+  g: number;
+  b: number;
+  m: number | undefined;
+  w: number | undefined;
+}
+export function extractColorInfo(tipo: EquipamentoTipo): ColorInfo | null {
+  let r, g, b, w, m;
+  for (let index = 0; index < tipo.canais.length; index++) {
+    const canal = tipo.canais[index];
+    if (canal.tipo == "red") {
+      if (typeof r != "undefined") return null;
+      r = index;
+    } else if (canal.tipo == "green") {
+      if (typeof g != "undefined") return null;
+      g = index;
+    } else if (canal.tipo == "blue") {
+      if (typeof b != "undefined") return null;
+      b = index;
+    } else if (canal.tipo == "white") {
+      if (typeof w != "undefined") return null;
+      w = index;
+    } else if (canal.tipo == "master") {
+      if (typeof m != "undefined") {
+        return null;
+      }
+      m = index;
+    }
+  }
+  if (
+    typeof r != "undefined" &&
+    typeof g != "undefined" &&
+    typeof b != "undefined"
+  )
+    return {
+      r,
+      g,
+      b,
+      w,
+      m
+    } as ColorInfo;
+  return null;
+}
+
+export function buildCor(
+  e: Equipamento,
+  tipo: EquipamentoTipo,
+  canais: { [k: number]: number }
+) {
+  const colorInfo = extractColorInfo(tipo);
+  if (!colorInfo) return null;
+  if (typeof colorInfo.w != "undefined") {
+    if (canais[e.inicio + 6] || canais[e.inicio + 7]) {
+      return null;
+    }
+    const master =
+        typeof colorInfo.m == "undefined"
+          ? 1
+          : canais[e.inicio + colorInfo.m] / 255,
+      r = canais[e.inicio + colorInfo.r] * master,
+      g = canais[e.inicio + colorInfo.g] * master,
+      b = canais[e.inicio + colorInfo.b] * master,
+      w = canais[e.inicio + colorInfo.w] * master;
+    return rgbw2Color(r, g, b, w);
+  } else {
+    const master =
+        typeof colorInfo.m == "undefined"
+          ? 1
+          : canais[e.inicio + colorInfo.m] / 255,
+      r = canais[e.inicio + colorInfo.r] * master,
+      g = canais[e.inicio + colorInfo.g] * master,
+      b = canais[e.inicio + colorInfo.b] * master;
+    return rgb2Color(r, g, b);
+  }
 }

@@ -1,5 +1,11 @@
 import { BrowserWindow, ipcMain } from "electron";
-import { AppState, IpcSender, IpcEvent, AppAction } from "../types";
+import {
+  AppState,
+  IpcSender,
+  IpcEvent,
+  AppAction,
+  EquipamentoTipo
+} from "../types";
 import * as path from "path";
 import * as fs from "fs";
 import * as dmx from "./dmx";
@@ -21,6 +27,7 @@ export const emptyState: AppState = {
   animacao: false,
   canais: {},
   equipamentos: [],
+  equipamentoTipos: [],
   cenas: []
 };
 
@@ -56,10 +63,57 @@ function getFile() {
 export function saveState(file: string) {
   fs.writeFileSync(file, JSON.stringify(state));
 }
+const initialEquipamentoTipos = [
+  {
+    // glow64
+    nome: "LED 64 GLOW",
+    uid: 1,
+    canais: [
+      { tipo: "red" },
+      { tipo: "green" },
+      { tipo: "blue" },
+      { tipo: "white" },
+      { tipo: "master" },
+      { tipo: "piscar" },
+      { tipo: "hue" },
+      { tipo: "animacao" },
+      { tipo: "animacao-velocidade" }
+    ]
+  },
+  {
+    // par16
+    nome: "PAR LED 16",
+    uid: 2,
+    canais: [
+      { tipo: "master" },
+      { tipo: "red" },
+      { tipo: "green" },
+      { tipo: "blue" }
+    ]
+  }
+] as EquipamentoTipo[];
 export function readState(file: string): AppState | undefined {
   const fileContent = fs.readFileSync(file).toString();
   if (fileContent) {
-    return JSON.parse(fileContent) as AppState;
+    const json = JSON.parse(fileContent) as AppState;
+    if (!json.equipamentoTipos) json.equipamentoTipos = initialEquipamentoTipos;
+    for (const e of json.equipamentos) {
+      if (!e.configuracoes) e.configuracoes = [];
+      if ((e as any).tipo == "glow64") {
+        delete (e as any).tipo;
+        e.tipoUid = 1;
+      } else if ((e as any).tipo == "par16") {
+        delete (e as any).tipo;
+        e.tipoUid = 2;
+      } else if ((e as any).tipo) {
+        console.error(e);
+        throw e;
+      }
+    }
+    for (const t of json.equipamentoTipos) {
+      if (!t.configuracoes) t.configuracoes = [];
+    }
+    return json;
   }
   return undefined;
 }

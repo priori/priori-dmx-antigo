@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Equipamento, EquipamentoTipo } from "../types";
+import { Cena, Equipamento, EquipamentoTipo } from "../types";
 import { action } from "../util/action";
 import { EquipamentoComponent } from "./EquipamentoComponent";
 import {
@@ -11,20 +11,35 @@ import {
 const SortableItem = SortableElement(
   ({
     equipamento,
-    canais
+    canais,
+    cenas,
+    tipo
   }: {
     equipamento: Equipamento;
+    tipo: EquipamentoTipo;
+    cenas: Cena[];
     canais: { [key: number]: number };
-  }) => <EquipamentoComponent equipamento={equipamento} canais={canais} />
+  }) => (
+    <EquipamentoComponent
+      equipamento={equipamento}
+      tipo={tipo}
+      canais={canais}
+      cenas={cenas}
+    />
+  )
 );
 
 const SortableList = SortableContainer(
   ({
     equipamentos,
-    canais
+    canais,
+    equipamentoTipos,
+    cenas
   }: {
     equipamentos: Equipamento[];
     canais: { [key: number]: number };
+    equipamentoTipos: EquipamentoTipo[];
+    cenas: Cena[];
   }) => (
     <div className="equipamentos">
       {equipamentos.map((e: Equipamento, index: number) => (
@@ -32,6 +47,10 @@ const SortableList = SortableContainer(
           equipamento={e}
           key={e.uid}
           canais={canais}
+          cenas={cenas}
+          tipo={
+            equipamentoTipos.find(t => t.uid == e.tipoUid) as EquipamentoTipo
+          }
           index={index}
         />
       ))}
@@ -43,9 +62,10 @@ class AddForm extends React.Component<
   {
     onSubmit: (nome: string, tipo: EquipamentoTipo, inicio: number) => void;
     onCancelar: () => void;
+    equipamentoTipos: EquipamentoTipo[];
   },
   {
-    tipo: EquipamentoTipo;
+    tipoUid: number;
     nome: string;
     inicio: number;
   }
@@ -55,7 +75,7 @@ class AddForm extends React.Component<
     this.state = {
       inicio: 1,
       nome: "",
-      tipo: "glow64"
+      tipoUid: (props.equipamentoTipos[0] as EquipamentoTipo).uid
     };
   }
 
@@ -88,19 +108,24 @@ class AddForm extends React.Component<
         Tipo:{" "}
         <select
           onChange={(e: any) =>
-            this.setState({ ...this.state, tipo: e.target.value })
+            this.setState({ ...this.state, tipoUid: parseInt(e.target.value) })
           }
-          value={this.state.tipo}
+          value={this.state.tipoUid}
         >
-          <option value="glow64">LED 64 GLOW</option>
-          <option value="par16">PAR LED 16</option>
+          {this.props.equipamentoTipos.map(t => (
+            <option key={t.uid} value={t.uid}>
+              {t.nome}
+            </option>
+          ))}
         </select>
         <br />
         <button
           onClick={() =>
             this.props.onSubmit(
               this.state.nome,
-              this.state.tipo,
+              this.props.equipamentoTipos.find(
+                e => e.uid == this.state.tipoUid
+              ) as EquipamentoTipo,
               this.state.inicio
             )
           }
@@ -115,6 +140,8 @@ class AddForm extends React.Component<
 
 export interface EquipamentosProps {
   equipamentos: Equipamento[];
+  equipamentoTipos: EquipamentoTipo[];
+  cenas: Cena[];
   canais: {
     [key: number]: number;
   };
@@ -186,8 +213,14 @@ export class Equipamentos extends React.Component<
         </div>
         {this.state.add ? (
           <AddForm
+            equipamentoTipos={this.props.equipamentoTipos}
             onSubmit={(nome: string, tipo: EquipamentoTipo, inicio: number) => {
-              action({ type: "create-equipamento", nome, inicio, tipo });
+              action({
+                type: "create-equipamento",
+                nome,
+                inicio,
+                tipoUid: tipo.uid
+              });
               this.setState({ ...this.state, add: false });
             }}
             onCancelar={() => this.setState({ ...this.state, add: false })}
@@ -201,6 +234,8 @@ export class Equipamentos extends React.Component<
           onSortEnd={this.onSortEnd}
           axis="xy"
           distance={5}
+          equipamentoTipos={this.props.equipamentoTipos}
+          cenas={this.props.cenas}
         />
         {/*getHelperDimensions={}*/}
       </div>

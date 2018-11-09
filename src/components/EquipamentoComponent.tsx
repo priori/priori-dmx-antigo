@@ -1,34 +1,15 @@
 import * as React from "react";
 import { FastInput } from "./util/FastInput";
-import { Equipamento } from "../types";
+import { Cena, Equipamento, EquipamentoTipo } from "../types";
 import { action } from "../util/action";
-import { rgb2Color, rgbw2Color } from "../util/cores";
 import { SoftPanel } from "./util/SoftPanel";
+import { buildCor } from "../util/cores";
 
-interface EquipamentoCanal {
-  name: string;
-}
-const glow64Canais: EquipamentoCanal[] = [
-  { name: "red" },
-  { name: "green" },
-  { name: "blue" },
-  { name: "white" },
-  { name: "master" },
-  { name: "piscar" },
-  { name: "hue" },
-  { name: "animacao" },
-  { name: "animacao-velocidade" }
-];
-
-const par16Canais: EquipamentoCanal[] = [
-  { name: "master" },
-  { name: "red" },
-  { name: "green" },
-  { name: "blue" }
-];
 export interface EquipamentoComponentProps {
   equipamento: Equipamento;
+  tipo: EquipamentoTipo;
   canais: { [key: number]: number };
+  cenas: Cena[];
 }
 export interface EquipamentoComponentState {
   canais: { [key: number]: number };
@@ -39,10 +20,14 @@ export interface EquipamentoComponentState {
 
 interface SalvarConfiguracaoProps {
   equipamento: Equipamento;
+  tipo: EquipamentoTipo;
   onClose: () => void;
+  cenas: Cena[];
 }
 interface SalvarConfiguracaoState {
   tipo: string;
+  nome: string;
+  cenaUid: number;
 }
 class SalvarConfiguracao extends React.Component<
   SalvarConfiguracaoProps,
@@ -51,8 +36,45 @@ class SalvarConfiguracao extends React.Component<
   constructor(props: SalvarConfiguracaoProps) {
     super(props);
     this.state = {
-      tipo: ""
+      tipo: "",
+      nome: "",
+      cenaUid: -1
     };
+  }
+  private salvar() {
+    const nome = this.state.nome;
+    if (this.state.tipo == "neste") {
+      action({
+        type: "salvar-equipamento-configuracao",
+        uid: this.props.equipamento.uid,
+        nome
+      });
+    } else if (this.state.tipo == "tipo") {
+      action({
+        type: "salvar-equipamento-tipo-configuracao",
+        uid: this.props.equipamento.uid,
+        nome
+      });
+    } else if (this.state.tipo == "cena") {
+      if (this.state.cenaUid == -1) {
+        alert("Escolha uma cena para salvar.");
+        return;
+      }
+      action({
+        type: "adicionar-equipamento-a-cena",
+        uid: this.props.equipamento.uid,
+        nome,
+        cenaUid: this.state.cenaUid
+      });
+    } else if (this.state.tipo == "novacena") {
+      action({
+        type: "criar-cena-equipamento",
+        uid: this.props.equipamento.uid,
+        nome
+      });
+    } else {
+      alert("Escolha onde salvar a configuração.");
+    }
   }
   render() {
     return (
@@ -62,39 +84,52 @@ class SalvarConfiguracao extends React.Component<
         }}
       >
         <div>
-          <input type="text" />
-          <br />
+          {this.state.tipo != "cena" ? (
+            <div>
+              {" "}
+              <input
+                type="text"
+                onChange={(e: any) =>
+                  this.setState({ ...this.state, nome: e.target.value })
+                }
+              />{" "}
+            </div>
+          ) : null}
           <select
             onChange={(e: any) =>
               this.setState({ ...this.state, tipo: e.target.value })
             }
+            value={this.state.tipo}
           >
             <option value="" />
             <option value="neste">Neste Equipamento</option>
-            <option value="tipo">
-              Para Todos{" "}
-              {this.props.equipamento.tipo == "glow64"
-                ? "LED 64 GLOW"
-                : "PAR LED 16"}
-            </option>
+            <option value="tipo">Para Todos {this.props.tipo.nome}</option>
             <option value="cena">Cena Existente</option>
             <option value="novacena">Nova Cena</option>
           </select>
-          {this.state.tipo == "novacena" ? (
-            <div>
-              {" "}
-              <input type="text" />{" "}
-            </div>
-          ) : null}
           {this.state.tipo == "cena" ? (
             <div>
-              <select>
-                <option value="" />
+              <select
+                onChange={(e: any) =>
+                  this.setState({
+                    ...this.state,
+                    cenaUid: parseInt(e.target.value)
+                  })
+                }
+              >
+                <option value="-1" />
+                {this.props.cenas
+                  .filter(c => c.tipo == "equipamentos")
+                  .map(c => (
+                    <option value={c.uid} key={c.uid}>
+                      {c.nome}
+                    </option>
+                  ))}
               </select>
             </div>
           ) : null}
           <div>
-            <button>Salvar</button>{" "}
+            <button onClick={() => this.salvar()}>Salvar</button>{" "}
             <button onClick={() => this.props.onClose()}>Cancelar</button>
           </div>
         </div>
@@ -137,7 +172,7 @@ export class EquipamentoComponent extends React.Component<
   }
 
   private cor() {
-    return buildCor(this.props.equipamento, this.props.canais);
+    return buildCor(this.props.equipamento, this.props.tipo, this.props.canais);
   }
 
   private editNome() {
@@ -222,7 +257,9 @@ export class EquipamentoComponent extends React.Component<
             <br />
             {this.state.salvarConfiguracao ? (
               <SalvarConfiguracao
+                cenas={this.props.cenas}
                 equipamento={e}
+                tipo={this.props.tipo}
                 onClose={() =>
                   this.setState({
                     ...this.state,
@@ -272,58 +309,36 @@ export class EquipamentoComponent extends React.Component<
           )}
         </div>
         <div className="equipamento__canais">
-          {(e.tipo == "glow64" ? glow64Canais : par16Canais).map(
-            (ec: EquipamentoCanal, index: number) => (
-              <div key={index} className={"equipamento__canal " + ec.name}>
-                <div className="equipamento__canal__index ">
-                  {e.inicio + index}
-                </div>
-                <div className="equipamento__canal__input__wrapper">
-                  <input
-                    onChange={(event: any) =>
-                      this.updateCanal(index + e.inicio, event.target.value)
-                    }
-                    type="range"
-                    min="0"
-                    className="equipamento__canal__input"
-                    max="255"
-                    value={
-                      typeof this.state.canais[index + e.inicio] != "undefined"
-                        ? this.state.canais[e.inicio + index]
-                        : this.props.canais[index + e.inicio] || "0"
-                    }
-                  />
-                </div>
-                <div className="equipamento__canal__valor">
-                  {typeof this.state.canais[index + e.inicio] != "undefined"
-                    ? this.state.canais[e.inicio + index]
-                    : this.props.canais[index + e.inicio] || "0"}
-                </div>
+          {this.props.tipo.canais.map((canal, index) => (
+            <div key={index} className={"equipamento__canal " + canal.tipo}>
+              <div className="equipamento__canal__index ">
+                {e.inicio + index}
               </div>
-            )
-          )}
+              <div className="equipamento__canal__input__wrapper">
+                <input
+                  onChange={(event: any) =>
+                    this.updateCanal(index + e.inicio, event.target.value)
+                  }
+                  type="range"
+                  min="0"
+                  className="equipamento__canal__input"
+                  max="255"
+                  value={
+                    typeof this.state.canais[index + e.inicio] != "undefined"
+                      ? this.state.canais[e.inicio + index]
+                      : this.props.canais[index + e.inicio] || "0"
+                  }
+                />
+              </div>
+              <div className="equipamento__canal__valor">
+                {typeof this.state.canais[index + e.inicio] != "undefined"
+                  ? this.state.canais[e.inicio + index]
+                  : this.props.canais[index + e.inicio] || "0"}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
-  }
-}
-
-function buildCor(e: Equipamento, canais: { [k: number]: number }) {
-  if (e.tipo == "glow64") {
-    if (canais[e.inicio + 6] || canais[e.inicio + 7]) {
-      return null;
-    }
-    const master = canais[e.inicio + 4] / 255,
-      r = canais[e.inicio] * master,
-      g = canais[e.inicio + 1] * master,
-      b = canais[e.inicio + 2] * master,
-      w = canais[e.inicio + 3] * master;
-    return rgbw2Color(r, g, b, w);
-  } else {
-    const master = canais[e.inicio] / 255,
-      r = canais[e.inicio + 1] * master,
-      g = canais[e.inicio + 2] * master,
-      b = canais[e.inicio + 3] * master;
-    return rgb2Color(r, g, b);
   }
 }
