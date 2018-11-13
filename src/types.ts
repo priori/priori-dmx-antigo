@@ -129,6 +129,17 @@ export type AppAction =
       uid: number;
       nome: string;
       cenaUid: number;
+    }
+  | {
+      type: "remove-equipamento-configuracao";
+      equipamentoUid: number;
+      index: number;
+    }
+  | { type: "remove-equipamento-cena"; cenaUid: number; equipamentoUid: number }
+  | {
+      type: "remove-equipamento-tipo-configuracao";
+      equipamentoTipoUid: number;
+      index: number;
     };
 
 export type Animacao =

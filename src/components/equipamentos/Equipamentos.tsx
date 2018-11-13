@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Cena, Equipamento, EquipamentoTipo } from "../types";
-import { action } from "../util/action";
+import { Cena, Equipamento, EquipamentoTipo } from "../../types";
+import { action } from "../../util/action";
 import { EquipamentoComponent } from "./EquipamentoComponent";
 import {
   SortableContainer,

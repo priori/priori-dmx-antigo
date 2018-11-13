@@ -3,6 +3,7 @@ import * as React from "react";
 export interface SoftPanelProps {
   // children: React.ReactNode
   onBlur: () => void;
+  className?: string;
 }
 export class SoftPanel extends React.Component<SoftPanelProps, {}> {
   blur = (e: any) => {
@@ -33,7 +34,10 @@ export class SoftPanel extends React.Component<SoftPanelProps, {}> {
   render() {
     return (
       <div
-        className="soft-panel"
+        className={
+          "soft-panel" +
+          (this.props.className ? " " + this.props.className : "")
+        }
         onBlurCapture={this.blur}
         tabIndex={0}
         ref={this.ref}

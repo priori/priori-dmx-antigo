@@ -3,7 +3,7 @@ import * as React from "react";
 import { Server } from "./Server";
 import { ConexaoDMX } from "./ConexaoDMX";
 import { Mesa } from "./Mesa";
-import { Equipamentos } from "./Equipamentos";
+import { Equipamentos } from "./equipamentos/Equipamentos";
 import { AppState } from "../types";
 import { Cenas } from "./Cenas";
 import { action } from "../util/action";

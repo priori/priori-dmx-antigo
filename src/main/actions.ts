@@ -696,6 +696,74 @@ function adicionarEquipamentoACena({
   });
 }
 
+function removeEquipamentoCena({
+  cenaUid,
+  equipamentoUid
+}: {
+  cenaUid: number;
+  equipamentoUid: number;
+}) {
+  const state = currentState();
+  setState({
+    ...state,
+    cenas: state.cenas.map(
+      c =>
+        c.uid == cenaUid
+          ? {
+              ...(c as EquipamentosCena),
+              equipamentos: (c as EquipamentosCena).equipamentos.filter(
+                e => e.uid != equipamentoUid
+              )
+            }
+          : c
+    )
+  });
+}
+
+function removeEquipamentoConfiguracao({
+  index,
+  equipamentoUid
+}: {
+  index: number;
+  equipamentoUid: number;
+}) {
+  const state = currentState();
+  setState({
+    ...state,
+    equipamentos: state.equipamentos.map(
+      e =>
+        e.uid == equipamentoUid
+          ? {
+              ...e,
+              configuracoes: e.configuracoes.filter((_, i) => i != index)
+            }
+          : e
+    )
+  });
+}
+
+function removeEquipamentoTipoConfiguracao({
+  equipamentoTipoUid,
+  index
+}: {
+  equipamentoTipoUid: number;
+  index: number;
+}) {
+  const state = currentState();
+  setState({
+    ...state,
+    equipamentoTipos: state.equipamentoTipos.map(
+      e =>
+        e.uid == equipamentoTipoUid
+          ? {
+              ...e,
+              configuracoes: e.configuracoes.filter((_, i) => i != index)
+            }
+          : e
+    )
+  });
+}
+
 on(action => {
   if (action.type == "abrir") abrir();
   else if (action.type == "aplicar-cena-agora") aplicarCenaAgora(action);
@@ -732,4 +800,10 @@ on(action => {
     criarCenaEquipamento(action);
   else if (action.type == "adicionar-equipamento-a-cena")
     adicionarEquipamentoACena(action);
+  else if (action.type == "remove-equipamento-cena")
+    removeEquipamentoCena(action);
+  else if (action.type == "remove-equipamento-configuracao")
+    removeEquipamentoConfiguracao(action);
+  else if (action.type == "remove-equipamento-tipo-configuracao")
+    removeEquipamentoTipoConfiguracao(action);
 });

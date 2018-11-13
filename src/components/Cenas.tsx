@@ -215,7 +215,7 @@ export class Cenas extends React.Component<AppState, CenasState> {
               <FastInput
                 className="cena__tempo"
                 type="number"
-                initialValue={cena.transicaoTempo + "" || "0"}
+                initialValue={((cena as any).transicaoTempo || "0") + ""}
                 onChange={value => this.novoTempo(cena.uid, parseInt(value))}
                 onCancel={() =>
                   this.setState({ ...this.state, editandoTempo: -1 })
@@ -228,7 +228,7 @@ export class Cenas extends React.Component<AppState, CenasState> {
                   this.setState({ ...this.state, editandoTempo: cena.uid })
                 }
               >
-                {cena ? cena.transicaoTempo + "ms" : ""}
+                {cena ? ((cena as any).transicaoTempo || 0) + "ms" : ""}
               </span>
             )}
           </div>
