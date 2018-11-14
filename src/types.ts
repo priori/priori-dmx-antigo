@@ -51,6 +51,11 @@ export interface MesaCena {
     [key: number]: number;
   };
 }
+
+export interface CenaSlide {
+  value: number,
+  uid: number
+}
 export type Cena = MesaCena | EquipamentosCena;
 
 export interface AppState {
@@ -58,6 +63,8 @@ export interface AppState {
     criando: boolean;
     criada: boolean;
   };
+
+  slide: CenaSlide|null;
 
   equipamentoTipos: EquipamentoTipo[];
 
@@ -125,6 +132,17 @@ export type AppAction =
     }
   | { type: "salvar-equipamento-configuracao"; uid: number; nome: string }
   | {
+      type: "aplicar-equipamento-configuracao";
+      equipamentoUid: number;
+      index: number;
+    }
+  | {
+      type: "aplicar-equipamento-tipo-configuracao";
+      equipamentoUid: number;
+      equipamentoTipoUid: number;
+      index: number;
+    }
+  | {
       type: "adicionar-equipamento-a-cena";
       uid: number;
       nome: string;
@@ -140,7 +158,8 @@ export type AppAction =
       type: "remove-equipamento-tipo-configuracao";
       equipamentoTipoUid: number;
       index: number;
-    };
+    }
+    | { type: "slide-cena", uid: number; value: number; };
 
 export type Animacao =
   | {

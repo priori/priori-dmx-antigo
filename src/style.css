@@ -395,3 +395,8 @@ input.cena__nome {
   width: 250px;
   outline: none;
 }
+.cenas__controller input[type="range"] {
+  height: 10px;
+  width: 300px;
+  margin-bottom: 9px;
+}

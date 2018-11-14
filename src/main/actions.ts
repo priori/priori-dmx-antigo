@@ -1,11 +1,11 @@
 import { dialog } from "electron";
 import {
-  Animacao,
-  AppState,
-  Cena,
-  Equipamento,
-  EquipamentosCena,
-  EquipamentoTipo
+    Animacao,
+    AppState,
+    Cena,
+    Equipamento,
+    EquipamentosCena,
+    EquipamentoTipo, MesaCena
 } from "../types";
 import { color2rgb, color2rgbw, extractColorInfo } from "../util/cores";
 import * as dmx from "./dmx";
@@ -127,7 +127,8 @@ function changeColor(e: { cor: string; equipamento: number }): void {
               cor
             }
           : e
-    )
+    ),
+    slide: null
   });
 }
 
@@ -167,7 +168,8 @@ function slide(e: { index: number; value: number }): void {
     canais: {
       ...state.canais,
       [e.index]: e.value
-    }
+    },
+      slide: null
   });
 }
 
@@ -253,16 +255,57 @@ function aplicarCenaAgora({ uid }: { uid: number }) {
   // canaisPrecisos = null;
   const cena = state.cenas.find(cena => cena.uid == uid) as Cena;
   if (cena.tipo == "mesa") {
-    if (state.dmx.conectado) dmx.update(cena.canais);
-    setState({
+     cenaMesaAgora(state,cena);
+  } else if ( cena.tipo == "equipamentos" ) {
+     cenaEquipamentosAgora(state,cena);
+  }
+}
+function cenaMesaAgora(state:AppState,cena:MesaCena){
+  if (state.dmx.conectado) dmx.update(cena.canais);
+  setState({
       ...state,
       canais: cena.canais,
       ultimaCena: cena.uid,
       animacao: false
-    });
-  }
+  });
 }
 let animacao: Animacao | null = null;
+
+function cenaEquipamentosAgora(state: AppState, cena: EquipamentosCena) {
+  const novo = {};
+  for ( const ce of cena.equipamentos ){
+      const e = state.equipamentos.find(eq=>eq.uid == ce.uid );
+      if ( !e ) {
+          console.error("Equipamento não encontrado.");
+          return;
+      }
+      const tipo = state.equipamentoTipos.find(t=>t.uid == e.tipoUid );
+      if ( !tipo ) {
+          console.error("Equipamento não encontrado.");
+          return;
+      }
+      for ( let count=0; count < tipo.canais.length; count++ ){
+          const canalIndex = count+e.inicio;
+          const valor = ce.canais[count];
+          if ( typeof novo[canalIndex] != 'undefined' && novo[canalIndex] != valor ) {
+              console.error('Inconsistencia nas faixas dos equipamentos.');
+              return;
+          }
+          novo[canalIndex] = valor;
+      }
+  }
+  if (state.dmx.conectado) dmx.update(novo);
+  animacao = null;
+  setState({
+      ...state,
+      canais: {
+          ...state.canais,
+          ...novo
+      },
+      ultimaCena: cena.uid,
+      animacao: false
+  });
+}
 
 function transicaoParaCena({ uid }: { uid: number }): void {
   const state = currentState();
@@ -287,15 +330,10 @@ function transicaoParaCena({ uid }: { uid: number }): void {
         animacao: true
       });
     } else {
-      if (state.dmx.conectado) dmx.update(cena.canais);
-      animacao = null;
-      setState({
-        ...state,
-        canais: cena.canais,
-        ultimaCena: cena.uid,
-        animacao: false
-      });
+      cenaMesaAgora(state,cena);
     }
+  } else {
+      cenaEquipamentosAgora(state,cena);
   }
 }
 
@@ -764,6 +802,69 @@ function removeEquipamentoTipoConfiguracao({
   });
 }
 
+function aplicarEquipamentoConfiguracao({equipamentoUid,index}: { equipamentoUid: number; index: number}) {
+
+    const state = currentState();
+    const equipamento = state.equipamentos.find(e=>e.uid == equipamentoUid);
+    if ( !equipamento ){
+      console.error('Equipamento não encontrado');
+      return;
+    }
+    const conf = equipamento.configuracoes[index];
+    const canais = {};
+    for ( const index in conf.canais ) {
+      canais[parseInt(index) + equipamento.inicio] = conf.canais[index];
+    }
+    if (state.dmx.conectado) dmx.update(canais);
+    setState({
+        ...state,
+        canais: {
+            ...state.canais,
+            ...canais
+        }
+    });
+}
+
+function aplicarEquipamentoTipoConfiguracao({equipamentoUid,index}: { equipamentoUid: number; equipamentoTipoUid: number; index: number }) {
+
+    const state = currentState();
+    const equipamento = state.equipamentos.find(e=>e.uid == equipamentoUid);
+    if ( !equipamento ){
+        console.error('Equipamento não encontrado');
+        return;
+    }
+    const tipo = state.equipamentoTipos.find(e=>e.uid == equipamento.tipoUid);
+    if ( !tipo ){
+      console.error('Tipo não encontrado');
+      return;
+    }
+    const conf = tipo.configuracoes[index];
+    const canais = {};
+    for ( const c in conf.canais ) {
+        canais[parseInt(c) + equipamento.inicio] = conf.canais[c];
+    }
+    if (state.dmx.conectado) dmx.update(canais);
+    setState({
+        ...state,
+        canais: {
+            ...state.canais,
+            ...canais
+        }
+    });
+}
+
+function slideCena({uid,value}: { uid: number; value: number}) {
+
+  const state = currentState();
+  setState({
+    ...state,
+    slide: {
+      uid,
+      value
+    }
+  },true);
+}
+
 on(action => {
   if (action.type == "abrir") abrir();
   else if (action.type == "aplicar-cena-agora") aplicarCenaAgora(action);
@@ -806,4 +907,10 @@ on(action => {
     removeEquipamentoConfiguracao(action);
   else if (action.type == "remove-equipamento-tipo-configuracao")
     removeEquipamentoTipoConfiguracao(action);
+  else if ( action.type == "aplicar-equipamento-configuracao")
+    aplicarEquipamentoConfiguracao(action);
+  else if ( action.type == "aplicar-equipamento-tipo-configuracao")
+    aplicarEquipamentoTipoConfiguracao(action);
+  else if ( action.type == "slide-cena")
+    slideCena(action);
 });

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { SoftPanel } from "../util/SoftPanel";
-import { Cena, Equipamento, EquipamentoTipo } from "../../types";
+import {Cena, Equipamento, EquipamentosCena, EquipamentoTipo} from "../../types";
 import { action } from "../../util/action";
 
 export interface SalvarConfiguracaoProps {
@@ -14,6 +14,16 @@ export interface SalvarConfiguracaoState {
   nome: string;
   cenaUid: number;
 }
+
+function conflitoDeFaixas(equipamento: Equipamento, tipo: EquipamentoTipo, cena: EquipamentosCena) {
+  const de = equipamento.inicio;
+  const ate = de + tipo.canais.length;
+  for ( const c of cena.equipamentos ) {
+
+  }
+  return false;
+}
+
 export class SalvarConfiguracao extends React.Component<
   SalvarConfiguracaoProps,
   SalvarConfiguracaoState
@@ -43,6 +53,15 @@ export class SalvarConfiguracao extends React.Component<
     } else if (this.state.tipo == "cena") {
       if (this.state.cenaUid == -1) {
         alert("Escolha uma cena para salvar.");
+        return;
+      }
+      const cena = this.props.cenas.find(c=>c.uid == this.state.cenaUid);
+      if ( !cena || cena.tipo == "mesa" ){
+        alert("Cena não encontrada.");
+        return;
+      }
+      if ( conflitoDeFaixas(this.props.equipamento,this.props.tipo,cena) ) {
+        alert("Conflito de faixas. Verifique todos as faixas de todos equipamentos desta cena.");
         return;
       }
       action({

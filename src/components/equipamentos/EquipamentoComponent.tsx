@@ -1,6 +1,11 @@
 import * as React from "react";
 import { FastInput } from "../util/FastInput";
-import { Cena, Equipamento, EquipamentoTipo } from "../../types";
+import {
+  Cena,
+  Equipamento,
+  EquipamentosCena,
+  EquipamentoTipo
+} from "../../types";
 import { action } from "../../util/action";
 import { buildCor } from "../../util/cores";
 import { SalvarConfiguracao } from "./SalvarConfiguracao";
@@ -135,12 +140,20 @@ export class EquipamentoComponent extends React.Component<
               textAlign: "center"
             }}
           >
-            <select onChange={(e: any) => this.aplicarOpcao(e.target.value)}>
-              <option />
-              {this.options().map(o => (
-                <option value={o.value} key={o.value}>
-                  {o.titulo}
-                </option>
+            <select
+                value={""}
+              onChange={(e: any) => this.aplicarOpcao(e.target.value)}
+              style={{ width: "90px" }}
+            >
+              <option value=""/>
+              {this.options().map((o,index) => (
+                <optgroup label={o.nome} key={index}>
+                  {o.opcoes.map(o => (
+                    <option value={o.value} key={o.value}>
+                      {o.titulo}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>{" "}
             {this.state.configSalvos ? (
@@ -252,18 +265,69 @@ export class EquipamentoComponent extends React.Component<
     );
   }
 
-  private options(): { titulo: string; value: string }[] {
-    return [
-      { titulo: "Pulsar", value: "pulsar" },
-      { titulo: "Piscar", value: "piscar" }
+  private options(): {
+    nome: string;
+    opcoes: { titulo: string; value: string }[];
+  }[] {
+    const cenas = this.props.cenas.filter(
+      c =>
+        c.tipo == "equipamentos" &&
+        c.equipamentos.find(e => e.uid == this.props.equipamento.uid)
+    ) as EquipamentosCena[];
+    const a = [
+      {
+        nome: "Efeitos",
+        opcoes: [
+          { titulo: "Pulsar", value: "pulsar" },
+          { titulo: "Piscar", value: "piscar" }
+        ]
+      }
     ];
+    if (this.props.equipamento.configuracoes.length)
+      a.push({
+        nome: "Equipamento " + this.props.equipamento.nome,
+        opcoes: this.props.equipamento.configuracoes.map((c, index) => ({
+          titulo: c.nome,
+          value: "equipamento:" + index
+        }))
+      });
+    if (this.props.tipo.configuracoes.length)
+      a.push({
+        nome: this.props.tipo.nome,
+        opcoes: this.props.tipo.configuracoes.map((c, index) => ({
+          titulo: c.nome,
+          value: "tipo:" + index
+        }))
+      });
+    if (cenas.length)
+      a.push({
+        nome: "Cenas",
+        opcoes: cenas.map(c => ({
+          titulo: c.nome,
+          value: "cena:" + c.uid
+        }))
+      });
+    return a;
   }
 
   private aplicarOpcao(value: string) {
+    if ( !value )return;
     if (value == "pulsar") {
       this.pulsar();
     } else if (value == "piscar") {
       this.piscar();
+    } else {
+      const match = value.match(/([^:]*):(.*)/);
+      if (!match) throw "Match";
+      const name = match[1];
+      const number = parseInt(match[2]);
+      if (name == "equipamento") {
+        this.aplicarConfiguracao(number);
+      } else if (name == "tipo") {
+        this.aplicarEquipamentoTipoConfiguracao(number);
+      } else if (name == "cena") {
+        this.aplicarCena(number);
+      }
     }
   }
 
@@ -271,6 +335,29 @@ export class EquipamentoComponent extends React.Component<
     this.setState({
       ...this.state,
       configSalvos: true
+    });
+  }
+  private aplicarConfiguracao(index: number) {
+    action({
+      type: "aplicar-equipamento-configuracao",
+      index,
+      equipamentoUid: this.props.equipamento.uid
+    });
+  }
+
+  private aplicarEquipamentoTipoConfiguracao(index: number) {
+    action({
+      type: "aplicar-equipamento-tipo-configuracao",
+      equipamentoUid: this.props.equipamento.uid,
+      equipamentoTipoUid: this.props.tipo.uid,
+      index
+    });
+  }
+
+  private aplicarCena(uid: number) {
+    action({
+      type: "transicao-para-cena", // aplicar-cena-agora
+      uid
     });
   }
 }

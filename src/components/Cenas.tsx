@@ -199,6 +199,9 @@ export class Cenas extends React.Component<AppState, CenasState> {
       <div className="cenas">
         {cena ? (
           <div className="cenas__controller">
+              <input type="range"
+                     onChange={(e:any)=>this.slide(parseFloat(e.target.value))}
+                     value={this.props.slide && this.props.slide.uid == cena.uid ? this.props.slide.value : '0'} />{" "}
             <button onClick={() => this.salvarCena(this.state.selected)}>
               Salvar <i className="fa fa-save" />
             </button>{" "}
@@ -234,6 +237,8 @@ export class Cenas extends React.Component<AppState, CenasState> {
           </div>
         ) : (
           <div className="cenas__controller" style={{ opacity: 0.5 }}>
+            <input readOnly={true} disabled={true} type="range"
+              value={'0'} />{" "}
             <button disabled={true}>
               Salvar <i className="fa fa-save" />
             </button>{" "}
@@ -275,5 +280,10 @@ export class Cenas extends React.Component<AppState, CenasState> {
     if (confirm("Realmente deseja remover esta cena?")) {
       action({ type: "remove-cena", uid });
     }
+  }
+
+  private slide(value: number) {
+      action({type:"slide-cena", uid: this.state.selected, value});
+      // this.setState({...this.state,slide:parseFloat(e.target.value)})
   }
 }

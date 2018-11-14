@@ -23,6 +23,7 @@ export const emptyState: AppState = {
     driver: "enttec-usb-dmx-pro",
     deviceId: "COM5"
   },
+  slide: null,
   ultimaCena: null,
   animacao: false,
   canais: {},
@@ -168,24 +169,33 @@ const maxThrotle = 1000;
 const throtleTime = 20;
 let timeoutThrotle: any;
 let firstThrotle: Date | null = null;
-export function setState(newState: AppState) {
+export function setState(newState: AppState,force=false) {
   if (!appSender) throw "Sem appSender.";
   state = newState;
+
   if (timeoutThrotle) clearTimeout(timeoutThrotle);
+  if ( force ) {
+     appSender.send("state", state);
+      if (screenSender) screenSender.send("state", state);
+  }
   if (!firstThrotle) firstThrotle = new Date();
   else if (new Date().getTime() - firstThrotle.getTime() > maxThrotle) {
     firstThrotle = null;
     if (!appSender) throw "Sem appSender.";
     saveState(file);
-    appSender.send("state", state);
-    if (screenSender) screenSender.send("state", state);
+    if ( !force ) {
+        appSender.send("state", state);
+        if (screenSender) screenSender.send("state", state);
+    }
     return;
   }
   timeoutThrotle = setTimeout(() => {
     if (!appSender) throw "Sem appSender.";
     saveState(file);
-    appSender.send("state", state);
-    if (screenSender) screenSender.send("state", state);
+    if ( !force ) {
+        appSender.send("state", state);
+        if (screenSender) screenSender.send("state", state);
+    }
   }, throtleTime);
 }
 
