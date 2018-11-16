@@ -181,7 +181,11 @@ function slide(e: { index: number; value: number }): void {
 function salvarCena({ uid }: { uid: Uid }): void {
   const state = currentState();
   const cenaIndex = state.cenas.findIndex(cena => cena.uid == uid),
-    cena = state.cenas[cenaIndex];
+    cena = state.cenas[cenaIndex] as MesaCena;
+  // TODO conferir se salvar cena equipamento não pode passar por aqui
+  if ( cena.tipo != "mesa" ) {
+      throw new Error("Tipo inválido.")
+  }
   setState({
     ...state,
     cenas: [
@@ -509,11 +513,11 @@ const animationInterval = setInterval(() => {
             });
         }
     }
-}catch (e) {
-    if ( e && e.stack )
-        console.error(e.stack);
+}catch (err) {
+    if ( err && err.stack )
+        console.error(err.stack);
     else
-        console.error(e);
+        console.error(err);
     animacao = null;
 }
 
@@ -969,23 +973,21 @@ function aplicarTipoConfiguracao({
 
 function cenaCanaisSlice(state: AppInternalState, cena: EquipamentosCena) {
   const canais: { [key: number]: number } = {};
-  cena.equipamentos.forEach(e => {
-    const equipamento = state.equipamentos.find(e2 => e2.uid == e.uid);
+  cena.equipamentos.forEach(eConf => {
+    const equipamento = state.equipamentos.find(e2 => e2.uid == eConf.uid);
     if (!equipamento) throw "EquipamentoSimples nao encontrado";
     // const tipo = state.equipamentoTipos.find(t=>t.uid == equipamento.tipoUid);
     // if ( !tipo )throw 'Tipo nao encontrado';
     if (equipamento.grupo) {
-      const c2 = grupoCanaisMesa(equipamento, state);
-      for (const k in c2) {
-        canais[k] = c2[k];
+      for (const index of grupoCanaisMesa(equipamento, state, eConf)) {
+        canais[index] = state.canais[index];
       }
-      const cor = grupoCor(equipamento, state);
-      if (cor) {
-        const c3 = grupoCanaisMesaCor(equipamento, state, cor);
-        if (c3) for (const k in c3) canais[k] = c3[k];
+      if (eConf.cor) {
+        const c3 = grupoCanaisMesaCor(equipamento, state, eConf.cor);
+        if (c3) for (const k in c3) canais[k] = state.canais[k];
       }
     } else {
-      e.canais.forEach((_, index) => {
+      eConf.canais.forEach((_, index) => {
         const key = equipamento.inicio + index;
         canais[key] = state.canais[key];
       });
@@ -1004,7 +1006,7 @@ function slideCena({ uid, value }: { uid: Uid; value: number }) {
     state.cenaSlide && state.cenaSlide.uid == uid
       ? state.cenaSlide.canaisAnterior
       : cena.tipo == "mesa"
-      ? { ...state.canais }
+      ? ({ ...state.canais } as any)
       : cenaCanaisSlice(state, cena);
   const canais: { [key: number]: number } = {};
   const perc = value / 100;

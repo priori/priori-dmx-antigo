@@ -18,8 +18,8 @@ export function deepEquals(a: any, b: any) {
 }
 
 export function deepFreeze (o:any) {
+    if ( !o || typeof o != "object" && typeof o != "function" )return;
     Object.freeze(o);
-
     Object.getOwnPropertyNames(o).forEach(function (prop) {
         if (o.hasOwnProperty(prop)
             && o[prop] !== null
@@ -28,7 +28,6 @@ export function deepFreeze (o:any) {
             deepFreeze(o[prop]);
         }
     });
-
     return o;
 };
 

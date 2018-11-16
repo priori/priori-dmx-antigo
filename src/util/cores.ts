@@ -1,9 +1,9 @@
 import {
-  AppInternalState,
-  CanaisTipo,
-  EquipamentoGrupoInternalState,
-  EquipamentoSimples,
-  Tipo
+    AppInternalState,
+    CanaisTipo,
+    EquipamentoGrupoInternalState,
+    EquipamentoSimples,
+    Tipo, Uid
 } from "../types/types";
 
 function corParte(s: number) {
@@ -338,7 +338,8 @@ export function grupoCanaisMesaCor(
 
 export function grupoCanaisMesa(
   e: EquipamentoGrupoInternalState,
-  state: AppInternalState
+  state: AppInternalState,
+  eConf: {uid:Uid,canais:(number|null)[],cor:string|null}
 ) {
   const info = grupoCanais(
     e,
@@ -346,46 +347,44 @@ export function grupoCanaisMesa(
     state.equipamentoTipos,
     state.canais
   );
-  let novo = {} as { [k: number]: number };
-  for (const canalInfo of info) {
-    const index = canalInfo.index;
+  const indexes = [] as number[];
+  for (const gIndex in info) {
+    const canalInfo = info[gIndex];
+    if ( eConf.canais[gIndex] === null )continue;
     const tipoNome = canalInfo.tipo;
-    const val = state.canais[index];
-    if (canalInfo.value === null) continue;
-
     for (const uid of e.equipamentos) {
-      const e = state.equipamentos.find(
+      const e2 = state.equipamentos.find(
         e2 => e2.uid == uid
       ) as EquipamentoSimples;
-      if (!e) throw new Error("Não encontrado equipamento");
-      const t = state.equipamentoTipos.find(t => t.uid == e.tipoUid);
+      if (!e2) throw new Error("Não encontrado equipamento");
+      const t = state.equipamentoTipos.find(t => t.uid == e2.tipoUid);
       if (!t) throw new Error("Não encontrado tipo");
       if (tipoNome == "red") {
         const colorinfo = extractColorInfo(t);
         if (!colorinfo) throw new Error("não encontrado color info");
-        novo[colorinfo.r + e.inicio] = val;
+        indexes.push(colorinfo.r + e2.inicio);
       } else if (tipoNome == "green") {
         const colorinfo = extractColorInfo(t);
         if (!colorinfo) throw new Error("não encontrado color info");
-        novo[colorinfo.g + e.inicio] = val;
+        indexes.push(colorinfo.g + e2.inicio);
       } else if (tipoNome == "blue") {
         const colorinfo = extractColorInfo(t);
         if (!colorinfo) throw new Error("não encontrado color info");
-        novo[colorinfo.b + e.inicio] = val;
+        indexes.push(colorinfo.b + e2.inicio);
       } else if (tipoNome == "master") {
         const mIndex = master(t);
         if (typeof mIndex == "undefined") throw new Error("Master");
-        novo[mIndex + e.inicio] = val;
+        indexes.push(mIndex + e2.inicio);
       } else if (tipoNome == "white") {
         const colorinfo = extractColorInfo(t);
         if (!colorinfo) throw new Error("não encontrado color info");
         if (typeof colorinfo.w == "undefined")
           throw new Error("não encontrado master no color info");
-        novo[colorinfo.w + e.inicio] = val;
+        indexes.push(colorinfo.w + e2.inicio);
       }
     }
   }
-  return novo;
+  return indexes;
 }
 
 export function canaisGrupoMesaCanais(

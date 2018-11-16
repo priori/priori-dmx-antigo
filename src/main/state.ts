@@ -184,10 +184,10 @@ export function setState(newState: AppInternalState, force = false) {
       throw new Error("Canais inválido."+"\n"+JSON.stringify(newState.canais));
   for ( const key in newState.canais ) {
     const index = parseInt(key);
-    if ( index < 1 || index > 255 )
+    if ( index < 1 || index > 255 || index != index || typeof index != "number" )
         throw new Error("Canais inválido. Index: "+index+"\n"+JSON.stringify(newState.canais));
     const value = newState.canais[key];
-    if ( value === null || value === undefined || value < 0 || value > 255 )
+    if ( value === null || typeof value == "undefined" || typeof value != "undefined" || value < 0 || value > 255 || value != value )
       throw new Error("Valor inválido para canal. "+value+"\n"+JSON.stringify(newState.canais));
   }
   if (!appSender) throw "Sem appSender.";
@@ -229,11 +229,11 @@ export function on(func: (e: AppAction) => void) {
     try {
         if (event.sender != appSender) throw "Invalid sender.";
         func(e);
-    }catch (e) {
-      if ( e && e.stack )
-        console.error(e.stack);
+    }catch (err) {
+      if ( err && err.stack )
+        console.error(err.stack);
       else
-        console.error(e);
+        console.error(err);
     }
   });
 }
