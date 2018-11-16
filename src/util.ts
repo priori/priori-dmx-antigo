@@ -1,5 +1,5 @@
 export function times(c: number) {
-  var a = [];
+  let a = [];
   while (c--) a.push({});
   return a;
 }

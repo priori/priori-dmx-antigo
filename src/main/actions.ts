@@ -1,13 +1,24 @@
 import { dialog } from "electron";
 import {
-    Animacao,
-    AppState,
-    Cena,
-    Equipamento,
-    EquipamentosCena,
-    EquipamentoTipo, MesaCena
-} from "../types";
-import { color2rgb, color2rgbw, extractColorInfo } from "../util/cores";
+  Animacao,
+  AppInternalState,
+  Cena,
+  EquipamentoSimples,
+  EquipamentosCena,
+  Tipo,
+  MesaCena,
+  Uid,
+  EquipamentoGrupoInternalState
+} from "../types/types";
+import {
+  canaisMesaCor,
+  grupoCanaisMesaCor,
+  canaisGrupoMesaCanais,
+  extractColorInfo,
+  grupoCanais,
+  grupoCor,
+  grupoCanaisMesa
+} from "../util/cores";
 import * as dmx from "./dmx";
 import {
   currentState,
@@ -16,7 +27,7 @@ import {
   readState,
   saveState,
   setState,
-  uid
+  generateUid
 } from "./state";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
@@ -44,7 +55,7 @@ function createEquipamento({
 }: {
   nome: string;
   inicio: number;
-  tipoUid: number;
+  tipoUid: Uid;
 }): void {
   const state = currentState();
   setState({
@@ -52,7 +63,8 @@ function createEquipamento({
     equipamentos: [
       ...state.equipamentos,
       {
-        uid: uid(),
+        uid: generateUid(),
+        grupo: false,
         nome,
         inicio,
         tipoUid,
@@ -62,73 +74,37 @@ function createEquipamento({
   });
 }
 
-function buildCanaisFromCor(
-  e: Equipamento,
-  tipo: EquipamentoTipo,
-  cor: string
-) {
-  const info = extractColorInfo(tipo);
-  if (!info) {
-    console.error("Tipo desconhecido. " + JSON.stringify(e));
-    return {};
-  }
-  if (typeof info.w != "undefined") {
-    const res = color2rgbw(cor);
-    const r = res[0],
-      g = res[1],
-      b = res[2],
-      w = res[3];
-    const data = {
-      [e.inicio + info.r]: r,
-      [e.inicio + info.g]: g,
-      [e.inicio + info.b]: b,
-      [e.inicio + info.w]: w
-    };
-    if (typeof info.m != "undefined")
-      data[e.inicio + info.m] = r || g || b || w ? 255 : 0;
-    return data;
-  } else {
-    const res = color2rgb(cor),
-      r = res[0],
-      g = res[1],
-      b = res[2];
-    const data = {
-      [e.inicio + info.r]: r,
-      [e.inicio + info.g]: g,
-      [e.inicio + info.b]: b
-    };
-    if (typeof info.m != "undefined")
-      data[e.inicio + info.m] = r || g || b ? 255 : 0;
-    return data;
-  }
-}
-
-function changeColor(e: { cor: string; equipamento: number }): void {
+function changeColor(e: { cor: string; equipamento: Uid }): void {
   const state = currentState(),
     { cor } = e,
     uid = e.equipamento,
-    equipamento = state.equipamentos.filter(e => e.uid == uid)[0] || null,
-    tipo = state.equipamentoTipos.find(
+    equipamento = state.equipamentos.filter(e => e.uid == uid)[0] || null;
+
+  let canais: { [k: number]: number };
+  if (equipamento.grupo) {
+    canais = grupoCanaisMesaCor(equipamento, state, cor);
+  } else {
+    const tipo = state.equipamentoTipos.find(
       t => t.uid == equipamento.tipoUid
-    ) as EquipamentoTipo,
-    data = buildCanaisFromCor(equipamento, tipo, cor);
-  if (state.dmx.conectado) dmx.update(data);
+    ) as Tipo;
+    canais = canaisMesaCor(equipamento, tipo, cor);
+  }
+  if (state.dmx.conectado) dmx.update(canais);
   setState({
     ...state,
     canais: {
       ...state.canais,
-      ...data
+      ...canais
     },
-    equipamentos: state.equipamentos.map(
-      e =>
-        e.uid == uid
-          ? {
-              ...e,
-              cor
-            }
-          : e
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid
+        ? {
+            ...e,
+            cor
+          }
+        : e
     ),
-    slide: null
+    cenaSlide: null
   });
 }
 
@@ -144,22 +120,51 @@ function dmxDesconectar(): void {
   });
 }
 
+function multipleSlide({
+  canais
+}: {
+  canais: { [index: number]: number };
+}): void {
+  for (const i in canais) {
+    const index = parseInt(i);
+    const value = canais[index];
+    if (typeof index != "number") {
+      throw new Error("index invalido " + index + ". typeof " + typeof index);
+    }
+    if (typeof value != "number") {
+      throw new Error("value invalido " + value + ". typeof " + typeof value);
+    }
+    if (index < 0 || index > 255) {
+      throw new Error("index fora da faixa. " + index);
+    }
+    if (value < 0 || value > 255) {
+      throw new Error("value fora da faixa. " + value);
+    }
+  }
+  const state = currentState();
+  if (state.dmx.conectado) dmx.update(canais);
+  setState({
+    ...state,
+    canais: {
+      ...state.canais,
+      ...canais
+    },
+    cenaSlide: null
+  });
+}
+
 function slide(e: { index: number; value: number }): void {
   if (typeof e.index != "number") {
-    console.error("index invalido " + e.index + ". typeof " + typeof e.index);
-    return;
+    throw new Error("index invalido " + e.index + ". typeof " + typeof e.index);
   }
   if (typeof e.value != "number") {
-    console.error("value invalido " + e.value + ". typeof " + typeof e.value);
-    return;
+    throw new Error("value invalido " + e.value + ". typeof " + typeof e.value);
   }
   if (e.index < 0 || e.index > 255) {
-    console.error("index fora da faixa. " + e.index);
-    return;
+    throw new Error("index fora da faixa. " + e.index);
   }
   if (e.value < 0 || e.value > 255) {
-    console.error("value fora da faixa. " + e.value);
-    return;
+    throw new Error("value fora da faixa. " + e.value);
   }
   const state = currentState();
   if (state.dmx.conectado) dmx.update({ [e.index]: e.value });
@@ -169,16 +174,12 @@ function slide(e: { index: number; value: number }): void {
       ...state.canais,
       [e.index]: e.value
     },
-      slide: null
+    cenaSlide: null
   });
 }
 
-function salvarCena({ uid }: { uid: number }): void {
-  const save = {},
-    state = currentState();
-  for (let c = 1; c <= 255; c++) {
-    save[c] = state.canais[c] || 0;
-  }
+function salvarCena({ uid }: { uid: Uid }): void {
+  const state = currentState();
   const cenaIndex = state.cenas.findIndex(cena => cena.uid == uid),
     cena = state.cenas[cenaIndex];
   setState({
@@ -187,7 +188,7 @@ function salvarCena({ uid }: { uid: number }): void {
       ...state.cenas.filter((_: any, index: number) => index < cenaIndex),
       {
         ...cena,
-        canais: save
+        canais: { ...state.canais }
       },
       ...state.cenas.filter((_: any, index: number) => index > cenaIndex)
     ]
@@ -195,11 +196,7 @@ function salvarCena({ uid }: { uid: number }): void {
 }
 
 function salvarMesa({ nome }: { nome: string }): void {
-  const state = currentState(),
-    save = {};
-  for (let c = 1; c <= 255; c++) {
-    save[c] = state.canais[c] || 0;
-  }
+  const state = currentState();
   setState({
     ...state,
     cenas: [
@@ -207,15 +204,15 @@ function salvarMesa({ nome }: { nome: string }): void {
       {
         transicaoTempo: 0,
         nome,
-        uid: uid(),
+        uid: generateUid(),
         tipo: "mesa",
-        canais: save
+        canais: { ...state.canais }
       }
     ]
   });
 }
 
-function editarNomeDaCena({ uid, nome }: { uid: number; nome: string }): void {
+function editarNomeDaCena({ uid, nome }: { uid: Uid; nome: string }): void {
   const state = currentState();
   const cenaIndex = state.cenas.findIndex(cena => cena.uid == uid);
   const cena = state.cenas[cenaIndex] as Cena;
@@ -232,7 +229,7 @@ function editarNomeDaCena({ uid, nome }: { uid: number; nome: string }): void {
   });
 }
 
-function editarTempoDaCena({ uid, tempo }: { uid: number; tempo: number }) {
+function editarTempoDaCena({ uid, tempo }: { uid: Uid; tempo: number }) {
   const state = currentState();
   const cenaIndex = state.cenas.findIndex(cena => cena.uid == uid);
   const cena = state.cenas[cenaIndex] as Cena;
@@ -250,90 +247,150 @@ function editarTempoDaCena({ uid, tempo }: { uid: number; tempo: number }) {
 }
 
 // let canaisPrecisos:any = null;
-function aplicarCenaAgora({ uid }: { uid: number }) {
+function aplicarCenaAgora({ uid }: { uid: Uid }) {
   const state = currentState();
   // canaisPrecisos = null;
   const cena = state.cenas.find(cena => cena.uid == uid) as Cena;
   if (cena.tipo == "mesa") {
-     cenaMesaAgora(state,cena);
-  } else if ( cena.tipo == "equipamentos" ) {
-     cenaEquipamentosAgora(state,cena);
+    cenaMesaAgora(state, cena);
+  } else if (cena.tipo == "equipamentos") {
+    cenaEquipamentosAgora(state, cena);
   }
 }
-function cenaMesaAgora(state:AppState,cena:MesaCena){
+function cenaMesaAgora(state: AppInternalState, cena: MesaCena) {
   if (state.dmx.conectado) dmx.update(cena.canais);
   setState({
-      ...state,
-      canais: cena.canais,
-      ultimaCena: cena.uid,
-      animacao: false
+    ...state,
+    canais: cena.canais,
+    ultimaCena: cena.uid,
+    animacao: false,
+    cenaSlide: null
   });
 }
 let animacao: Animacao | null = null;
 
-function cenaEquipamentosAgora(state: AppState, cena: EquipamentosCena) {
+// function grant<T>( v:T|null|undefined ) {
+//   if ( typeof v == "undefined") throw new Error("undefiend!");
+//   if ( v === null )throw new Error("null!");
+//   return v;
+// }
+
+function getGrupoState(
+  e: EquipamentoGrupoInternalState,
+  state: AppInternalState
+) {
+  // const canais = {} as {[k:number]:number};
+  const canais = [] as (number | null)[];
+  let cor: string | null = null;
+  const canaisDoGrupo = grupoCanais(
+    e,
+    state.equipamentos.filter(e => !e.grupo) as EquipamentoSimples[],
+    state.equipamentoTipos,
+    state.canais
+  );
+  for (const c of canaisDoGrupo) {
+    // if ( !c.unknow ) novo[c.index+""] = c.value;
+    canais.push(c.unknow ? null : parseFloat(c.value));
+  }
+  cor = grupoCor(e, state);
+  return { canais, cor };
+}
+
+function cenaEquipamentosAgora(
+  state: AppInternalState,
+  cena: EquipamentosCena
+) {
   const novo = {};
-  for ( const ce of cena.equipamentos ){
-      const e = state.equipamentos.find(eq=>eq.uid == ce.uid );
-      if ( !e ) {
-          console.error("Equipamento não encontrado.");
-          return;
+  for (const ce of cena.equipamentos) {
+    const e = state.equipamentos.find(eq => eq.uid == ce.uid);
+    if (!e) {
+      throw new Error("EquipamentoSimples não encontrado.");
+    }
+    if (e.grupo) {
+      const canais3 = canaisGrupoMesaCanais(e, state, ce.canais);
+      for (const key in canais3) novo[key] = canais3[key];
+      if (ce.cor) {
+        const canais2 = grupoCanaisMesaCor(e, state, ce.cor);
+        for (const key in canais2) novo[key] = canais2[key];
       }
-      const tipo = state.equipamentoTipos.find(t=>t.uid == e.tipoUid );
-      if ( !tipo ) {
-          console.error("Equipamento não encontrado.");
-          return;
+    } else {
+      const tipo = state.equipamentoTipos.find(t => t.uid == e.tipoUid);
+      if (!tipo) {
+        throw new Error("EquipamentoSimples não encontrado.");
       }
-      for ( let count=0; count < tipo.canais.length; count++ ){
-          const canalIndex = count+e.inicio;
-          const valor = ce.canais[count];
-          if ( typeof novo[canalIndex] != 'undefined' && novo[canalIndex] != valor ) {
-              console.error('Inconsistencia nas faixas dos equipamentos.');
-              return;
-          }
-          novo[canalIndex] = valor;
+      for (let count = 0; count < tipo.canais.length; count++) {
+        const canalIndex = count + e.inicio;
+        const valor = ce.canais[count];
+        if (
+          typeof novo[canalIndex] != "undefined" &&
+          novo[canalIndex] != valor
+        ) {
+          throw new Error("Inconsistencia nas faixas dos equipamentos.");
+        }
+        novo[canalIndex] = valor;
       }
+    }
   }
   if (state.dmx.conectado) dmx.update(novo);
   animacao = null;
   setState({
-      ...state,
-      canais: {
-          ...state.canais,
-          ...novo
-      },
-      ultimaCena: cena.uid,
-      animacao: false
+    ...state,
+    canais: {
+      ...state.canais,
+      ...novo
+    },
+    ultimaCena: cena.uid,
+    animacao: false,
+    cenaSlide: null
   });
 }
 
-function transicaoParaCena({ uid }: { uid: number }): void {
+function transicaoParaCena({ uid }: { uid: Uid }): void {
   const state = currentState();
   // canaisPrecisos = null;
-  const cena = state.cenas.find(cena => cena.uid == uid) as Cena;
+  const cena = state.cenas.find(cena => cena.uid == uid) as Cena,
+    tempo = cena.transicaoTempo;
   if (cena.tipo == "mesa") {
-    const tempo = cena.transicaoTempo;
     if (tempo) {
       const de = new Date();
       const ate = new Date();
       ate.setTime(de.getTime() + parseInt(tempo + ""));
-      animacao = {
-        type: "transicao",
-        de,
-        cena: cena.uid,
-        ate,
-        canaisIniciais: state.canais
-      };
       setState({
         ...state,
         ultimaCena: cena.uid,
-        animacao: true
+        animacao: true,
+        cenaSlide: null
       });
+      animacao = {
+          type: "transicao",
+          de,
+          cena: cena.uid,
+          ate,
+          canaisIniciais: state.canais
+      };
     } else {
-      cenaMesaAgora(state,cena);
+      cenaMesaAgora(state, cena);
     }
   } else {
-      cenaEquipamentosAgora(state,cena);
+    if (tempo) {
+      const de = new Date;
+      const ate = new Date;
+      ate.setTime(de.getTime() + parseInt(tempo + ""));
+      setState({
+        ...state,
+        ultimaCena: cena.uid,
+        animacao: true,
+        cenaSlide: null
+      });
+      animacao = {
+          type: "slide-cena",
+          de,
+          cena: uid,
+          ate
+      };
+    } else {
+      cenaEquipamentosAgora(state, cena);
+    }
   }
 }
 
@@ -342,96 +399,124 @@ function smoth(val: number) {
 }
 const intervalTime = 100;
 const animationInterval = setInterval(() => {
-  const state = currentState();
-  if (animacao) {
-    if (animacao.type == "transicao") {
-      const now = new Date();
-      const cena = state.cenas.find(
-        c => c.uid == (animacao as any).cena
-      ) as Cena;
-      if (cena.tipo == "mesa") {
-        const passouTime = now.getTime() - animacao.de.getTime();
-        const totalTime = animacao.ate.getTime() - animacao.de.getTime();
-        if (passouTime > totalTime) {
-          // canaisPrecisos = null;
-          animacao = null;
-          setState({
-            ...state,
-            animacao: false,
-            canais: cena.canais
-          });
-          if (state.dmx.conectado) dmx.update(cena.canais);
-          return;
-        }
-        const canais = { ...state.canais };
-        for (const index in canais) {
-          const valorInicial = animacao.canaisIniciais[index],
-            valorObjetivo = cena.canais[index],
-            proximoValor =
-              valorInicial +
-              ((valorObjetivo - valorInicial) * passouTime) / totalTime;
-          canais[index] = Math.round(proximoValor);
-        }
-        if (state.dmx.conectado) dmx.update(canais);
-        setState({
-          ...state,
-          canais
-        });
-      }
-    } else if (animacao.type == "pulsar") {
-      const inicial = animacao.valorInicial;
-      const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
-      // const de = inicial;
-      // const ate = inicial - 40;
-      const info = extractColorInfo(animacao.tipo);
-      if (!info || typeof info.m == "undefined") {
-        console.error("Equipamento sem master não pode pulsar.");
-        return;
-      }
-      const index = animacao.equipamento.inicio + info.m;
-      const state = currentState();
+    try {
+    const state = currentState();
+    if (animacao) {
+        if (animacao.type == "slide-cena") {
+            const now = new Date();
+            const passouTime = now.getTime() - animacao.de.getTime();
+            const totalTime = animacao.ate.getTime() - animacao.de.getTime();
+            const uid = animacao.cena;
+            if (passouTime > totalTime) {
+                animacao = null;
+                slideCena({uid, value: 100});
+                const state = currentState();
+                setState({
+                    ...state,
+                    animacao: false
+                });
+                return;
+            }
+            const perc = passouTime / totalTime;
+            const value = smoth(perc) * 100;
+            slideCena({uid, value});
+        } else if (animacao.type == "transicao") {
+            const now = new Date();
+            const cena = state.cenas.find(
+                c => c.uid == (animacao as any).cena
+            ) as Cena;
+            if (cena.tipo == "mesa") {
+                const passouTime = now.getTime() - animacao.de.getTime();
+                const totalTime = animacao.ate.getTime() - animacao.de.getTime();
+                if (passouTime > totalTime) {
+                    // canaisPrecisos = null;
+                    animacao = null;
+                    setState({
+                        ...state,
+                        animacao: false,
+                        canais: cena.canais
+                    });
+                    if (state.dmx.conectado) dmx.update(cena.canais);
+                    return;
+                }
+                const canais = {} as {[k:number]:number};
+                for (const index in canais) {
+                    const valorInicial = animacao.canaisIniciais[index],
+                        valorObjetivo = cena.canais[index],
+                        proximoValor =
+                            valorInicial +
+                            ((valorObjetivo - valorInicial) * passouTime) / totalTime;
+                    canais[index] = Math.round(proximoValor);
+                }
+                if (state.dmx.conectado) dmx.update(canais);
+                setState({
+                    ...state,
+                    canais: {
+                        ...state.canais,
+                        ...canais
+                    }
+                });
+            }
+        } else if (animacao.type == "pulsar") {
+            const inicial = animacao.valorInicial;
+            const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
+            // const de = inicial;
+            // const ate = inicial - 40;
+            const info = extractColorInfo(animacao.tipo);
+            if (!info || typeof info.m == "undefined") {
+                throw new Error("EquipamentoSimples sem master não pode pulsar.");
+            }
+            const index = animacao.equipamento.inicio + info.m;
+            const state = currentState();
 
-      const tamanhoDoCiclo = 2000;
-      const aux = (tempoQuePassou % tamanhoDoCiclo) / (tamanhoDoCiclo / 2);
-      const perc = aux > 1 ? 2 - aux : aux;
-      const smothPerc = smoth(perc);
+            const tamanhoDoCiclo = 2000;
+            const aux = (tempoQuePassou % tamanhoDoCiclo) / (tamanhoDoCiclo / 2);
+            const perc = aux > 1 ? 2 - aux : aux;
+            const smothPerc = smoth(perc);
 
-      const value = inicial - ((3 * inicial) / 4) * smothPerc;
-      if (value == state[index]) return;
-      const canais = {
-        ...state.canais,
-        [index]: Math.round(value)
-      };
-      if (state.dmx.conectado) dmx.update(canais);
-      setState({
-        ...state,
-        canais
-      });
-    } else if (animacao.type == "piscar") {
-      const inicial = animacao.valorInicial;
-      const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
-      // const de = inicial;
-      // const ate = inicial - 40;
-      const info = extractColorInfo(animacao.tipo);
-      if (!info || typeof info.m == "undefined") {
-        console.error("Equipamento sem master não pode pulsar.");
-        return;
-      }
-      const index = animacao.equipamento.inicio + info.m;
-      const state = currentState();
-      const value = Math.floor(tempoQuePassou / 1000) % 2 ? inicial : 0;
-      if (value == state[index]) return;
-      const canais = {
-        ...state.canais,
-        [index]: value
-      };
-      if (state.dmx.conectado) dmx.update(canais);
-      setState({
-        ...state,
-        canais
-      });
+            const value = inicial - ((3 * inicial) / 4) * smothPerc;
+            if (value == state[index]) return;
+            const canais = {
+                ...state.canais,
+                [index]: Math.round(value)
+            };
+            if (state.dmx.conectado) dmx.update(canais);
+            setState({
+                ...state,
+                canais
+            });
+        } else if (animacao.type == "piscar") {
+            const inicial = animacao.valorInicial;
+            const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
+            // const de = inicial;
+            // const ate = inicial - 40;
+            const info = extractColorInfo(animacao.tipo);
+            if (!info || typeof info.m == "undefined") {
+                throw new Error("EquipamentoSimples sem master não pode pulsar.");
+            }
+            const index = animacao.equipamento.inicio + info.m;
+            const state = currentState();
+            const value = Math.floor(tempoQuePassou / 1000) % 2 ? inicial : 0;
+            if (value == state[index]) return;
+            const canais = {
+                ...state.canais,
+                [index]: value
+            };
+            if (state.dmx.conectado) dmx.update(canais);
+            setState({
+                ...state,
+                canais
+            });
+        }
     }
-  }
+}catch (e) {
+    if ( e && e.stack )
+        console.error(e.stack);
+    else
+        console.error(e);
+    animacao = null;
+}
+
 }, intervalTime);
 
 export function close() {
@@ -464,12 +549,12 @@ function abrir() {
       dmx.close();
     }
     setState(json);
-    if (state.dmx.conectado) {
+    if (json.dmx.conectado) {
       dmx.connect(
-        state.dmx.driver,
-        state.dmx.deviceId
+        json.dmx.driver,
+        json.dmx.deviceId
       );
-      dmx.update(state.canais);
+      dmx.update(json.canais);
     }
   }
 }
@@ -480,7 +565,7 @@ function salvar() {
     filters: [{ name: "Configurações Priori DMX", extensions: ["priori-dmx"] }]
   });
   if (!name.endsWith(".priori-dmx")) name = name + ".priori-dmx";
-  saveState(name);
+  saveState(name,currentState());
 }
 
 function novo() {
@@ -490,7 +575,7 @@ function novo() {
   setState(emptyState);
 }
 
-function removeEquipamento({ uid }: { uid: number }) {
+function removeEquipamento({ uid }: { uid: Uid }) {
   const state = currentState();
   setState({
     ...state,
@@ -498,17 +583,17 @@ function removeEquipamento({ uid }: { uid: number }) {
   });
 }
 
-function editarEquipamentoNome({ uid, nome }: { uid: number; nome: string }) {
+function editarEquipamentoNome({ uid, nome }: { uid: Uid; nome: string }) {
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e => (e.uid == uid ? { ...e, nome } : e)
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid ? { ...e, nome } : e
     )
   });
 }
 
-function removeCena({ uid }: { uid: number }) {
+function removeCena({ uid }: { uid: Uid }) {
   const state = currentState();
   setState({
     ...state,
@@ -520,33 +605,34 @@ function equipamentoEditarInicio({
   uid,
   inicio
 }: {
-  uid: number;
+  uid: Uid;
   inicio: number;
 }) {
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e => (e.uid == uid ? { ...e, inicio } : e)
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid ? { ...e, inicio } : e
     )
   });
 }
 
-function pulsarEquipamento({ uid }: { uid: number }) {
+function pulsarEquipamento({ uid }: { uid: Uid }) {
   const state = currentState();
-  const equipamento = state.equipamentos.find(e => e.uid == uid) as Equipamento;
+  const equipamento = state.equipamentos.find(
+    e => e.uid == uid
+  ) as EquipamentoSimples;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
-  ) as EquipamentoTipo;
+  ) as Tipo;
   const info = extractColorInfo(tipo);
   if (!info || typeof info.m == "undefined") {
-    console.error(
-      "Equipamento sem master nao pode pulsar",
-      equipamento,
-      tipo,
-      info
+    throw new Error(
+      "EquipamentoSimples sem master nao pode pulsar " +
+        equipamento +
+        tipo +
+        info
     );
-    return;
   }
   const valorInicial = state.canais[equipamento.inicio + info.m];
   animacao = {
@@ -558,21 +644,22 @@ function pulsarEquipamento({ uid }: { uid: number }) {
   };
 }
 
-function piscarEquipamento({ uid }: { uid: number }) {
+function piscarEquipamento({ uid }: { uid: Uid }) {
   const state = currentState();
-  const equipamento = state.equipamentos.find(e => e.uid == uid) as Equipamento;
+  const equipamento = state.equipamentos.find(
+    e => e.uid == uid
+  ) as EquipamentoSimples;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
-  ) as EquipamentoTipo;
+  ) as Tipo;
   const info = extractColorInfo(tipo);
   if (!info || typeof info.m == "undefined") {
-    console.error(
-      "Equipamento sem master nao pode pulsar",
-      equipamento,
-      tipo,
-      info
+    throw new Error(
+      "EquipamentoSimples sem master nao pode pulsar" +
+        equipamento +
+        tipo +
+        info
     );
-    return;
   }
   const valorInicial = state.canais[equipamento.inicio + info.m];
   animacao = {
@@ -584,7 +671,7 @@ function piscarEquipamento({ uid }: { uid: number }) {
   };
 }
 
-function equipamentosSort({ sort }: { sort: number[] }) {
+function equipamentosSort({ sort }: { sort: Uid[] }) {
   const state = currentState();
   const equipamentos = [...state.equipamentos];
   equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
@@ -594,7 +681,7 @@ function equipamentosSort({ sort }: { sort: number[] }) {
   });
 }
 
-function cenasSort({ sort }: { sort: number[] }) {
+function cenasSort({ sort }: { sort: Uid[] }) {
   const state = currentState(),
     cenas = [...state.cenas];
   cenas.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
@@ -604,7 +691,11 @@ function cenasSort({ sort }: { sort: number[] }) {
   });
 }
 
-function extractCanais(state: AppState, e: Equipamento, tipo: EquipamentoTipo) {
+function extractCanais(
+  state: AppInternalState,
+  e: EquipamentoSimples,
+  tipo: Tipo
+) {
   let count = e.inicio;
   const max = count + tipo.canais.length;
   const canais = [] as number[];
@@ -619,14 +710,16 @@ function salvarEquipamentoConfiguracao({
   uid,
   nome
 }: {
-  uid: number;
+  uid: Uid;
   nome: string;
 }) {
   const state = currentState();
-  const equipamento = state.equipamentos.find(e => e.uid == uid) as Equipamento;
+  const equipamento = state.equipamentos.find(
+    e => e.uid == uid
+  ) as EquipamentoSimples;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
-  ) as EquipamentoTipo;
+  ) as Tipo;
   const canais = extractCanais(state, equipamento, tipo);
   const novaConfiguracao = {
     nome,
@@ -634,63 +727,67 @@ function salvarEquipamentoConfiguracao({
   };
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e =>
-        e.uid == uid
-          ? {
-              ...e,
-              configuracoes: [...e.configuracoes, novaConfiguracao]
-            }
-          : e
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid
+        ? {
+            ...e,
+            configuracoes: [...e.configuracoes, novaConfiguracao]
+          }
+        : e
     )
   });
 }
 
-function salvarEquipamentoTipoConfiguracao({
-  uid,
-  nome
-}: {
-  uid: number;
-  nome: string;
-}) {
+function salvarTipoConfiguracao({ uid, nome }: { uid: Uid; nome: string }) {
   const state = currentState();
-  const equipamento = state.equipamentos.find(e => e.uid == uid) as Equipamento;
+  const equipamento = state.equipamentos.find(
+    e => e.uid == uid
+  ) as EquipamentoSimples;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
-  ) as EquipamentoTipo;
+  ) as Tipo;
   const novaConfiguracao = {
     nome,
     canais: extractCanais(state, equipamento, tipo)
   };
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(
-      t =>
-        t.uid != equipamento.tipoUid
-          ? t
-          : {
-              ...t,
-              configuracoes: [...t.configuracoes, novaConfiguracao]
-            }
+    equipamentoTipos: state.equipamentoTipos.map(t =>
+      t.uid != equipamento.tipoUid
+        ? t
+        : {
+            ...t,
+            configuracoes: [...t.configuracoes, novaConfiguracao]
+          }
     )
   });
 }
 
-const uniqueId = uid;
-function criarCenaEquipamento({ uid, nome }: { uid: number; nome: string }) {
-  const state = currentState();
-  const equipamento = state.equipamentos.find(e => e.uid == uid) as Equipamento;
-  const tipo = state.equipamentoTipos.find(
-    t => t.uid == equipamento.tipoUid
-  ) as EquipamentoTipo;
-  const canais = extractCanais(state, equipamento, tipo);
+function criarCenaEquipamento({ uid, nome }: { uid: Uid; nome: string }) {
+  const state = currentState(),
+    equipamento = state.equipamentos.find(e => e.uid == uid);
+  if (!equipamento) throw new Error("Equipamento não encontrado.");
+  let canais;
+  let cor = null;
+  if (equipamento.grupo) {
+    const gs = getGrupoState(equipamento, state);
+    cor = gs.cor;
+    canais = gs.canais;
+  } else {
+    const tipo = state.equipamentoTipos.find(
+      t => t.uid == equipamento.tipoUid
+    ) as Tipo;
+    canais = extractCanais(state, equipamento, tipo);
+  }
   const cenaEquipamento: EquipamentosCena = {
     tipo: "equipamentos",
-    uid: uniqueId(),
+    uid: generateUid(),
     nome,
+    transicaoTempo: 0,
     equipamentos: [
       {
         canais,
+        cor,
         uid
       }
     ]
@@ -705,31 +802,33 @@ function adicionarEquipamentoACena({
   uid,
   cenaUid
 }: {
-  uid: number;
-  cenaUid: number;
+  uid: Uid;
+  cenaUid: Uid;
 }) {
   const state = currentState();
-  const equipamento = state.equipamentos.find(e => e.uid == uid) as Equipamento;
+  const equipamento = state.equipamentos.find(
+    e => e.uid == uid
+  ) as EquipamentoSimples;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
-  ) as EquipamentoTipo;
+  ) as Tipo;
   const canais = extractCanais(state, equipamento, tipo);
   setState({
     ...state,
-    cenas: state.cenas.map(
-      c =>
-        c.uid != cenaUid || c.tipo != "equipamentos"
-          ? c
-          : {
-              ...c,
-              equipamentos: [
-                ...c.equipamentos,
-                {
-                  canais,
-                  uid
-                }
-              ]
-            }
+    cenas: state.cenas.map(c =>
+      c.uid != cenaUid || c.tipo != "equipamentos"
+        ? c
+        : {
+            ...c,
+            equipamentos: [
+              ...c.equipamentos,
+              {
+                canais,
+                uid,
+                cor: null
+              }
+            ]
+          }
     )
   });
 }
@@ -738,22 +837,21 @@ function removeEquipamentoCena({
   cenaUid,
   equipamentoUid
 }: {
-  cenaUid: number;
-  equipamentoUid: number;
+  cenaUid: Uid;
+  equipamentoUid: Uid;
 }) {
   const state = currentState();
   setState({
     ...state,
-    cenas: state.cenas.map(
-      c =>
-        c.uid == cenaUid
-          ? {
-              ...(c as EquipamentosCena),
-              equipamentos: (c as EquipamentosCena).equipamentos.filter(
-                e => e.uid != equipamentoUid
-              )
-            }
-          : c
+    cenas: state.cenas.map(c =>
+      c.uid == cenaUid
+        ? {
+            ...(c as EquipamentosCena),
+            equipamentos: (c as EquipamentosCena).equipamentos.filter(
+              e => e.uid != equipamentoUid
+            )
+          }
+        : c
     )
   });
 }
@@ -763,106 +861,229 @@ function removeEquipamentoConfiguracao({
   equipamentoUid
 }: {
   index: number;
-  equipamentoUid: number;
+  equipamentoUid: Uid;
 }) {
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e =>
-        e.uid == equipamentoUid
-          ? {
-              ...e,
-              configuracoes: e.configuracoes.filter((_, i) => i != index)
-            }
-          : e
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == equipamentoUid
+        ? {
+            ...e,
+            configuracoes: e.configuracoes.filter((_, i) => i != index)
+          }
+        : e
     )
   });
 }
 
-function removeEquipamentoTipoConfiguracao({
+function removeTipoConfiguracao({
   equipamentoTipoUid,
   index
 }: {
-  equipamentoTipoUid: number;
+  equipamentoTipoUid: Uid;
   index: number;
 }) {
   const state = currentState();
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(
-      e =>
-        e.uid == equipamentoTipoUid
-          ? {
-              ...e,
-              configuracoes: e.configuracoes.filter((_, i) => i != index)
-            }
-          : e
+    equipamentoTipos: state.equipamentoTipos.map(e =>
+      e.uid == equipamentoTipoUid
+        ? {
+            ...e,
+            configuracoes: e.configuracoes.filter((_, i) => i != index)
+          }
+        : e
     )
   });
 }
 
-function aplicarEquipamentoConfiguracao({equipamentoUid,index}: { equipamentoUid: number; index: number}) {
-
-    const state = currentState();
-    const equipamento = state.equipamentos.find(e=>e.uid == equipamentoUid);
-    if ( !equipamento ){
-      console.error('Equipamento não encontrado');
-      return;
-    }
-    const conf = equipamento.configuracoes[index];
-    const canais = {};
-    for ( const index in conf.canais ) {
+function aplicarEquipamentoConfiguracao({
+  equipamentoUid,
+  index
+}: {
+  equipamentoUid: Uid;
+  index: number;
+}) {
+  const state = currentState();
+  const equipamento = state.equipamentos.find(e => e.uid == equipamentoUid);
+  if (!equipamento) {
+    throw new Error("EquipamentoSimples não encontrado");
+  }
+  const conf = equipamento.configuracoes[index];
+  const canais = {};
+  if (equipamento.grupo) {
+    throw new Error(
+      "Não implementado ainda. aplicarEquipamentoConfiguracao grupo"
+    );
+  } else {
+    for (const index in conf.canais) {
       canais[parseInt(index) + equipamento.inicio] = conf.canais[index];
     }
-    if (state.dmx.conectado) dmx.update(canais);
-    setState({
-        ...state,
-        canais: {
-            ...state.canais,
-            ...canais
-        }
-    });
+  }
+  if (state.dmx.conectado) dmx.update(canais);
+  setState({
+    ...state,
+    canais: {
+      ...state.canais,
+      ...canais
+    }
+  });
 }
 
-function aplicarEquipamentoTipoConfiguracao({equipamentoUid,index}: { equipamentoUid: number; equipamentoTipoUid: number; index: number }) {
-
-    const state = currentState();
-    const equipamento = state.equipamentos.find(e=>e.uid == equipamentoUid);
-    if ( !equipamento ){
-        console.error('Equipamento não encontrado');
-        return;
-    }
-    const tipo = state.equipamentoTipos.find(e=>e.uid == equipamento.tipoUid);
-    if ( !tipo ){
-      console.error('Tipo não encontrado');
-      return;
+function aplicarTipoConfiguracao({
+  equipamentoUid,
+  index
+}: {
+  equipamentoUid: Uid;
+  equipamentoTipoUid: Uid;
+  index: number;
+}) {
+  const state = currentState();
+  const equipamento = state.equipamentos.find(e => e.uid == equipamentoUid);
+  if (!equipamento) {
+    throw new Error("EquipamentoSimples não encontrado");
+  }
+  const canais = {};
+  if (equipamento.grupo) {
+    throw new Error("Grupo de equipamentos não está vinculado a tipo.");
+  } else {
+    const tipo = state.equipamentoTipos.find(e => e.uid == equipamento.tipoUid);
+    if (!tipo) {
+      throw new Error("Tipo não encontrado");
     }
     const conf = tipo.configuracoes[index];
-    const canais = {};
-    for ( const c in conf.canais ) {
-        canais[parseInt(c) + equipamento.inicio] = conf.canais[c];
+    for (const c in conf.canais) {
+      canais[parseInt(c) + equipamento.inicio] = conf.canais[c];
     }
-    if (state.dmx.conectado) dmx.update(canais);
-    setState({
-        ...state,
-        canais: {
-            ...state.canais,
-            ...canais
-        }
-    });
+  }
+  if (state.dmx.conectado) dmx.update(canais);
+  setState({
+    ...state,
+    canais: {
+      ...state.canais,
+      ...canais
+    }
+  });
 }
 
-function slideCena({uid,value}: { uid: number; value: number}) {
+function cenaCanaisSlice(state: AppInternalState, cena: EquipamentosCena) {
+  const canais: { [key: number]: number } = {};
+  cena.equipamentos.forEach(e => {
+    const equipamento = state.equipamentos.find(e2 => e2.uid == e.uid);
+    if (!equipamento) throw "EquipamentoSimples nao encontrado";
+    // const tipo = state.equipamentoTipos.find(t=>t.uid == equipamento.tipoUid);
+    // if ( !tipo )throw 'Tipo nao encontrado';
+    if (equipamento.grupo) {
+      const c2 = grupoCanaisMesa(equipamento, state);
+      for (const k in c2) {
+        canais[k] = c2[k];
+      }
+      const cor = grupoCor(equipamento, state);
+      if (cor) {
+        const c3 = grupoCanaisMesaCor(equipamento, state, cor);
+        if (c3) for (const k in c3) canais[k] = c3[k];
+      }
+    } else {
+      e.canais.forEach((_, index) => {
+        const key = equipamento.inicio + index;
+        canais[key] = state.canais[key];
+      });
+    }
+  });
+  return canais;
+}
 
+function slideCena({ uid, value }: { uid: Uid; value: number }) {
+  const state = currentState();
+  const cena = state.cenas.find(c => c.uid == uid);
+  if (!cena) {
+    throw new Error("Cena não encontrada.");
+  }
+  const canaisAnterior: { [key: number]: number } =
+    state.cenaSlide && state.cenaSlide.uid == uid
+      ? state.cenaSlide.canaisAnterior
+      : cena.tipo == "mesa"
+      ? { ...state.canais }
+      : cenaCanaisSlice(state, cena);
+  const canais: { [key: number]: number } = {};
+  const perc = value / 100;
+  if (cena.tipo == "mesa") {
+    for (const key in canaisAnterior) {
+      const prev = canaisAnterior[key];
+      const next = cena.canais[key];
+      canais[key] = Math.round(next * perc + prev * (1 - perc));
+    }
+  } else if (cena.tipo == "equipamentos") {
+    cena.equipamentos.forEach(e => {
+      const equipamento = state.equipamentos.find(e2 => e2.uid == e.uid);
+      if (!equipamento) {
+        throw new Error("EquipamentoSimples não encontrado.");
+      }
+      if (equipamento.grupo) {
+        const canais3 = canaisGrupoMesaCanais(equipamento, state, e.canais);
+        for (const key in canais3) {
+          const prev = canaisAnterior[key];
+          const next = canais3[key];
+          canais[key] = Math.round(next * perc + prev * (1 - perc));
+        }
+        if (e.cor) {
+          const canais2 = grupoCanaisMesaCor(equipamento, state, e.cor);
+          for (const key in canais2) {
+            const prev = canaisAnterior[key];
+            const next = canais2[key];
+            canais[key] = Math.round(next * perc + prev * (1 - perc));
+          }
+        }
+      } else {
+        e.canais.forEach((next, index) => {
+          if (next === null) return;
+          const key = index + equipamento.inicio;
+          const prev = canaisAnterior[key];
+          canais[key] = Math.round(next * perc + prev * (1 - perc));
+        });
+      }
+    });
+  }
+  if (state.dmx.conectado) dmx.update(canais);
+  setState(
+    {
+      ...state,
+      cenaSlide: {
+        uid,
+        value,
+        canaisAnterior
+      },
+      canais: {
+        ...state.canais,
+        ...canais
+      }
+    },
+    true
+  );
+}
+
+function createEquipamentoGrupo({
+  nome,
+  equipamentos
+}: {
+  nome: string;
+  equipamentos: Uid[];
+}) {
   const state = currentState();
   setState({
     ...state,
-    slide: {
-      uid,
-      value
-    }
-  },true);
+    equipamentos: [
+      ...state.equipamentos,
+      {
+        grupo: true,
+        uid: generateUid(),
+        nome,
+        equipamentos,
+        configuracoes: []
+      }
+    ]
+  });
 }
 
 on(action => {
@@ -870,6 +1091,8 @@ on(action => {
   else if (action.type == "aplicar-cena-agora") aplicarCenaAgora(action);
   else if (action.type == "change-color") changeColor(action);
   else if (action.type == "create-equipamento") createEquipamento(action);
+  else if (action.type == "create-equipamento-grupo")
+    createEquipamentoGrupo(action);
   // else if ( action.type == "app-start")
   else if (action.type == "dmx-conectar") dmxConectar(action);
   else if (action.type == "dmx-desconectar") dmxDesconectar();
@@ -882,6 +1105,7 @@ on(action => {
   // else if ( action.type == "screen-started")
   // screenStarted
   else if (action.type == "slide") slide(action);
+  else if (action.type == "multiple-slide") multipleSlide(action);
   else if (action.type == "transicao-para-cena") transicaoParaCena(action);
   else if (action.type == "remove-equipamento") removeEquipamento(action);
   else if (action.type == "editar-equipamento-nome")
@@ -896,7 +1120,7 @@ on(action => {
   else if (action.type == "salvar-equipamento-configuracao")
     salvarEquipamentoConfiguracao(action);
   else if (action.type == "salvar-equipamento-tipo-configuracao")
-    salvarEquipamentoTipoConfiguracao(action);
+    salvarTipoConfiguracao(action);
   else if (action.type == "criar-cena-equipamento")
     criarCenaEquipamento(action);
   else if (action.type == "adicionar-equipamento-a-cena")
@@ -906,11 +1130,10 @@ on(action => {
   else if (action.type == "remove-equipamento-configuracao")
     removeEquipamentoConfiguracao(action);
   else if (action.type == "remove-equipamento-tipo-configuracao")
-    removeEquipamentoTipoConfiguracao(action);
-  else if ( action.type == "aplicar-equipamento-configuracao")
+    removeTipoConfiguracao(action);
+  else if (action.type == "aplicar-equipamento-configuracao")
     aplicarEquipamentoConfiguracao(action);
-  else if ( action.type == "aplicar-equipamento-tipo-configuracao")
-    aplicarEquipamentoTipoConfiguracao(action);
-  else if ( action.type == "slide-cena")
-    slideCena(action);
+  else if (action.type == "aplicar-equipamento-tipo-configuracao")
+    aplicarTipoConfiguracao(action);
+  else if (action.type == "slide-cena") slideCena(action);
 });

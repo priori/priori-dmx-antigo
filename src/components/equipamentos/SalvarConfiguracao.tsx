@@ -1,11 +1,16 @@
 import * as React from "react";
 import { SoftPanel } from "../util/SoftPanel";
-import {Cena, Equipamento, EquipamentosCena, EquipamentoTipo} from "../../types";
+import {
+  Cena,
+  EquipamentoSimples,
+  Tipo,
+  EquipamentoGrupoInternalState
+} from "../../types/types";
 import { action } from "../../util/action";
 
 export interface SalvarConfiguracaoProps {
-  equipamento: Equipamento;
-  tipo: EquipamentoTipo;
+  equipamento: EquipamentoSimples | EquipamentoGrupoInternalState;
+  tipo: Tipo | null;
   onClose: () => void;
   cenas: Cena[];
 }
@@ -15,14 +20,18 @@ export interface SalvarConfiguracaoState {
   cenaUid: number;
 }
 
-function conflitoDeFaixas(equipamento: Equipamento, tipo: EquipamentoTipo, cena: EquipamentosCena) {
-  const de = equipamento.inicio;
-  const ate = de + tipo.canais.length;
-  for ( const c of cena.equipamentos ) {
-
-  }
-  return false;
-}
+// TODO
+// function conflitoDeFaixas(
+// equipamento: EquipamentoSimples,
+// tipo: Tipo,
+// cena: EquipamentosCena
+// ) {
+//   const de = equipamento.inicio;
+// const ate = de + tipo.canais.length;
+// for (const c of cena.equipamentos) {
+// }
+// return false;
+// }
 
 export class SalvarConfiguracao extends React.Component<
   SalvarConfiguracaoProps,
@@ -55,15 +64,18 @@ export class SalvarConfiguracao extends React.Component<
         alert("Escolha uma cena para salvar.");
         return;
       }
-      const cena = this.props.cenas.find(c=>c.uid == this.state.cenaUid);
-      if ( !cena || cena.tipo == "mesa" ){
+      const cena = this.props.cenas.find(c => c.uid == this.state.cenaUid);
+      if (!cena || cena.tipo == "mesa") {
         alert("Cena não encontrada.");
         return;
       }
-      if ( conflitoDeFaixas(this.props.equipamento,this.props.tipo,cena) ) {
-        alert("Conflito de faixas. Verifique todos as faixas de todos equipamentos desta cena.");
-        return;
-      }
+      // TODO
+      // if (conflitoDeFaixas(this.props.equipamento, this.props.tipo, cena)) {
+      //   alert(
+      //     "Conflito de faixas. Verifique todos as faixas de todos equipamentos desta cena."
+      //   );
+      //   return;
+      // }
       action({
         type: "adicionar-equipamento-a-cena",
         uid: this.props.equipamento.uid,
@@ -81,6 +93,7 @@ export class SalvarConfiguracao extends React.Component<
     }
   }
   render() {
+    const tipo = this.props.tipo;
     return (
       <SoftPanel
         onBlur={() => {
@@ -107,7 +120,7 @@ export class SalvarConfiguracao extends React.Component<
           >
             <option value="" />
             <option value="neste">Neste Equipamento</option>
-            <option value="tipo">Para Todos {this.props.tipo.nome}</option>
+            {tipo ? <option value="tipo">Para Todos {tipo.nome}</option> : null}
             <option value="cena">Cena Existente</option>
             <option value="novacena">Nova Cena</option>
           </select>

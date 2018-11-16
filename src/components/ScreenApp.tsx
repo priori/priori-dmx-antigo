@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AppState } from "../types";
+import { AppInternalState } from "../types/types";
 import { listen, close } from "../util/listeners";
 import { action } from "../util/action";
 
@@ -20,7 +20,7 @@ export class ScreenApp extends React.Component<undefined, ScreenAppState> {
     close(this.listener);
   }
 
-  listener = (state: AppState) => {
+  listener = (state: AppInternalState) => {
     this.setState({
       state
     });

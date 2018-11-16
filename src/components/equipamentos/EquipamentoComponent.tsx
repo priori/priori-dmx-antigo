@@ -2,21 +2,40 @@ import * as React from "react";
 import { FastInput } from "../util/FastInput";
 import {
   Cena,
-  Equipamento,
+  EquipamentoSimples,
   EquipamentosCena,
-  EquipamentoTipo
-} from "../../types";
+  Tipo,
+  EquipamentoGrupoInternalState,
+  Uid
+} from "../../types/types";
 import { action } from "../../util/action";
-import { buildCor } from "../../util/cores";
+import {
+  buildCor,
+  extractColorInfo,
+  grupoCanais,
+  grupoCor2,
+  master
+} from "../../util/cores";
 import { SalvarConfiguracao } from "./SalvarConfiguracao";
 import { ConfiguracoesSalvas } from "./ConfiguracoesSalvas";
 
-export interface EquipamentoComponentProps {
-  equipamento: Equipamento;
-  tipo: EquipamentoTipo;
-  canais: { [key: number]: number };
-  cenas: Cena[];
-}
+export type EquipamentoComponentProps =
+  | {
+      equipamento: EquipamentoSimples;
+      tipo: Tipo;
+      canais: { [key: number]: number };
+      cenas: Cena[];
+      equipamentos: null;
+      tipos: null;
+    }
+  | {
+      equipamento: EquipamentoGrupoInternalState;
+      tipo: null;
+      equipamentos: EquipamentoSimples[];
+      canais: { [key: number]: number };
+      cenas: Cena[];
+      tipos: Tipo[];
+    };
 export interface EquipamentoComponentState {
   canais: { [key: number]: number };
   editNome: boolean;
@@ -29,7 +48,8 @@ export class EquipamentoComponent extends React.Component<
   EquipamentoComponentProps,
   EquipamentoComponentState
 > {
-  constructor(props: { equipamento: Equipamento }) {
+  private colorInput: HTMLInputElement;
+  constructor(props: EquipamentoComponentProps) {
     super(props);
     this.state = {
       canais: {},
@@ -48,19 +68,71 @@ export class EquipamentoComponent extends React.Component<
   }
 
   private updateCanal(index: number, val: string) {
-    const value = parseInt(val);
-    this.setState({
-      ...this.state,
-      canais: {
-        ...this.state.canais,
-        [index]: value
+    const e = this.props.equipamento;
+    if (e.grupo) {
+      const canais = {} as { [k: number]: number };
+      const es = this.props.equipamentos;
+      const tipos = this.props.tipos;
+      if (!es) throw new Error("Não encontrados equipamentos");
+      if (!tipos) throw new Error("Não encontrados tipos");
+
+      const info = grupoCanais(e, es, tipos, this.props.canais);
+      const canalInfo = info[index - 1];
+      const tipoNome = canalInfo.tipo;
+
+      for (const uid of e.equipamentos) {
+        const e = es.find(e2 => e2.uid == uid);
+        if (!e) throw new Error("Não encontrado equipamento");
+        const t = tipos.find(t => t.uid == e.tipoUid);
+        if (!t) throw new Error("Não encontrado tipo");
+        if (tipoNome == "red") {
+          const colorinfo = extractColorInfo(t);
+          if (!colorinfo) throw new Error("não encontrado color info");
+          canais[colorinfo.r + e.inicio] = parseFloat(val);
+        } else if (tipoNome == "green") {
+          const colorinfo = extractColorInfo(t);
+          if (!colorinfo) throw new Error("não encontrado color info");
+          canais[colorinfo.g + e.inicio] = parseFloat(val);
+        } else if (tipoNome == "blue") {
+          const colorinfo = extractColorInfo(t);
+          if (!colorinfo) throw new Error("não encontrado color info");
+          canais[colorinfo.b + e.inicio] = parseFloat(val);
+        } else if (tipoNome == "master") {
+          const mIndex = master(t);
+          if (typeof mIndex == "undefined") throw new Error("Master");
+          canais[mIndex + e.inicio] = parseFloat(val);
+        } else if (tipoNome == "white") {
+          const colorinfo = extractColorInfo(t);
+          if (!colorinfo) throw new Error("não encontrado color info");
+          if (typeof colorinfo.w == "undefined")
+            throw new Error("não encontrado master no color info");
+          canais[colorinfo.w + e.inicio] = parseFloat(val);
+        }
       }
-    });
-    action({ type: "slide", index, value });
+      action({ type: "multiple-slide", canais });
+    } else {
+      const value = parseInt(val);
+      this.setState({
+        ...this.state,
+        canais: {
+          ...this.state.canais,
+          [index]: value
+        }
+      });
+      action({ type: "slide", index, value });
+    }
   }
 
   private cor() {
-    return buildCor(this.props.equipamento, this.props.tipo, this.props.canais);
+    const e = this.props.equipamento;
+    if (!e.grupo)
+      return buildCor(e, this.props.tipo as Tipo, this.props.canais);
+    return grupoCor2(
+      e,
+      this.props.equipamentos as EquipamentoSimples[],
+      this.props.tipos as Tipo[],
+      this.props.canais
+    );
   }
 
   private editNome() {
@@ -70,7 +142,10 @@ export class EquipamentoComponent extends React.Component<
     });
   }
 
-  private changeColor(equipamento: Equipamento, cor: string) {
+  private changeColor(
+    equipamento: EquipamentoSimples | EquipamentoGrupoInternalState,
+    cor: string
+  ) {
     action({ type: "change-color", equipamento: equipamento.uid, cor });
   }
 
@@ -99,6 +174,9 @@ export class EquipamentoComponent extends React.Component<
 
   render() {
     const e = this.props.equipamento;
+    const tipo = this.props.tipo;
+    const canais = this.canais();
+    const cor = this.cor();
 
     return (
       <div className="equipamento">
@@ -128,9 +206,26 @@ export class EquipamentoComponent extends React.Component<
           )}
         </div>
         <div className="equipamento__main">
+          {!cor ? (
+            <span
+              onClick={() => this.colorInput.click()}
+              style={{
+                position: "absolute",
+                marginLeft: "25px",
+                marginTop: "19px",
+                fontWeight: "bold",
+                fontSize: "30px",
+                color: "white",
+                opacity: 0.66
+              }}
+            >
+              ?
+            </span>
+          ) : null}
           <input
+            ref={el => (this.colorInput = el)}
             type="color"
-            value={this.cor() || "#000000"}
+            value={cor || "#000000"}
             onChange={(event: any) => this.changeColor(e, event.target.value)}
           />
           <div
@@ -141,12 +236,12 @@ export class EquipamentoComponent extends React.Component<
             }}
           >
             <select
-                value={""}
+              value={""}
               onChange={(e: any) => this.aplicarOpcao(e.target.value)}
               style={{ width: "90px" }}
             >
-              <option value=""/>
-              {this.options().map((o,index) => (
+              <option value="" />
+              {this.options().map((o, index) => (
                 <optgroup label={o.nome} key={index}>
                   {o.opcoes.map(o => (
                     <option value={o.value} key={o.value}>
@@ -160,7 +255,7 @@ export class EquipamentoComponent extends React.Component<
               <ConfiguracoesSalvas
                 equipamento={e}
                 cenas={this.props.cenas}
-                tipo={this.props.tipo}
+                tipo={tipo}
                 onClose={() =>
                   this.setState({
                     ...this.state,
@@ -173,7 +268,7 @@ export class EquipamentoComponent extends React.Component<
             <span
               style={{
                 position: "absolute",
-                left: this.props.equipamento.inicio < 100 ? "53px" : "60px",
+                left: e.grupo ? "5px" : e.inicio < 100 ? "53px" : "60px",
                 bottom: "4px"
               }}
             >
@@ -181,7 +276,7 @@ export class EquipamentoComponent extends React.Component<
                 <SalvarConfiguracao
                   cenas={this.props.cenas}
                   equipamento={e}
-                  tipo={this.props.tipo}
+                  tipo={tipo}
                   onClose={() =>
                     this.setState({
                       ...this.state,
@@ -193,7 +288,7 @@ export class EquipamentoComponent extends React.Component<
               <button onClick={() => this.salvar()}>Salvar</button>
             </span>
           </div>
-          {this.state.editInicio ? (
+          {!e.grupo && this.state.editInicio ? (
             <FastInput
               className="equipamento__inicio"
               initialValue={e.inicio + ""}
@@ -217,7 +312,7 @@ export class EquipamentoComponent extends React.Component<
                 this.setState({ ...this.state, editInicio: false });
               }}
             />
-          ) : (
+          ) : e.grupo ? null : (
             <span
               className="equipamento__inicio"
               onDoubleClick={() =>
@@ -231,36 +326,32 @@ export class EquipamentoComponent extends React.Component<
             </span>
           )}
         </div>
-        <div className="equipamento__canais">
-          {this.props.tipo.canais.map((canal, index) => (
-            <div key={index} className={"equipamento__canal " + canal.tipo}>
-              <div className="equipamento__canal__index ">
-                {e.inicio + index}
+        {canais.length ? (
+          <div className="equipamento__canais">
+            {canais.map((canal, index) => (
+              <div
+                key={index}
+                className={"equipamento__canal " + canal.tipo}
+                style={{ opacity: canal.unknow ? 0.3 : 1 }}
+              >
+                <div className="equipamento__canal__index ">{canal.index}</div>
+                <div className="equipamento__canal__input__wrapper">
+                  <input
+                    onChange={(event: any) =>
+                      this.updateCanal(canal.index, event.target.value)
+                    }
+                    type="range"
+                    min="0"
+                    className="equipamento__canal__input"
+                    max="255"
+                    value={canal.value}
+                  />
+                </div>
+                <div className="equipamento__canal__valor">{canal.value}</div>
               </div>
-              <div className="equipamento__canal__input__wrapper">
-                <input
-                  onChange={(event: any) =>
-                    this.updateCanal(index + e.inicio, event.target.value)
-                  }
-                  type="range"
-                  min="0"
-                  className="equipamento__canal__input"
-                  max="255"
-                  value={
-                    typeof this.state.canais[index + e.inicio] != "undefined"
-                      ? this.state.canais[e.inicio + index]
-                      : this.props.canais[index + e.inicio] || "0"
-                  }
-                />
-              </div>
-              <div className="equipamento__canal__valor">
-                {typeof this.state.canais[index + e.inicio] != "undefined"
-                  ? this.state.canais[e.inicio + index]
-                  : this.props.canais[index + e.inicio] || "0"}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -283,18 +374,20 @@ export class EquipamentoComponent extends React.Component<
         ]
       }
     ];
-    if (this.props.equipamento.configuracoes.length)
+    const e = this.props.equipamento;
+    if (e.configuracoes.length)
       a.push({
-        nome: "Equipamento " + this.props.equipamento.nome,
+        nome: "EquipamentoSimples " + this.props.equipamento.nome,
         opcoes: this.props.equipamento.configuracoes.map((c, index) => ({
           titulo: c.nome,
           value: "equipamento:" + index
         }))
       });
-    if (this.props.tipo.configuracoes.length)
+    const tipo = this.props.tipo;
+    if (tipo && tipo.configuracoes.length)
       a.push({
-        nome: this.props.tipo.nome,
-        opcoes: this.props.tipo.configuracoes.map((c, index) => ({
+        nome: tipo.nome,
+        opcoes: tipo.configuracoes.map((c, index) => ({
           titulo: c.nome,
           value: "tipo:" + index
         }))
@@ -311,7 +404,7 @@ export class EquipamentoComponent extends React.Component<
   }
 
   private aplicarOpcao(value: string) {
-    if ( !value )return;
+    if (!value) return;
     if (value == "pulsar") {
       this.pulsar();
     } else if (value == "piscar") {
@@ -324,9 +417,9 @@ export class EquipamentoComponent extends React.Component<
       if (name == "equipamento") {
         this.aplicarConfiguracao(number);
       } else if (name == "tipo") {
-        this.aplicarEquipamentoTipoConfiguracao(number);
+        this.aplicarTipoConfiguracao(number);
       } else if (name == "cena") {
-        this.aplicarCena(number);
+        this.aplicarCena(number as Uid);
       }
     }
   }
@@ -345,19 +438,48 @@ export class EquipamentoComponent extends React.Component<
     });
   }
 
-  private aplicarEquipamentoTipoConfiguracao(index: number) {
+  private aplicarTipoConfiguracao(index: number) {
     action({
       type: "aplicar-equipamento-tipo-configuracao",
       equipamentoUid: this.props.equipamento.uid,
-      equipamentoTipoUid: this.props.tipo.uid,
+      equipamentoTipoUid: (this.props.tipo as Tipo).uid,
       index
     });
   }
 
-  private aplicarCena(uid: number) {
+  private aplicarCena(uid: Uid) {
     action({
       type: "transicao-para-cena", // aplicar-cena-agora
       uid
     });
+  }
+
+  private canais(): {
+    index: number;
+    value: string;
+    tipo: string;
+    unknow: boolean;
+  }[] {
+    const e = this.props.equipamento;
+    const t = this.props.tipo;
+    if (!e.grupo) {
+      if (!t) throw new Error("Não foi encontrado Tipo");
+      return t.canais.map((canal, index) => ({
+        tipo: canal.tipo,
+        index: e.inicio + index,
+        unknow: false,
+        value:
+          typeof this.state.canais[index + e.inicio] != "undefined"
+            ? this.state.canais[e.inicio + index] + ""
+            : this.props.canais[index + e.inicio]
+            ? this.props.canais[index + e.inicio] + "" || "0"
+            : "0"
+      }));
+    }
+    const tipos = this.props.tipos,
+      equipamentos = this.props.equipamentos;
+    if (!tipos) throw new Error("Tipos não encontrado.");
+    if (!equipamentos) throw new Error("Equipamentos não encontrado.");
+    return grupoCanais(e, equipamentos, tipos, this.props.canais);
   }
 }

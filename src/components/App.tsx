@@ -4,13 +4,14 @@ import { Server } from "./Server";
 import { ConexaoDMX } from "./ConexaoDMX";
 import { Mesa } from "./Mesa";
 import { Equipamentos } from "./equipamentos/Equipamentos";
-import { AppState } from "../types";
+import { AppInternalState } from "../types/types";
 import { Cenas } from "./Cenas";
 import { action } from "../util/action";
 import { listen, close } from "../util/listeners";
+import {deepFreeze} from "../util/equals";
 
 const empty = {};
-export class App extends React.Component<{}, AppState | {}> {
+export class App extends React.Component<{}, AppInternalState | {}> {
   constructor(props: {}) {
     super(props);
     this.state = empty;
@@ -18,7 +19,10 @@ export class App extends React.Component<{}, AppState | {}> {
     // this.stateListener = this.stateListener.bind(this);
     listen(this.stateListener);
   }
-  stateListener = (data: AppState) => {
+  stateListener = (data: AppInternalState) => {
+    for(const key in data ) {
+      deepFreeze(data[key]);
+    }
     this.setState(data);
   };
 
@@ -41,7 +45,7 @@ export class App extends React.Component<{}, AppState | {}> {
 
   render() {
     if (this.state == empty) return null;
-    const state = this.state as AppState;
+    const state = this.state as AppInternalState;
     return (
       <div>
         <div

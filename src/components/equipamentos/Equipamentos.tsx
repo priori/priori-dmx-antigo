@@ -1,33 +1,46 @@
 import * as React from "react";
-import { Cena, Equipamento, EquipamentoTipo } from "../../types";
+import {
+  Cena,
+  EquipamentoGrupoInternalState,
+  EquipamentoSimples,
+  Tipo,
+  Uid
+} from "../../types/types";
 import { action } from "../../util/action";
-import { EquipamentoComponent } from "./EquipamentoComponent";
+import {
+  EquipamentoComponent,
+  EquipamentoComponentProps
+} from "./EquipamentoComponent";
 import {
   SortableContainer,
   SortableElement,
   arrayMove
 } from "react-sortable-hoc";
+import { AddForm } from "./AddForm";
 
-const SortableItem = SortableElement(
-  ({
-    equipamento,
-    canais,
-    cenas,
-    tipo
-  }: {
-    equipamento: Equipamento;
-    tipo: EquipamentoTipo;
-    cenas: Cena[];
-    canais: { [key: number]: number };
-  }) => (
-    <EquipamentoComponent
-      equipamento={equipamento}
-      tipo={tipo}
-      canais={canais}
-      cenas={cenas}
-    />
-  )
+const SortableItem = SortableElement((props: EquipamentoComponentProps) =>
+  React.createElement(EquipamentoComponent, props)
 );
+
+function buildProps(
+  e: EquipamentoSimples | EquipamentoGrupoInternalState,
+  index: number,
+  equipamentos: (EquipamentoSimples | EquipamentoGrupoInternalState)[],
+  canais: { [k: number]: number },
+  equipamentoTipos: Tipo[],
+  cenas: Cena[]
+) {
+  return {
+    canais,
+    tipo: e.grupo ? null : equipamentoTipos.find(e2 => e2.uid == e.tipoUid),
+    cenas,
+    equipamento: e,
+    index,
+    key: e.uid,
+    equipamentos: e.grupo ? equipamentos : null,
+    tipos: e.grupo ? equipamentoTipos : null
+  } as EquipamentoComponentProps & { key: number; index: number };
+}
 
 const SortableList = SortableContainer(
   ({
@@ -36,111 +49,25 @@ const SortableList = SortableContainer(
     equipamentoTipos,
     cenas
   }: {
-    equipamentos: Equipamento[];
+    equipamentos: (EquipamentoSimples | EquipamentoGrupoInternalState)[];
     canais: { [key: number]: number };
-    equipamentoTipos: EquipamentoTipo[];
+    equipamentoTipos: Tipo[];
     cenas: Cena[];
   }) => (
     <div className="equipamentos">
-      {equipamentos.map((e: Equipamento, index: number) => (
-        <SortableItem
-          equipamento={e}
-          key={e.uid}
-          canais={canais}
-          cenas={cenas}
-          tipo={
-            equipamentoTipos.find(t => t.uid == e.tipoUid) as EquipamentoTipo
-          }
-          index={index}
-        />
-      ))}
+      {equipamentos.map((e: EquipamentoSimples, index: number) =>
+        React.createElement(
+          SortableItem,
+          buildProps(e, index, equipamentos, canais, equipamentoTipos, cenas)
+        )
+      )}
     </div>
   )
 );
 
-class AddForm extends React.Component<
-  {
-    onSubmit: (nome: string, tipo: EquipamentoTipo, inicio: number) => void;
-    onCancelar: () => void;
-    equipamentoTipos: EquipamentoTipo[];
-  },
-  {
-    tipoUid: number;
-    nome: string;
-    inicio: number;
-  }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      inicio: 1,
-      nome: "",
-      tipoUid: (props.equipamentoTipos[0] as EquipamentoTipo).uid
-    };
-  }
-
-  render() {
-    return (
-      <div className="add-form">
-        Nome:{" "}
-        <input
-          type="text"
-          value={this.state.nome}
-          onChange={e =>
-            this.setState({ ...this.state, nome: (e.target as any).value })
-          }
-        />
-        <br />
-        Início:{" "}
-        <input
-          type="number"
-          min={1}
-          max={255}
-          value={this.state.inicio}
-          onChange={e =>
-            this.setState({
-              ...this.state,
-              inicio: parseInt((e.target as any).value)
-            })
-          }
-        />
-        <br />
-        Tipo:{" "}
-        <select
-          onChange={(e: any) =>
-            this.setState({ ...this.state, tipoUid: parseInt(e.target.value) })
-          }
-          value={this.state.tipoUid}
-        >
-          {this.props.equipamentoTipos.map(t => (
-            <option key={t.uid} value={t.uid}>
-              {t.nome}
-            </option>
-          ))}
-        </select>
-        <br />
-        <button
-          onClick={() =>
-            this.props.onSubmit(
-              this.state.nome,
-              this.props.equipamentoTipos.find(
-                e => e.uid == this.state.tipoUid
-              ) as EquipamentoTipo,
-              this.state.inicio
-            )
-          }
-        >
-          Incluir
-        </button>{" "}
-        <button onClick={() => this.props.onCancelar()}>Cancelar</button>
-      </div>
-    );
-  }
-}
-
 export interface EquipamentosProps {
-  equipamentos: Equipamento[];
-  equipamentoTipos: EquipamentoTipo[];
+  equipamentos: (EquipamentoSimples | EquipamentoGrupoInternalState)[];
+  equipamentoTipos: Tipo[];
   cenas: Cena[];
   canais: {
     [key: number]: number;
@@ -149,7 +76,7 @@ export interface EquipamentosProps {
 
 export interface EquipamentosState {
   add: boolean;
-  equipamentosSort: number[] | null;
+  equipamentosSort: Uid[] | null;
 }
 
 export class Equipamentos extends React.Component<
@@ -202,7 +129,7 @@ export class Equipamentos extends React.Component<
     let equipamentos = this.props.equipamentos;
     if (this.state.equipamentosSort) {
       equipamentos = [...equipamentos];
-      const sort = this.state.equipamentosSort as number[];
+      const sort = this.state.equipamentosSort as Uid[];
       equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
     }
     return (
@@ -213,8 +140,13 @@ export class Equipamentos extends React.Component<
         </div>
         {this.state.add ? (
           <AddForm
+            equipamentos={
+              this.props.equipamentos.filter(
+                e => !e.grupo
+              ) as EquipamentoSimples[]
+            }
             equipamentoTipos={this.props.equipamentoTipos}
-            onSubmit={(nome: string, tipo: EquipamentoTipo, inicio: number) => {
+            onSubmitSimples={(nome: string, tipo: Tipo, inicio: number) => {
               action({
                 type: "create-equipamento",
                 nome,
@@ -224,6 +156,14 @@ export class Equipamentos extends React.Component<
               this.setState({ ...this.state, add: false });
             }}
             onCancelar={() => this.setState({ ...this.state, add: false })}
+            onSubmitGrupo={(nome: string, equipamentos: Uid[]) => {
+              action({
+                type: "create-equipamento-grupo",
+                nome,
+                equipamentos
+              });
+              this.setState({ ...this.state, add: false });
+            }}
           />
         ) : (
           undefined

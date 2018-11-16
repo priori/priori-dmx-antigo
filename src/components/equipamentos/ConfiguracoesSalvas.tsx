@@ -1,16 +1,18 @@
 import * as React from "react";
 import {
   Cena,
-  Equipamento,
+  EquipamentoSimples,
   EquipamentosCena,
-  EquipamentoTipo
-} from "../../types";
+  Tipo,
+  EquipamentoGrupoInternalState,
+  Uid
+} from "../../types/types";
 import { SoftPanel } from "../util/SoftPanel";
 import { action } from "../../util/action";
 
 export interface ConfiguracoesSalvasProps {
-  equipamento: Equipamento;
-  tipo: EquipamentoTipo;
+  equipamento: EquipamentoSimples | EquipamentoGrupoInternalState;
+  tipo: Tipo | null;
   onClose: () => void;
   cenas: Cena[];
 }
@@ -29,6 +31,7 @@ export class ConfiguracoesSalvas extends React.Component<
         c.tipo == "equipamentos" &&
         c.equipamentos.find(e => e.uid == this.props.equipamento.uid)
     ) as EquipamentosCena[];
+    const tipo = this.props.tipo;
     return (
       <SoftPanel
         onBlur={() => {
@@ -38,7 +41,8 @@ export class ConfiguracoesSalvas extends React.Component<
       >
         <div>
           {this.props.equipamento.configuracoes.length == 0 &&
-          this.props.tipo.configuracoes.length == 0 &&
+          tipo &&
+          tipo.configuracoes.length == 0 &&
           cenas.length == 0 ? (
             <div>Nenhuma configuração salva.</div>
           ) : null}
@@ -55,10 +59,10 @@ export class ConfiguracoesSalvas extends React.Component<
               ))}
             </div>
           ) : null}
-          {this.props.tipo.configuracoes.length ? (
+          {tipo && tipo.configuracoes.length ? (
             <div>
-              <h2 style={{ margin: 0 }}>{this.props.tipo.nome}</h2>
-              {this.props.tipo.configuracoes.map((c, i) => (
+              <h2 style={{ margin: 0 }}>{tipo.nome}</h2>
+              {tipo.configuracoes.map((c, i) => (
                 <div key={i}>
                   {c.nome}{" "}
                   <button onClick={() => this.removerNoTipo(i)}>Remover</button>
@@ -112,14 +116,15 @@ export class ConfiguracoesSalvas extends React.Component<
   }
 
   private removerNoTipo(i: number) {
+    const tipo = this.props.tipo as Tipo;
     action({
       type: "remove-equipamento-tipo-configuracao",
-      equipamentoTipoUid: this.props.tipo.uid,
+      equipamentoTipoUid: tipo.uid,
       index: i
     });
   }
 
-  private removerCena(uid: number) {
+  private removerCena(uid: Uid) {
     action({ type: "remove-cena", uid });
   }
 }

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AppState, Cena } from "../types";
+import { AppInternalState, Cena, Uid } from "../types/types";
 import { action } from "../util/action";
 import { FastInput } from "./util/FastInput";
 import {
@@ -11,8 +11,8 @@ import {
 export interface CenasState {
   editandoTempo: number;
   editandoNome: number;
-  selected: number;
-  cenasSort: number[] | null;
+  selected: Uid | null;
+  cenasSort: Uid[] | null;
 }
 
 const SortableItem = SortableElement(
@@ -78,7 +78,7 @@ const SortableList = SortableContainer(
     editing,
     onPencil
   }: {
-    selected: number;
+    selected: Uid | null;
     cenas: Cena[];
     onClick: (cena: Cena) => void;
     onEdit: (cena: Cena, value: string) => void;
@@ -108,41 +108,41 @@ const SortableList = SortableContainer(
   }
 );
 
-export class Cenas extends React.Component<AppState, CenasState> {
-  constructor(props: AppState) {
+export class Cenas extends React.Component<AppInternalState, CenasState> {
+  constructor(props: AppInternalState) {
     super(props);
     this.state = {
       editandoNome: -1,
       editandoTempo: -1,
-      selected: -1,
+      selected: null,
       cenasSort: null
     };
   }
 
-  aplicar(uid: number) {
+  aplicar(uid: Uid) {
     action({ type: "aplicar-cena-agora", uid });
   }
 
-  componentWillReceiveProps(nextProps: AppState) {
+  componentWillReceiveProps(nextProps: AppInternalState) {
     this.setState(Cenas.getDerivedStateFromProps(nextProps, this.state));
   }
 
-  static getDerivedStateFromProps(_: AppState, state: CenasState) {
+  static getDerivedStateFromProps(_: AppInternalState, state: CenasState) {
     return {
       ...state,
       cenasSort: null
     };
   }
 
-  transicao(uid: number) {
+  transicao(uid: Uid) {
     action({ type: "transicao-para-cena", uid });
   }
 
-  salvarCena(uid: number) {
+  salvarCena(uid: Uid) {
     action({ type: "salvar-cena", uid });
   }
 
-  novoNome(uid: number, nome: string) {
+  novoNome(uid: Uid, nome: string) {
     action({ type: "editar-nome-da-cena", uid, nome });
     this.setState({
       ...this.state,
@@ -150,7 +150,7 @@ export class Cenas extends React.Component<AppState, CenasState> {
     });
   }
 
-  novoTempo(uid: number, tempo: number) {
+  novoTempo(uid: Uid, tempo: number) {
     if (tempo < 0) {
       alert("Valor inválido!");
       return;
@@ -179,7 +179,7 @@ export class Cenas extends React.Component<AppState, CenasState> {
     if (this.state.selected == cena.uid) {
       this.setState({
         ...this.state,
-        selected: -1
+        selected: null
       });
     } else {
       this.setState({ ...this.state, selected: cena.uid });
@@ -192,26 +192,32 @@ export class Cenas extends React.Component<AppState, CenasState> {
     let cenas = this.props.cenas;
     if (this.state.cenasSort) {
       cenas = [...cenas];
-      const sort = this.state.cenasSort as number[];
+      const sort = this.state.cenasSort as Uid[];
       cenas.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
     }
     return (
       <div className="cenas">
         {cena ? (
           <div className="cenas__controller">
-              <input type="range"
-                     onChange={(e:any)=>this.slide(parseFloat(e.target.value))}
-                     value={this.props.slide && this.props.slide.uid == cena.uid ? this.props.slide.value : '0'} />{" "}
-            <button onClick={() => this.salvarCena(this.state.selected)}>
+            <input
+              type="range"
+              onChange={(e: any) => this.cenaSlide(parseFloat(e.target.value))}
+              value={
+                this.props.cenaSlide && this.props.cenaSlide.uid == cena.uid
+                  ? this.props.cenaSlide.value
+                  : "0"
+              }
+            />{" "}
+            <button onClick={() => this.salvarCena(cena.uid)}>
               Salvar <i className="fa fa-save" />
             </button>{" "}
-            <button onClick={() => this.removeCena(this.state.selected)}>
+            <button onClick={() => this.removeCena(cena.uid)}>
               Remover <i className="fa fa-close" />
             </button>{" "}
-            <button onClick={() => this.aplicar(this.state.selected)}>
+            <button onClick={() => this.aplicar(cena.uid)}>
               Agora <i className="fa fa-check" />
             </button>{" "}
-            <button onClick={() => this.transicao(this.state.selected)}>
+            <button onClick={() => this.transicao(cena.uid)}>
               Transição <i className="fa fa-play" />
             </button>
             {this.state.editandoTempo != -1 ? (
@@ -237,8 +243,7 @@ export class Cenas extends React.Component<AppState, CenasState> {
           </div>
         ) : (
           <div className="cenas__controller" style={{ opacity: 0.5 }}>
-            <input readOnly={true} disabled={true} type="range"
-              value={'0'} />{" "}
+            <input readOnly={true} disabled={true} type="range" value={"0"} />{" "}
             <button disabled={true}>
               Salvar <i className="fa fa-save" />
             </button>{" "}
@@ -276,14 +281,14 @@ export class Cenas extends React.Component<AppState, CenasState> {
     );
   }
 
-  private removeCena(uid: number) {
+  private removeCena(uid: Uid) {
     if (confirm("Realmente deseja remover esta cena?")) {
       action({ type: "remove-cena", uid });
     }
   }
 
-  private slide(value: number) {
-      action({type:"slide-cena", uid: this.state.selected, value});
-      // this.setState({...this.state,slide:parseFloat(e.target.value)})
+  private cenaSlide(value: number) {
+    action({ type: "slide-cena", uid: this.state.selected as Uid, value });
+    // this.setState({...this.state,slide:parseFloat(e.target.value)})
   }
 }

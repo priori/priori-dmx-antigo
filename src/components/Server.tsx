@@ -55,7 +55,7 @@ export class Server extends React.Component<{}, ServerState> {
   }
 
   render() {
-    let networkAddress = "";
+    let networkAddress = [] as string[];
     for (let name in ifaces) {
       for (const network of ifaces[name]) {
         const { address } = network;
@@ -64,8 +64,7 @@ export class Server extends React.Component<{}, ServerState> {
           address != "127.0.0.1" &&
           !address.endsWith(".0")
         ) {
-          networkAddress = address;
-          break;
+          networkAddress.push(address);
         }
       }
     }
@@ -74,7 +73,9 @@ export class Server extends React.Component<{}, ServerState> {
         style={{ opacity: this.state.fechando ? 0.5 : 1 }}
         className="servidor-http"
       >
-        {networkAddress ? "http://" + networkAddress + ":" : "Port: "}
+        {networkAddress
+          ? "http://" + networkAddress[networkAddress.length - 1] + ":"
+          : "Port: "}
         <input
           type="number"
           readOnly={this.state.executando}
@@ -88,7 +89,13 @@ export class Server extends React.Component<{}, ServerState> {
           </span>
         ) : (
           <button onClick={() => this.iniciar()}>Iniciar</button>
-        )}
+        )}{" "}
+        {networkAddress.length > 1
+          ? "ou " +
+            networkAddress
+              .filter((_, i) => i != networkAddress.length - 1)
+              .join(",")
+          : ""}
       </div>
     );
   }
