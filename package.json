@@ -12,7 +12,8 @@
     "lint": "tslint --project tsconfig.json --type-check --force",
     "watchpage": "./node_modules/.bin/tsc -p ./tsconfig-page.json",
     "prettier": "./node_modules/.bin/prettier --write \"./src/**/*.{ts,tsx}\"",
-    "parcel": "parcel watch ./src/web.html --cache-dir ../priori-dmx-yarn-cache --out-dir ./public"
+    "parcel": "parcel watch ./src/web.html --cache-dir ../priori-dmx-yarn-cache --out-dir ./public",
+    "parcel-build": "parcel build ./src/web.html --cache-dir ../priori-dmx-yarn-cache --out-dir ./public"
   },
   "keywords": [],
   "author": "Leonardo",
