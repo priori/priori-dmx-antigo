@@ -1,6 +1,6 @@
 import { AppAction } from "../types/types";
 
-const webMode = !!(window as any).parcelRequire;
+const webMode = !!(window as any).webMode;
 const electron = !webMode ? require("electron") : null;
 const ipcRenderer = electron ? electron.ipcRenderer : null;
 export function action(e: AppAction) {

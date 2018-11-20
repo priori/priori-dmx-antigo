@@ -2,7 +2,7 @@ import { AppInternalState } from "../types/internal-state";
 
 const wm = new WeakMap();
 
-const webMode = !!(window as any).parcelRequire;
+const webMode = !!(window as any).webMode;
 const electron = webMode ? null : require("electron");
 const ipcRenderer = electron ? electron.ipcRenderer : null;
 
