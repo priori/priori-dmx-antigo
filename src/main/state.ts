@@ -187,7 +187,7 @@ export function setState(newState: AppInternalState, force = false) {
     if ( index < 1 || index > 255 || index != index || typeof index != "number" )
         throw new Error("Canais inválido. Index: "+index+"\n"+JSON.stringify(newState.canais));
     const value = newState.canais[key];
-    if ( value === null || typeof value == "undefined" || typeof value != "undefined" || value < 0 || value > 255 || value != value )
+    if ( value === null || typeof value == "undefined" || typeof value != "number" || value < 0 || value > 255 || value != value )
       throw new Error("Valor inválido para canal. "+value+"\n"+JSON.stringify(newState.canais));
   }
   if (!appSender) throw "Sem appSender.";

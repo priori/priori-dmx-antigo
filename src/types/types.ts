@@ -29,7 +29,7 @@ export interface EquipamentoSimples {
   readonly tipoUid: Uid;
   readonly uid: Uid;
   readonly nome: string;
-  configuracoes: {
+  readonly configuracoes: {
     readonly nome: string;
     readonly canais: number[];
   }[];
@@ -42,7 +42,8 @@ export interface EquipamentoGrupoInternalState {
   readonly grupo: true;
   readonly configuracoes: {
     readonly nome: string;
-    readonly canais: number[];
+    readonly canais: (number|null)[];
+    readonly cor: string|null;
   }[];
 }
 
@@ -53,8 +54,8 @@ export interface EquipamentosCena {
   readonly transicaoTempo: number;
   readonly equipamentos: {
     readonly uid: Uid;
-    readonly canais: (number | null)[];
-    readonly cor: string | null;
+    readonly canais: (number|null)[];
+    readonly cor: string|null;
   }[];
 }
 export interface MesaCena {
@@ -78,6 +79,8 @@ export interface CanaisDmx {
   readonly [key: number]: number;
   __canaisdmx__: never;
 }
+
+export type Equipamento = EquipamentoSimples | EquipamentoGrupoInternalState;
 
 export interface AppInternalState {
   readonly window: {
@@ -103,7 +106,7 @@ export interface AppInternalState {
 
   readonly animacao: boolean;
 
-  readonly equipamentos: (EquipamentoSimples | EquipamentoGrupoInternalState)[];
+  readonly equipamentos: (Equipamento)[];
 }
 
 export interface IpcEvent {

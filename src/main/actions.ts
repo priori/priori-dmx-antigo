@@ -1,14 +1,14 @@
 import { dialog } from "electron";
 import {
-  Animacao,
-  AppInternalState,
-  Cena,
-  EquipamentoSimples,
-  EquipamentosCena,
-  Tipo,
-  MesaCena,
-  Uid,
-  EquipamentoGrupoInternalState
+    Animacao,
+    AppInternalState,
+    Cena,
+    EquipamentoSimples,
+    EquipamentosCena,
+    Tipo,
+    MesaCena,
+    Uid,
+    EquipamentoGrupoInternalState, Equipamento
 } from "../types/types";
 import {
   canaisMesaCor,
@@ -724,22 +724,27 @@ function salvarEquipamentoConfiguracao({
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
   ) as Tipo;
-  const canais = extractCanais(state, equipamento, tipo);
-  const novaConfiguracao = {
-    nome,
-    canais
-  };
-  setState({
-    ...state,
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == uid
-        ? {
-            ...e,
-            configuracoes: [...e.configuracoes, novaConfiguracao]
-          }
-        : e
-    )
-  });
+  if ( equipamento.grupo ) {
+      throw new Error("Não implementado ainda.");
+
+  } else {
+      const canais = extractCanais(state, equipamento, tipo);
+      const novaConfiguracao = {
+          nome,
+          canais
+      };
+      setState({
+          ...state,
+          equipamentos: state.equipamentos.map(e =>
+              e.uid == uid
+                  ? {
+                      ...e,
+                      configuracoes: [...e.configuracoes, novaConfiguracao]
+                  } as EquipamentoSimples
+                  : e
+          )
+      });
+  }
 }
 
 function salvarTipoConfiguracao({ uid, nome }: { uid: Uid; nome: string }) {
@@ -873,9 +878,9 @@ function removeEquipamentoConfiguracao({
     equipamentos: state.equipamentos.map(e =>
       e.uid == equipamentoUid
         ? {
-            ...e,
-            configuracoes: e.configuracoes.filter((_, i) => i != index)
-          }
+            ...(e as Equipamento),
+            configuracoes: (e as any).configuracoes.filter((_:any, i:number) => i != index)
+          } as Equipamento
         : e
     )
   });
