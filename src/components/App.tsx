@@ -8,7 +8,7 @@ import { AppInternalState } from "../types/internal-state";
 import { Cenas } from "./Cenas";
 import { action } from "../util/action";
 import { listen, close } from "../util/listeners";
-import {deepFreeze} from "../util/equals";
+import { deepFreeze } from "../util/equals";
 import "../util/prevent-selection";
 
 const empty = {};
@@ -21,7 +21,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
     listen(this.stateListener);
   }
   stateListener = (data: AppInternalState) => {
-    for(const key in data ) {
+    for (const key in data) {
       deepFreeze(data[key]);
     }
     this.setState(data);
@@ -101,4 +101,3 @@ export class App extends React.Component<{}, AppInternalState | {}> {
     );
   }
 }
-

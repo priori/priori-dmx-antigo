@@ -51,12 +51,14 @@ export class ConfiguracoesSalvas extends React.Component<
               <h2 style={{ margin: 0 }}>
                 Equipamento {this.props.equipamento.nome}
               </h2>
-              {(this.props.equipamento.configuracoes as {nome:string}[]).map((e, index: number) => (
-                <div key={index}>
-                  {e.nome}{" "}
-                  <button onClick={() => this.remover(index)}>Remover</button>
-                </div>
-              ))}
+              {(this.props.equipamento.configuracoes as { nome: string }[]).map(
+                (e, index: number) => (
+                  <div key={index}>
+                    {e.nome}{" "}
+                    <button onClick={() => this.remover(index)}>Remover</button>
+                  </div>
+                )
+              )}
             </div>
           ) : null}
           {tipo && tipo.configuracoes.length ? (

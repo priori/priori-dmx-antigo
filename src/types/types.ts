@@ -1,4 +1,4 @@
-import {EquipamentoSimplesIS, Tipo, Uid} from "./internal-state";
+import { EquipamentoSimplesIS, Tipo, Uid } from "./internal-state";
 
 export interface IpcEvent {
   sender: IpcSender;
@@ -10,7 +10,7 @@ export interface IpcSender {
 
 export type AppAction =
   | { type: "app-start" }
-  | { type: "http-open", port: number }
+  | { type: "http-open"; port: number }
   | { type: "http-close" }
   | { type: "salvar-mesa"; nome: string }
   | { type: "novo" }

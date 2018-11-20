@@ -1,9 +1,10 @@
 import {
-    AppInternalState,
-    CanaisTipo,
-    EquipamentoGrupoIS,
-    EquipamentoSimplesIS,
-    Tipo, Uid
+  AppInternalState,
+  CanaisTipo,
+  EquipamentoGrupoIS,
+  EquipamentoSimplesIS,
+  Tipo,
+  Uid
 } from "../types/internal-state";
 
 function corParte(s: number) {
@@ -284,10 +285,7 @@ export function extractGrupoInfo(
   };
 }
 
-export function grupoCor(
-  e: EquipamentoGrupoIS,
-  state: AppInternalState
-) {
+export function grupoCor(e: EquipamentoGrupoIS, state: AppInternalState) {
   const equipamentos = state.equipamentos.filter(
       e => !e.grupo
     ) as EquipamentoSimplesIS[],
@@ -339,7 +337,7 @@ export function grupoCanaisMesaCor(
 export function grupoCanaisMesa(
   e: EquipamentoGrupoIS,
   state: AppInternalState,
-  eConf: {uid:Uid,canais:(number|null)[],cor:string|null}
+  eConf: { uid: Uid; canais: (number | null)[]; cor: string | null }
 ) {
   const info = grupoCanais(
     e,
@@ -350,7 +348,7 @@ export function grupoCanaisMesa(
   const indexes = [] as number[];
   for (const gIndex in info) {
     const canalInfo = info[gIndex];
-    if ( eConf.canais[gIndex] === null )continue;
+    if (eConf.canais[gIndex] === null) continue;
     const tipoNome = canalInfo.tipo;
     for (const uid of e.equipamentos) {
       const e2 = state.equipamentos.find(
@@ -441,7 +439,11 @@ export function canaisGrupoMesaCanais(
   return novo;
 }
 
-export function canaisMesaCor(e: EquipamentoSimplesIS, tipo: Tipo, cor: string) {
+export function canaisMesaCor(
+  e: EquipamentoSimplesIS,
+  tipo: Tipo,
+  cor: string
+) {
   const info = extractColorInfo(tipo);
   if (!info) {
     throw new Error("Tipo desconhecido. " + JSON.stringify(e));

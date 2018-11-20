@@ -378,7 +378,9 @@ export class EquipamentoComponent extends React.Component<
     if (e.configuracoes.length)
       a.push({
         nome: "EquipamentoSimplesIS " + this.props.equipamento.nome,
-        opcoes: (this.props.equipamento.configuracoes as {nome:string}[]).map((c, index) => ({
+        opcoes: (this.props.equipamento.configuracoes as {
+          nome: string;
+        }[]).map((c, index) => ({
           titulo: c.nome,
           value: "equipamento:" + index
         }))
@@ -472,8 +474,8 @@ export class EquipamentoComponent extends React.Component<
           typeof this.state.canais[index + e.inicio] != "undefined"
             ? this.state.canais[e.inicio + index] + ""
             : this.props.canais[index + e.inicio]
-            ? this.props.canais[index + e.inicio] + "" || "0"
-            : "0"
+              ? this.props.canais[index + e.inicio] + "" || "0"
+              : "0"
       }));
     }
     const tipos = this.props.tipos,

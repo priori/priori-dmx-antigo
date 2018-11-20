@@ -1,10 +1,11 @@
 import * as React from "react";
 import { SoftPanel } from "../util/SoftPanel";
 import {
-    CenaIS,
-    EquipamentoSimplesIS,
-    Tipo,
-    EquipamentoGrupoIS, Uid
+  CenaIS,
+  EquipamentoSimplesIS,
+  Tipo,
+  EquipamentoGrupoIS,
+  Uid
 } from "../../types/internal-state";
 import { action } from "../../util/action";
 
@@ -17,7 +18,7 @@ export interface SalvarConfiguracaoProps {
 export interface SalvarConfiguracaoState {
   tipo: string;
   nome: string;
-  cenaUid: Uid|null;
+  cenaUid: Uid | null;
 }
 
 // TODO
@@ -130,7 +131,9 @@ export class SalvarConfiguracao extends React.Component<
                 onChange={(e: any) =>
                   this.setState({
                     ...this.state,
-                    cenaUid: e.target.value ? parseInt(e.target.value) as Uid : null
+                    cenaUid: e.target.value
+                      ? (parseInt(e.target.value) as Uid)
+                      : null
                   })
                 }
               >

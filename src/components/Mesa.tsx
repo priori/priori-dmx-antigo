@@ -2,9 +2,9 @@ import * as React from "react";
 import { action } from "../util/action";
 
 function times(c: number) {
-    let a = [];
-    while (c--) a.push({});
-    return a;
+  let a = [];
+  while (c--) a.push({});
+  return a;
 }
 
 export interface MesaState {}

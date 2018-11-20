@@ -1,13 +1,14 @@
 import { dialog } from "electron";
 import {
-    AppInternalState,
-    CenaIS,
-    EquipamentoSimplesIS,
-    EquipamentosCenaIS,
-    Tipo,
-    MesaCenaIS,
-    Uid,
-    EquipamentoGrupoIS, EquipamentoIS
+  AppInternalState,
+  CenaIS,
+  EquipamentoSimplesIS,
+  EquipamentosCenaIS,
+  Tipo,
+  MesaCenaIS,
+  Uid,
+  EquipamentoGrupoIS,
+  EquipamentoIS
 } from "../types/internal-state";
 import {
   canaisMesaCor,
@@ -27,9 +28,9 @@ import {
   setState,
   generateUid
 } from "./state";
-import {Animacao} from "../types/types";
-import {httpClose, httpOpen} from "./http-server";
-import {readState} from "./state-util";
+import { Animacao } from "../types/types";
+import { httpClose, httpOpen } from "./http-server";
+import { readState } from "./state-util";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
@@ -97,13 +98,14 @@ function changeColor(e: { cor: string; equipamento: Uid }): void {
       ...state.canais,
       ...canais
     },
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == uid
-        ? {
-            ...e,
-            cor
-          }
-        : e
+    equipamentos: state.equipamentos.map(
+      e =>
+        e.uid == uid
+          ? {
+              ...e,
+              cor
+            }
+          : e
     ),
     cenaSlide: null
   });
@@ -184,8 +186,8 @@ function salvarCena({ uid }: { uid: Uid }): void {
   const cenaIndex = state.cenas.findIndex(cena => cena.uid == uid),
     cena = state.cenas[cenaIndex] as MesaCenaIS;
   // TODO conferir se salvar cena equipamento não pode passar por aqui
-  if ( cena.tipo != "mesa" ) {
-      throw new Error("Tipo inválido.")
+  if (cena.tipo != "mesa") {
+    throw new Error("Tipo inválido.");
   }
   setState({
     ...state,
@@ -280,10 +282,7 @@ let animacao: Animacao | null = null;
 //   return v;
 // }
 
-function getGrupoState(
-  e: EquipamentoGrupoIS,
-  state: AppInternalState
-) {
+function getGrupoState(e: EquipamentoGrupoIS, state: AppInternalState) {
   // const canais = {} as {[k:number]:number};
   const canais = [] as (number | null)[];
   let cor: string | null = null;
@@ -367,19 +366,19 @@ function transicaoParaCena({ uid }: { uid: Uid }): void {
         cenaSlide: null
       });
       animacao = {
-          type: "transicao",
-          de,
-          cena: cena.uid,
-          ate,
-          canaisIniciais: state.canais
+        type: "transicao",
+        de,
+        cena: cena.uid,
+        ate,
+        canaisIniciais: state.canais
       };
     } else {
       cenaMesaAgora(state, cena);
     }
   } else {
     if (tempo) {
-      const de = new Date;
-      const ate = new Date;
+      const de = new Date();
+      const ate = new Date();
       ate.setTime(de.getTime() + parseInt(tempo + ""));
       setState({
         ...state,
@@ -388,10 +387,10 @@ function transicaoParaCena({ uid }: { uid: Uid }): void {
         cenaSlide: null
       });
       animacao = {
-          type: "slide-cena",
-          de,
-          cena: uid,
-          ate
+        type: "slide-cena",
+        de,
+        cena: uid,
+        ate
       };
     } else {
       cenaEquipamentosAgora(state, cena);
@@ -404,124 +403,121 @@ function smoth(val: number) {
 }
 const intervalTime = 100;
 const animationInterval = setInterval(() => {
-    try {
+  try {
     const state = currentState();
     if (animacao) {
-        if (animacao.type == "slide-cena") {
-            const now = new Date();
-            const passouTime = now.getTime() - animacao.de.getTime();
-            const totalTime = animacao.ate.getTime() - animacao.de.getTime();
-            const uid = animacao.cena;
-            if (passouTime > totalTime) {
-                animacao = null;
-                slideCena({uid, value: 100});
-                const state = currentState();
-                setState({
-                    ...state,
-                    animacao: false
-                });
-                return;
-            }
-            const perc = passouTime / totalTime;
-            const value = smoth(perc) * 100;
-            slideCena({uid, value});
-        } else if (animacao.type == "transicao") {
-            const now = new Date();
-            const cena = state.cenas.find(
-                c => c.uid == (animacao as any).cena
-            ) as CenaIS;
-            if (cena.tipo == "mesa") {
-                const passouTime = now.getTime() - animacao.de.getTime();
-                const totalTime = animacao.ate.getTime() - animacao.de.getTime();
-                if (passouTime > totalTime) {
-                    // canaisPrecisos = null;
-                    animacao = null;
-                    setState({
-                        ...state,
-                        animacao: false,
-                        canais: cena.canais
-                    });
-                    if (state.dmx.conectado) dmx.update(cena.canais);
-                    return;
-                }
-                const canais = {} as {[k:number]:number};
-                for (const index in canais) {
-                    const valorInicial = animacao.canaisIniciais[index],
-                        valorObjetivo = cena.canais[index],
-                        proximoValor =
-                            valorInicial +
-                            ((valorObjetivo - valorInicial) * passouTime) / totalTime;
-                    canais[index] = Math.round(proximoValor);
-                }
-                if (state.dmx.conectado) dmx.update(canais);
-                setState({
-                    ...state,
-                    canais: {
-                        ...state.canais,
-                        ...canais
-                    }
-                });
-            }
-        } else if (animacao.type == "pulsar") {
-            const inicial = animacao.valorInicial;
-            const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
-            // const de = inicial;
-            // const ate = inicial - 40;
-            const info = extractColorInfo(animacao.tipo);
-            if (!info || typeof info.m == "undefined") {
-                throw new Error("EquipamentoSimplesIS sem master não pode pulsar.");
-            }
-            const index = animacao.equipamento.inicio + info.m;
-            const state = currentState();
-
-            const tamanhoDoCiclo = 2000;
-            const aux = (tempoQuePassou % tamanhoDoCiclo) / (tamanhoDoCiclo / 2);
-            const perc = aux > 1 ? 2 - aux : aux;
-            const smothPerc = smoth(perc);
-
-            const value = inicial - ((3 * inicial) / 4) * smothPerc;
-            if (value == state[index]) return;
-            const canais = {
-                ...state.canais,
-                [index]: Math.round(value)
-            };
-            if (state.dmx.conectado) dmx.update(canais);
-            setState({
-                ...state,
-                canais
-            });
-        } else if (animacao.type == "piscar") {
-            const inicial = animacao.valorInicial;
-            const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
-            // const de = inicial;
-            // const ate = inicial - 40;
-            const info = extractColorInfo(animacao.tipo);
-            if (!info || typeof info.m == "undefined") {
-                throw new Error("EquipamentoSimplesIS sem master não pode pulsar.");
-            }
-            const index = animacao.equipamento.inicio + info.m;
-            const state = currentState();
-            const value = Math.floor(tempoQuePassou / 1000) % 2 ? inicial : 0;
-            if (value == state[index]) return;
-            const canais = {
-                ...state.canais,
-                [index]: value
-            };
-            if (state.dmx.conectado) dmx.update(canais);
-            setState({
-                ...state,
-                canais
-            });
+      if (animacao.type == "slide-cena") {
+        const now = new Date();
+        const passouTime = now.getTime() - animacao.de.getTime();
+        const totalTime = animacao.ate.getTime() - animacao.de.getTime();
+        const uid = animacao.cena;
+        if (passouTime > totalTime) {
+          animacao = null;
+          slideCena({ uid, value: 100 });
+          const state = currentState();
+          setState({
+            ...state,
+            animacao: false
+          });
+          return;
         }
-    }
-}catch (err) {
-    if ( err && err.stack )
-        console.error(err.stack);
-    else
-        console.error(err);
-    animacao = null;
-}
+        const perc = passouTime / totalTime;
+        const value = smoth(perc) * 100;
+        slideCena({ uid, value });
+      } else if (animacao.type == "transicao") {
+        const now = new Date();
+        const cena = state.cenas.find(
+          c => c.uid == (animacao as any).cena
+        ) as CenaIS;
+        if (cena.tipo == "mesa") {
+          const passouTime = now.getTime() - animacao.de.getTime();
+          const totalTime = animacao.ate.getTime() - animacao.de.getTime();
+          if (passouTime > totalTime) {
+            // canaisPrecisos = null;
+            animacao = null;
+            setState({
+              ...state,
+              animacao: false,
+              canais: cena.canais
+            });
+            if (state.dmx.conectado) dmx.update(cena.canais);
+            return;
+          }
+          const canais = {} as { [k: number]: number };
+          for (const index in canais) {
+            const valorInicial = animacao.canaisIniciais[index],
+              valorObjetivo = cena.canais[index],
+              proximoValor =
+                valorInicial +
+                ((valorObjetivo - valorInicial) * passouTime) / totalTime;
+            canais[index] = Math.round(proximoValor);
+          }
+          if (state.dmx.conectado) dmx.update(canais);
+          setState({
+            ...state,
+            canais: {
+              ...state.canais,
+              ...canais
+            }
+          });
+        }
+      } else if (animacao.type == "pulsar") {
+        const inicial = animacao.valorInicial;
+        const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
+        // const de = inicial;
+        // const ate = inicial - 40;
+        const info = extractColorInfo(animacao.tipo);
+        if (!info || typeof info.m == "undefined") {
+          throw new Error("EquipamentoSimplesIS sem master não pode pulsar.");
+        }
+        const index = animacao.equipamento.inicio + info.m;
+        const state = currentState();
 
+        const tamanhoDoCiclo = 2000;
+        const aux = (tempoQuePassou % tamanhoDoCiclo) / (tamanhoDoCiclo / 2);
+        const perc = aux > 1 ? 2 - aux : aux;
+        const smothPerc = smoth(perc);
+
+        const value = inicial - ((3 * inicial) / 4) * smothPerc;
+        if (value == state[index]) return;
+        const canais = {
+          ...state.canais,
+          [index]: Math.round(value)
+        };
+        if (state.dmx.conectado) dmx.update(canais);
+        setState({
+          ...state,
+          canais
+        });
+      } else if (animacao.type == "piscar") {
+        const inicial = animacao.valorInicial;
+        const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
+        // const de = inicial;
+        // const ate = inicial - 40;
+        const info = extractColorInfo(animacao.tipo);
+        if (!info || typeof info.m == "undefined") {
+          throw new Error("EquipamentoSimplesIS sem master não pode pulsar.");
+        }
+        const index = animacao.equipamento.inicio + info.m;
+        const state = currentState();
+        const value = Math.floor(tempoQuePassou / 1000) % 2 ? inicial : 0;
+        if (value == state[index]) return;
+        const canais = {
+          ...state.canais,
+          [index]: value
+        };
+        if (state.dmx.conectado) dmx.update(canais);
+        setState({
+          ...state,
+          canais
+        });
+      }
+    }
+  } catch (err) {
+    if (err && err.stack) console.error(err.stack);
+    else console.error(err);
+    animacao = null;
+  }
 }, intervalTime);
 
 export function close() {
@@ -542,13 +538,16 @@ function abrir() {
   if (!name.endsWith(".priori-dmx")) name = name + ".priori-dmx";
   const json = readState(name);
   if (json) {
-    if ( json.httpServer.open != state.httpServer.open || state.httpServer.port != json.httpServer.port ) {
-        if ( state.httpServer.open ) {
-            httpClose();
-        }
-        if ( json.httpServer.open ) {
-            httpOpen(json.httpServer.port);
-        }
+    if (
+      json.httpServer.open != state.httpServer.open ||
+      state.httpServer.port != json.httpServer.port
+    ) {
+      if (state.httpServer.open) {
+        httpClose();
+      }
+      if (json.httpServer.open) {
+        httpOpen(json.httpServer.port);
+      }
     }
     if (
       json.dmx.conectado == state.dmx.conectado &&
@@ -578,7 +577,7 @@ function salvar() {
     filters: [{ name: "Configurações Priori DMX", extensions: ["priori-dmx"] }]
   });
   if (!name.endsWith(".priori-dmx")) name = name + ".priori-dmx";
-  saveState(name,currentState());
+  saveState(name, currentState());
 }
 
 function novo() {
@@ -600,8 +599,8 @@ function editarEquipamentoNome({ uid, nome }: { uid: Uid; nome: string }) {
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == uid ? { ...e, nome } : e
+    equipamentos: state.equipamentos.map(
+      e => (e.uid == uid ? { ...e, nome } : e)
     )
   });
 }
@@ -624,8 +623,8 @@ function equipamentoEditarInicio({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == uid ? { ...e, inicio } : e
+    equipamentos: state.equipamentos.map(
+      e => (e.uid == uid ? { ...e, inicio } : e)
     )
   });
 }
@@ -733,26 +732,26 @@ function salvarEquipamentoConfiguracao({
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
   ) as Tipo;
-  if ( equipamento.grupo ) {
-      throw new Error("Não implementado ainda.");
-
+  if (equipamento.grupo) {
+    throw new Error("Não implementado ainda.");
   } else {
-      const canais = extractCanais(state, equipamento, tipo);
-      const novaConfiguracao = {
-          nome,
-          canais
-      };
-      setState({
-          ...state,
-          equipamentos: state.equipamentos.map(e =>
-              e.uid == uid
-                  ? {
-                      ...e,
-                      configuracoes: [...e.configuracoes, novaConfiguracao]
-                  } as EquipamentoSimplesIS
-                  : e
-          )
-      });
+    const canais = extractCanais(state, equipamento, tipo);
+    const novaConfiguracao = {
+      nome,
+      canais
+    };
+    setState({
+      ...state,
+      equipamentos: state.equipamentos.map(
+        e =>
+          e.uid == uid
+            ? ({
+                ...e,
+                configuracoes: [...e.configuracoes, novaConfiguracao]
+              } as EquipamentoSimplesIS)
+            : e
+      )
+    });
   }
 }
 
@@ -770,13 +769,14 @@ function salvarTipoConfiguracao({ uid, nome }: { uid: Uid; nome: string }) {
   };
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(t =>
-      t.uid != equipamento.tipoUid
-        ? t
-        : {
-            ...t,
-            configuracoes: [...t.configuracoes, novaConfiguracao]
-          }
+    equipamentoTipos: state.equipamentoTipos.map(
+      t =>
+        t.uid != equipamento.tipoUid
+          ? t
+          : {
+              ...t,
+              configuracoes: [...t.configuracoes, novaConfiguracao]
+            }
     )
   });
 }
@@ -833,20 +833,21 @@ function adicionarEquipamentoACena({
   const canais = extractCanais(state, equipamento, tipo);
   setState({
     ...state,
-    cenas: state.cenas.map(c =>
-      c.uid != cenaUid || c.tipo != "equipamentos"
-        ? c
-        : {
-            ...c,
-            equipamentos: [
-              ...c.equipamentos,
-              {
-                canais,
-                uid,
-                cor: null
-              }
-            ]
-          }
+    cenas: state.cenas.map(
+      c =>
+        c.uid != cenaUid || c.tipo != "equipamentos"
+          ? c
+          : {
+              ...c,
+              equipamentos: [
+                ...c.equipamentos,
+                {
+                  canais,
+                  uid,
+                  cor: null
+                }
+              ]
+            }
     )
   });
 }
@@ -861,15 +862,16 @@ function removeEquipamentoCena({
   const state = currentState();
   setState({
     ...state,
-    cenas: state.cenas.map(c =>
-      c.uid == cenaUid
-        ? {
-            ...(c as EquipamentosCenaIS),
-            equipamentos: (c as EquipamentosCenaIS).equipamentos.filter(
-              e => e.uid != equipamentoUid
-            )
-          }
-        : c
+    cenas: state.cenas.map(
+      c =>
+        c.uid == cenaUid
+          ? {
+              ...(c as EquipamentosCenaIS),
+              equipamentos: (c as EquipamentosCenaIS).equipamentos.filter(
+                e => e.uid != equipamentoUid
+              )
+            }
+          : c
     )
   });
 }
@@ -884,13 +886,16 @@ function removeEquipamentoConfiguracao({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == equipamentoUid
-        ? {
-            ...(e as EquipamentoIS),
-            configuracoes: (e as any).configuracoes.filter((_:any, i:number) => i != index)
-          } as EquipamentoIS
-        : e
+    equipamentos: state.equipamentos.map(
+      e =>
+        e.uid == equipamentoUid
+          ? ({
+              ...(e as EquipamentoIS),
+              configuracoes: (e as any).configuracoes.filter(
+                (_: any, i: number) => i != index
+              )
+            } as EquipamentoIS)
+          : e
     )
   });
 }
@@ -905,13 +910,14 @@ function removeTipoConfiguracao({
   const state = currentState();
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(e =>
-      e.uid == equipamentoTipoUid
-        ? {
-            ...e,
-            configuracoes: e.configuracoes.filter((_, i) => i != index)
-          }
-        : e
+    equipamentoTipos: state.equipamentoTipos.map(
+      e =>
+        e.uid == equipamentoTipoUid
+          ? {
+              ...e,
+              configuracoes: e.configuracoes.filter((_, i) => i != index)
+            }
+          : e
     )
   });
 }
@@ -1020,8 +1026,8 @@ function slideCena({ uid, value }: { uid: Uid; value: number }) {
     state.cenaSlide && state.cenaSlide.uid == uid
       ? state.cenaSlide.canaisAnterior
       : cena.tipo == "mesa"
-      ? ({ ...state.canais } as any)
-      : cenaCanaisSlice(state, cena);
+        ? ({ ...state.canais } as any)
+        : cenaCanaisSlice(state, cena);
   const canais: { [key: number]: number } = {};
   const perc = value / 100;
   if (cena.tipo == "mesa") {
@@ -1103,28 +1109,28 @@ function createEquipamentoGrupo({
 }
 
 function httpCloseCall() {
-    httpClose();
-    const state = currentState();
-    setState({
-        ...state,
-        httpServer: {
-            ...state.httpServer,
-            open: false
-        }
-    })
+  httpClose();
+  const state = currentState();
+  setState({
+    ...state,
+    httpServer: {
+      ...state.httpServer,
+      open: false
+    }
+  });
 }
 
-function httpOpenCall(port:number) {
-    httpOpen(port);
-    const state = currentState();
-    setState({
-        ...state,
-        httpServer: {
-            ...state.httpServer,
-            port,
-            open: true
-        }
-    })
+function httpOpenCall(port: number) {
+  httpOpen(port);
+  const state = currentState();
+  setState({
+    ...state,
+    httpServer: {
+      ...state.httpServer,
+      port,
+      open: true
+    }
+  });
 }
 
 on(action => {
@@ -1180,4 +1186,3 @@ on(action => {
   else if (action.type == "http-close") httpCloseCall();
   else if (action.type == "http-open") httpOpenCall(action.port);
 });
-

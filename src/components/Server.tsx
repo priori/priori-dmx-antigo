@@ -1,5 +1,5 @@
 import * as React from "react";
-import {action} from "../util/action";
+import { action } from "../util/action";
 
 const os = require("os");
 const ifaces = os.networkInterfaces();
@@ -9,8 +9,8 @@ export interface ServerState {
   fechando: boolean;
 }
 export interface ServerProps {
-    open: boolean,
-    port: number
+  open: boolean;
+  port: number;
 }
 
 export class Server extends React.Component<ServerProps, ServerState> {
@@ -23,8 +23,8 @@ export class Server extends React.Component<ServerProps, ServerState> {
   }
   port: null | HTMLInputElement = null;
 
-  componentWillReceiveProps(){
-    this.setState({abrindo:false,fechando:false});
+  componentWillReceiveProps() {
+    this.setState({ abrindo: false, fechando: false });
   }
 
   iniciar() {
@@ -32,10 +32,10 @@ export class Server extends React.Component<ServerProps, ServerState> {
     const el = this.port;
     if (!el) return;
     const port = parseInt(el.value);
-    action({type:"http-open",port});
+    action({ type: "http-open", port });
     this.setState({
-        ...this.state,
-        abrindo: true
+      ...this.state,
+      abrindo: true
     });
   }
 
@@ -45,7 +45,7 @@ export class Server extends React.Component<ServerProps, ServerState> {
       ...this.state,
       fechando: true
     });
-    action({type:"http-close"});
+    action({ type: "http-close" });
   }
 
   render() {
@@ -72,7 +72,9 @@ export class Server extends React.Component<ServerProps, ServerState> {
           : "Port: "}
         <input
           type="number"
-          readOnly={this.state.abrindo || this.state.fechando || this.props.open}
+          readOnly={
+            this.state.abrindo || this.state.fechando || this.props.open
+          }
           defaultValue="8080"
           ref={el => (this.port = el)}
         />{" "}

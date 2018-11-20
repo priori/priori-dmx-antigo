@@ -7,21 +7,21 @@ import { AppInternalState } from "../types/internal-state";
 import { Cenas } from "./Cenas";
 import { action } from "../util/action";
 import { close } from "../util/listeners";
-import {deepFreeze} from "../util/equals";
+import { deepFreeze } from "../util/equals";
 
 const empty = {};
 export class WebApp extends React.Component<{}, AppInternalState | {}> {
   constructor(props: {}) {
     super(props);
     this.state = empty;
-    const socket = new WebSocket("ws://"+location.host+"/state");
+    const socket = new WebSocket("ws://" + location.host + "/state");
     socket.onmessage = event => {
-        this.stateListener(JSON.parse(event.data) as AppInternalState);
-    }
+      this.stateListener(JSON.parse(event.data) as AppInternalState);
+    };
   }
 
-  stateListener(data: AppInternalState){
-    for(const key in data ) {
+  stateListener(data: AppInternalState) {
+    for (const key in data) {
       deepFreeze(data[key]);
     }
     this.setState(data);

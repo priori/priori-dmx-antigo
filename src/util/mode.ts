@@ -1,4 +1,1 @@
-
-function buildModel(){
-
-}
+function buildModel() {}

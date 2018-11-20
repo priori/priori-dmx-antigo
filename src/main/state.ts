@@ -1,27 +1,23 @@
 import { BrowserWindow, ipcMain } from "electron";
 import {
-    AppInternalState,
-    Tipo,
-    Uid, CanaisDmx
+  AppInternalState,
+  Tipo,
+  Uid,
+  CanaisDmx
 } from "../types/internal-state";
-import {
-    IpcSender,
-    IpcEvent,
-    AppAction,
-} from "../types/types";
+import { IpcSender, IpcEvent, AppAction } from "../types/types";
 import * as path from "path";
 import * as fs from "fs";
 import * as dmx from "./dmx";
-import {deepFreeze} from "../util/equals";
-import {httpOpen, httpServerListener} from "./http-server";
-import {readState} from "./state-util";
+import { deepFreeze } from "../util/equals";
+import { httpOpen, httpServerListener } from "./http-server";
+import { readState } from "./state-util";
 
 let screen: BrowserWindow | null,
   appSender: IpcSender | null = null;
 
 const emptyCanais = {} as CanaisDmx;
-for ( let c=1; c<=255; c++ )
-  (emptyCanais as any)[c] = 0;
+for (let c = 1; c <= 255; c++) (emptyCanais as any)[c] = 0;
 deepFreeze(emptyCanais);
 
 export const emptyState: AppInternalState = {
@@ -78,7 +74,7 @@ function getFile() {
   }
   return path.join(dir, "priori-dmx.json");
 }
-export function saveState(file: string, state:AppInternalState) {
+export function saveState(file: string, state: AppInternalState) {
   fs.writeFileSync(file, JSON.stringify(state));
 }
 export const initialTipos = [
@@ -112,7 +108,7 @@ export const initialTipos = [
 ] as Tipo[];
 const file = getFile();
 if (!fs.existsSync(file)) {
-  saveState(file,state);
+  saveState(file, state);
 } else {
   const json = readState(file);
   if (json) {
@@ -124,7 +120,7 @@ if (!fs.existsSync(file)) {
       );
       dmx.update(state.canais);
     }
-    if ( state.httpServer.open ) {
+    if (state.httpServer.open) {
       httpOpen(state.httpServer.port);
     }
   }
@@ -166,54 +162,70 @@ let timeoutThrotle: any;
 let firstThrotle: Date | null = null;
 
 function sendState(state: AppInternalState) {
-    if (!appSender) throw "Sem appSender.";
-    appSender.send("state", state);
-    if (screenSender) screenSender.send("state", state);
-    httpServerListener(state);
+  if (!appSender) throw "Sem appSender.";
+  appSender.send("state", state);
+  if (screenSender) screenSender.send("state", state);
+  httpServerListener(state);
 }
 
 export function setState(newState: AppInternalState, force = false) {
-    if ( Object.keys(newState.canais).length != 255 )
-      throw new Error("Canais inválido."+"\n"+JSON.stringify(newState.canais));
-  for ( const key in newState.canais ) {
+  if (Object.keys(newState.canais).length != 255)
+    throw new Error(
+      "Canais inválido." + "\n" + JSON.stringify(newState.canais)
+    );
+  for (const key in newState.canais) {
     const index = parseInt(key);
-    if ( index < 1 || index > 255 || index != index || typeof index != "number" )
-        throw new Error("Canais inválido. Index: "+index+"\n"+JSON.stringify(newState.canais));
+    if (index < 1 || index > 255 || index != index || typeof index != "number")
+      throw new Error(
+        "Canais inválido. Index: " +
+          index +
+          "\n" +
+          JSON.stringify(newState.canais)
+      );
     const value = newState.canais[key];
-    if ( value === null || typeof value == "undefined" || typeof value != "number" || value < 0 || value > 255 || value != value )
-      throw new Error("Valor inválido para canal. "+value+"\n"+JSON.stringify(newState.canais));
+    if (
+      value === null ||
+      typeof value == "undefined" ||
+      typeof value != "number" ||
+      value < 0 ||
+      value > 255 ||
+      value != value
+    )
+      throw new Error(
+        "Valor inválido para canal. " +
+          value +
+          "\n" +
+          JSON.stringify(newState.canais)
+      );
   }
   if (!appSender) throw "Sem appSender.";
   deepFreeze(newState);
   state = newState;
 
-    if (timeoutThrotle) clearTimeout(timeoutThrotle);
-    if (force) {
-        sendState(state);
+  if (timeoutThrotle) clearTimeout(timeoutThrotle);
+  if (force) {
+    sendState(state);
+  }
+  if (!firstThrotle) firstThrotle = new Date();
+  else if (new Date().getTime() - firstThrotle.getTime() > maxThrotle) {
+    firstThrotle = null;
+    if (!appSender) throw "Sem appSender.";
+    saveState(file, newState);
+    if (!force) {
+      sendState(state);
     }
-    if (!firstThrotle) firstThrotle = new Date();
-    else if (new Date().getTime() - firstThrotle.getTime() > maxThrotle) {
-        firstThrotle = null;
-        if (!appSender) throw "Sem appSender.";
-        saveState(file,newState);
-        if (!force) {
-            sendState(state);
-        }
-        return;
+    return;
+  }
+  timeoutThrotle = setTimeout(() => {
+    if (!appSender) throw "Sem appSender.";
+    saveState(file, newState);
+    if (!force) {
+      sendState(state);
     }
-    timeoutThrotle = setTimeout(() => {
-        if (!appSender) throw "Sem appSender.";
-        saveState(file,newState);
-        if (!force) {
-            sendState(state);
-        }
-    }, throtleTime);
-
+  }, throtleTime);
 }
 
-
-
-let listeners:((_:AppAction)=>void)[] = [];
+let listeners: ((_: AppAction) => void)[] = [];
 
 export function currentState() {
   return state;
@@ -224,27 +236,22 @@ export function on(func: (e: AppAction) => void) {
 }
 
 export function actionCall(e: AppAction) {
-    try {
-        for ( const l of listeners )
-            l(e);
-    }catch (err) {
-        if ( err && err.stack )
-            console.error(err.stack);
-        else
-            console.error(err);
-    }
+  try {
+    for (const l of listeners) l(e);
+  } catch (err) {
+    if (err && err.stack) console.error(err.stack);
+    else console.error(err);
+  }
 }
 
 ipcMain.on("action-call", (event: IpcEvent, e: AppAction) => {
-    try {
-        if (event.sender != appSender) throw "Invalid sender.";
-        actionCall(e);
-    }catch (err) {
-        if ( err && err.stack )
-            console.error(err.stack);
-        else
-            console.error(err);
-    }
+  try {
+    if (event.sender != appSender) throw "Invalid sender.";
+    actionCall(e);
+  } catch (err) {
+    if (err && err.stack) console.error(err.stack);
+    else console.error(err);
+  }
 });
 
 // ipcMain.on('action',(event:IpcEvent,e:AppAction)=>{
