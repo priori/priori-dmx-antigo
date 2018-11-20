@@ -1,11 +1,11 @@
 import * as React from "react";
 import {
-  Cena,
-  EquipamentoGrupoInternalState,
-  EquipamentoSimples,
+  CenaIS,
+  EquipamentoGrupoIS,
+  EquipamentoSimplesIS,
   Tipo,
   Uid
-} from "../../types/types";
+} from "../../types/internal-state";
 import { action } from "../../util/action";
 import {
   EquipamentoComponent,
@@ -23,12 +23,12 @@ const SortableItem = SortableElement((props: EquipamentoComponentProps) =>
 );
 
 function buildProps(
-  e: EquipamentoSimples | EquipamentoGrupoInternalState,
+  e: EquipamentoSimplesIS | EquipamentoGrupoIS,
   index: number,
-  equipamentos: (EquipamentoSimples | EquipamentoGrupoInternalState)[],
+  equipamentos: (EquipamentoSimplesIS | EquipamentoGrupoIS)[],
   canais: { [k: number]: number },
   equipamentoTipos: Tipo[],
-  cenas: Cena[]
+  cenas: CenaIS[]
 ) {
   return {
     canais,
@@ -49,13 +49,13 @@ const SortableList = SortableContainer(
     equipamentoTipos,
     cenas
   }: {
-    equipamentos: (EquipamentoSimples | EquipamentoGrupoInternalState)[];
+    equipamentos: (EquipamentoSimplesIS | EquipamentoGrupoIS)[];
     canais: { [key: number]: number };
     equipamentoTipos: Tipo[];
-    cenas: Cena[];
+    cenas: CenaIS[];
   }) => (
     <div className="equipamentos">
-      {equipamentos.map((e: EquipamentoSimples, index: number) =>
+      {equipamentos.map((e: EquipamentoSimplesIS, index: number) =>
         React.createElement(
           SortableItem,
           buildProps(e, index, equipamentos, canais, equipamentoTipos, cenas)
@@ -66,9 +66,9 @@ const SortableList = SortableContainer(
 );
 
 export interface EquipamentosProps {
-  equipamentos: (EquipamentoSimples | EquipamentoGrupoInternalState)[];
+  equipamentos: (EquipamentoSimplesIS | EquipamentoGrupoIS)[];
   equipamentoTipos: Tipo[];
-  cenas: Cena[];
+  cenas: CenaIS[];
   canais: {
     [key: number]: number;
   };
@@ -143,7 +143,7 @@ export class Equipamentos extends React.Component<
             equipamentos={
               this.props.equipamentos.filter(
                 e => !e.grupo
-              ) as EquipamentoSimples[]
+              ) as EquipamentoSimplesIS[]
             }
             equipamentoTipos={this.props.equipamentoTipos}
             onSubmitSimples={(nome: string, tipo: Tipo, inicio: number) => {

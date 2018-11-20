@@ -1,6 +1,11 @@
 import * as React from "react";
-import { times } from "../util";
 import { action } from "../util/action";
+
+function times(c: number) {
+    let a = [];
+    while (c--) a.push({});
+    return a;
+}
 
 export interface MesaState {}
 export interface MesaProps {

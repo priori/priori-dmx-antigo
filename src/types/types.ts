@@ -1,113 +1,4 @@
-export type Uid = { __uid__: never } & number;
-export type CanaisTipo =
-  | "red"
-  | "green"
-  | "blue"
-  | "white"
-  | "master"
-  | "piscar"
-  | "hue"
-  | "animacao"
-  | "animacao-velocidade"
-  | "other";
-
-export interface TipoConfiguracao {
-  readonly nome: string;
-  readonly canais: number[];
-}
-export type Tipo = {
-  readonly uid: Uid;
-  readonly nome: string;
-  readonly configuracoes: TipoConfiguracao[];
-  readonly canais: {
-    readonly tipo: CanaisTipo;
-  }[];
-};
-export interface EquipamentoSimples {
-  readonly grupo: false;
-  readonly inicio: number;
-  readonly tipoUid: Uid;
-  readonly uid: Uid;
-  readonly nome: string;
-  readonly configuracoes: {
-    readonly nome: string;
-    readonly canais: number[];
-  }[];
-}
-
-export interface EquipamentoGrupoInternalState {
-  readonly equipamentos: Uid[];
-  readonly nome: string;
-  readonly uid: Uid;
-  readonly grupo: true;
-  readonly configuracoes: {
-    readonly nome: string;
-    readonly canais: (number|null)[];
-    readonly cor: string|null;
-  }[];
-}
-
-export interface EquipamentosCena {
-  readonly uid: Uid;
-  readonly tipo: "equipamentos";
-  readonly nome: string;
-  readonly transicaoTempo: number;
-  readonly equipamentos: {
-    readonly uid: Uid;
-    readonly canais: (number|null)[];
-    readonly cor: string|null;
-  }[];
-}
-export interface MesaCena {
-  readonly uid: Uid;
-  readonly tipo: "mesa";
-  readonly nome: string;
-  readonly transicaoTempo: number;
-  readonly canais: CanaisDmx;
-}
-
-export interface CenaSlide {
-  readonly value: number;
-  readonly uid: Uid;
-  readonly canaisAnterior: {
-    readonly [key: number]: number;
-  };
-}
-export type Cena = MesaCena | EquipamentosCena;
-
-export interface CanaisDmx {
-  readonly [key: number]: number;
-  __canaisdmx__: never;
-}
-
-export type Equipamento = EquipamentoSimples | EquipamentoGrupoInternalState;
-
-export interface AppInternalState {
-  readonly window: {
-    readonly criando: boolean;
-    readonly criada: boolean;
-  };
-
-  readonly cenaSlide: CenaSlide | null;
-
-  readonly equipamentoTipos: Tipo[];
-
-  readonly dmx: {
-    readonly conectado: boolean;
-    readonly deviceId: string;
-    readonly driver: string;
-  };
-
-  readonly canais: CanaisDmx;
-
-  readonly cenas: Cena[];
-
-  readonly ultimaCena: number | null;
-
-  readonly animacao: boolean;
-
-  readonly equipamentos: (Equipamento)[];
-}
+import {EquipamentoSimplesIS, Tipo, Uid} from "./internal-state";
 
 export interface IpcEvent {
   sender: IpcSender;
@@ -119,6 +10,8 @@ export interface IpcSender {
 
 export type AppAction =
   | { type: "app-start" }
+  | { type: "http-open", port: number }
+  | { type: "http-close" }
   | { type: "salvar-mesa"; nome: string }
   | { type: "novo" }
   | { type: "abrir" }
@@ -206,14 +99,14 @@ export type Animacao =
     }
   | {
       type: "pulsar";
-      equipamento: EquipamentoSimples;
+      equipamento: EquipamentoSimplesIS;
       tipo: Tipo;
       inicio: Date;
       valorInicial: number;
     }
   | {
       type: "piscar";
-      equipamento: EquipamentoSimples;
+      equipamento: EquipamentoSimplesIS;
       tipo: Tipo;
       inicio: Date;
       valorInicial: number;

@@ -1,12 +1,12 @@
 import * as React from "react";
-import { EquipamentoSimples, Tipo, Uid } from "../../types/types";
+import { EquipamentoSimplesIS, Tipo, Uid } from "../../types/internal-state";
 
 export interface AddFormProps {
   onSubmitSimples: (nome: string, tipo: Tipo, inicio: number) => void;
   onSubmitGrupo: (nome: string, equipamentos: Uid[]) => void;
   onCancelar: () => void;
   equipamentoTipos: Tipo[];
-  equipamentos: EquipamentoSimples[];
+  equipamentos: EquipamentoSimplesIS[];
 }
 export interface AddFormState {
   tipoUid: Uid | null;

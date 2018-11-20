@@ -1,13 +1,13 @@
 import * as React from "react";
 import { FastInput } from "../util/FastInput";
 import {
-  Cena,
-  EquipamentoSimples,
-  EquipamentosCena,
+  CenaIS,
+  EquipamentoSimplesIS,
+  EquipamentosCenaIS,
   Tipo,
-  EquipamentoGrupoInternalState,
+  EquipamentoGrupoIS,
   Uid
-} from "../../types/types";
+} from "../../types/internal-state";
 import { action } from "../../util/action";
 import {
   buildCor,
@@ -21,19 +21,19 @@ import { ConfiguracoesSalvas } from "./ConfiguracoesSalvas";
 
 export type EquipamentoComponentProps =
   | {
-      equipamento: EquipamentoSimples;
+      equipamento: EquipamentoSimplesIS;
       tipo: Tipo;
       canais: { [key: number]: number };
-      cenas: Cena[];
+      cenas: CenaIS[];
       equipamentos: null;
       tipos: null;
     }
   | {
-      equipamento: EquipamentoGrupoInternalState;
+      equipamento: EquipamentoGrupoIS;
       tipo: null;
-      equipamentos: EquipamentoSimples[];
+      equipamentos: EquipamentoSimplesIS[];
       canais: { [key: number]: number };
-      cenas: Cena[];
+      cenas: CenaIS[];
       tipos: Tipo[];
     };
 export interface EquipamentoComponentState {
@@ -129,7 +129,7 @@ export class EquipamentoComponent extends React.Component<
       return buildCor(e, this.props.tipo as Tipo, this.props.canais);
     return grupoCor2(
       e,
-      this.props.equipamentos as EquipamentoSimples[],
+      this.props.equipamentos as EquipamentoSimplesIS[],
       this.props.tipos as Tipo[],
       this.props.canais
     );
@@ -143,7 +143,7 @@ export class EquipamentoComponent extends React.Component<
   }
 
   private changeColor(
-    equipamento: EquipamentoSimples | EquipamentoGrupoInternalState,
+    equipamento: EquipamentoSimplesIS | EquipamentoGrupoIS,
     cor: string
   ) {
     action({ type: "change-color", equipamento: equipamento.uid, cor });
@@ -364,7 +364,7 @@ export class EquipamentoComponent extends React.Component<
       c =>
         c.tipo == "equipamentos" &&
         c.equipamentos.find(e => e.uid == this.props.equipamento.uid)
-    ) as EquipamentosCena[];
+    ) as EquipamentosCenaIS[];
     const a = [
       {
         nome: "Efeitos",
@@ -377,8 +377,8 @@ export class EquipamentoComponent extends React.Component<
     const e = this.props.equipamento;
     if (e.configuracoes.length)
       a.push({
-        nome: "EquipamentoSimples " + this.props.equipamento.nome,
-        opcoes: this.props.equipamento.configuracoes.map((c, index) => ({
+        nome: "EquipamentoSimplesIS " + this.props.equipamento.nome,
+        opcoes: (this.props.equipamento.configuracoes as {nome:string}[]).map((c, index) => ({
           titulo: c.nome,
           value: "equipamento:" + index
         }))

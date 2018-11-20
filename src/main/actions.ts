@@ -1,15 +1,14 @@
 import { dialog } from "electron";
 import {
-    Animacao,
     AppInternalState,
-    Cena,
-    EquipamentoSimples,
-    EquipamentosCena,
+    CenaIS,
+    EquipamentoSimplesIS,
+    EquipamentosCenaIS,
     Tipo,
-    MesaCena,
+    MesaCenaIS,
     Uid,
-    EquipamentoGrupoInternalState, Equipamento
-} from "../types/types";
+    EquipamentoGrupoIS, EquipamentoIS
+} from "../types/internal-state";
 import {
   canaisMesaCor,
   grupoCanaisMesaCor,
@@ -24,11 +23,13 @@ import {
   currentState,
   emptyState,
   on,
-  readState,
   saveState,
   setState,
   generateUid
 } from "./state";
+import {Animacao} from "../types/types";
+import {httpClose, httpOpen} from "./http-server";
+import {readState} from "./state-util";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
@@ -181,7 +182,7 @@ function slide(e: { index: number; value: number }): void {
 function salvarCena({ uid }: { uid: Uid }): void {
   const state = currentState();
   const cenaIndex = state.cenas.findIndex(cena => cena.uid == uid),
-    cena = state.cenas[cenaIndex] as MesaCena;
+    cena = state.cenas[cenaIndex] as MesaCenaIS;
   // TODO conferir se salvar cena equipamento não pode passar por aqui
   if ( cena.tipo != "mesa" ) {
       throw new Error("Tipo inválido.")
@@ -219,7 +220,7 @@ function salvarMesa({ nome }: { nome: string }): void {
 function editarNomeDaCena({ uid, nome }: { uid: Uid; nome: string }): void {
   const state = currentState();
   const cenaIndex = state.cenas.findIndex(cena => cena.uid == uid);
-  const cena = state.cenas[cenaIndex] as Cena;
+  const cena = state.cenas[cenaIndex] as CenaIS;
   setState({
     ...state,
     cenas: [
@@ -236,7 +237,7 @@ function editarNomeDaCena({ uid, nome }: { uid: Uid; nome: string }): void {
 function editarTempoDaCena({ uid, tempo }: { uid: Uid; tempo: number }) {
   const state = currentState();
   const cenaIndex = state.cenas.findIndex(cena => cena.uid == uid);
-  const cena = state.cenas[cenaIndex] as Cena;
+  const cena = state.cenas[cenaIndex] as CenaIS;
   setState({
     ...state,
     cenas: [
@@ -254,14 +255,14 @@ function editarTempoDaCena({ uid, tempo }: { uid: Uid; tempo: number }) {
 function aplicarCenaAgora({ uid }: { uid: Uid }) {
   const state = currentState();
   // canaisPrecisos = null;
-  const cena = state.cenas.find(cena => cena.uid == uid) as Cena;
+  const cena = state.cenas.find(cena => cena.uid == uid) as CenaIS;
   if (cena.tipo == "mesa") {
     cenaMesaAgora(state, cena);
   } else if (cena.tipo == "equipamentos") {
     cenaEquipamentosAgora(state, cena);
   }
 }
-function cenaMesaAgora(state: AppInternalState, cena: MesaCena) {
+function cenaMesaAgora(state: AppInternalState, cena: MesaCenaIS) {
   if (state.dmx.conectado) dmx.update(cena.canais);
   setState({
     ...state,
@@ -280,7 +281,7 @@ let animacao: Animacao | null = null;
 // }
 
 function getGrupoState(
-  e: EquipamentoGrupoInternalState,
+  e: EquipamentoGrupoIS,
   state: AppInternalState
 ) {
   // const canais = {} as {[k:number]:number};
@@ -288,7 +289,7 @@ function getGrupoState(
   let cor: string | null = null;
   const canaisDoGrupo = grupoCanais(
     e,
-    state.equipamentos.filter(e => !e.grupo) as EquipamentoSimples[],
+    state.equipamentos.filter(e => !e.grupo) as EquipamentoSimplesIS[],
     state.equipamentoTipos,
     state.canais
   );
@@ -302,13 +303,13 @@ function getGrupoState(
 
 function cenaEquipamentosAgora(
   state: AppInternalState,
-  cena: EquipamentosCena
+  cena: EquipamentosCenaIS
 ) {
   const novo = {};
   for (const ce of cena.equipamentos) {
     const e = state.equipamentos.find(eq => eq.uid == ce.uid);
     if (!e) {
-      throw new Error("EquipamentoSimples não encontrado.");
+      throw new Error("EquipamentoSimplesIS não encontrado.");
     }
     if (e.grupo) {
       const canais3 = canaisGrupoMesaCanais(e, state, ce.canais);
@@ -320,7 +321,7 @@ function cenaEquipamentosAgora(
     } else {
       const tipo = state.equipamentoTipos.find(t => t.uid == e.tipoUid);
       if (!tipo) {
-        throw new Error("EquipamentoSimples não encontrado.");
+        throw new Error("EquipamentoSimplesIS não encontrado.");
       }
       for (let count = 0; count < tipo.canais.length; count++) {
         const canalIndex = count + e.inicio;
@@ -352,7 +353,7 @@ function cenaEquipamentosAgora(
 function transicaoParaCena({ uid }: { uid: Uid }): void {
   const state = currentState();
   // canaisPrecisos = null;
-  const cena = state.cenas.find(cena => cena.uid == uid) as Cena,
+  const cena = state.cenas.find(cena => cena.uid == uid) as CenaIS,
     tempo = cena.transicaoTempo;
   if (cena.tipo == "mesa") {
     if (tempo) {
@@ -428,7 +429,7 @@ const animationInterval = setInterval(() => {
             const now = new Date();
             const cena = state.cenas.find(
                 c => c.uid == (animacao as any).cena
-            ) as Cena;
+            ) as CenaIS;
             if (cena.tipo == "mesa") {
                 const passouTime = now.getTime() - animacao.de.getTime();
                 const totalTime = animacao.ate.getTime() - animacao.de.getTime();
@@ -468,7 +469,7 @@ const animationInterval = setInterval(() => {
             // const ate = inicial - 40;
             const info = extractColorInfo(animacao.tipo);
             if (!info || typeof info.m == "undefined") {
-                throw new Error("EquipamentoSimples sem master não pode pulsar.");
+                throw new Error("EquipamentoSimplesIS sem master não pode pulsar.");
             }
             const index = animacao.equipamento.inicio + info.m;
             const state = currentState();
@@ -496,7 +497,7 @@ const animationInterval = setInterval(() => {
             // const ate = inicial - 40;
             const info = extractColorInfo(animacao.tipo);
             if (!info || typeof info.m == "undefined") {
-                throw new Error("EquipamentoSimples sem master não pode pulsar.");
+                throw new Error("EquipamentoSimplesIS sem master não pode pulsar.");
             }
             const index = animacao.equipamento.inicio + info.m;
             const state = currentState();
@@ -541,6 +542,14 @@ function abrir() {
   if (!name.endsWith(".priori-dmx")) name = name + ".priori-dmx";
   const json = readState(name);
   if (json) {
+    if ( json.httpServer.open != state.httpServer.open || state.httpServer.port != json.httpServer.port ) {
+        if ( state.httpServer.open ) {
+            httpClose();
+        }
+        if ( json.httpServer.open ) {
+            httpOpen(json.httpServer.port);
+        }
+    }
     if (
       json.dmx.conectado == state.dmx.conectado &&
       json.dmx.deviceId == state.dmx.deviceId &&
@@ -625,14 +634,14 @@ function pulsarEquipamento({ uid }: { uid: Uid }) {
   const state = currentState();
   const equipamento = state.equipamentos.find(
     e => e.uid == uid
-  ) as EquipamentoSimples;
+  ) as EquipamentoSimplesIS;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
   ) as Tipo;
   const info = extractColorInfo(tipo);
   if (!info || typeof info.m == "undefined") {
     throw new Error(
-      "EquipamentoSimples sem master nao pode pulsar " +
+      "EquipamentoSimplesIS sem master nao pode pulsar " +
         equipamento +
         tipo +
         info
@@ -652,14 +661,14 @@ function piscarEquipamento({ uid }: { uid: Uid }) {
   const state = currentState();
   const equipamento = state.equipamentos.find(
     e => e.uid == uid
-  ) as EquipamentoSimples;
+  ) as EquipamentoSimplesIS;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
   ) as Tipo;
   const info = extractColorInfo(tipo);
   if (!info || typeof info.m == "undefined") {
     throw new Error(
-      "EquipamentoSimples sem master nao pode pulsar" +
+      "EquipamentoSimplesIS sem master nao pode pulsar" +
         equipamento +
         tipo +
         info
@@ -697,7 +706,7 @@ function cenasSort({ sort }: { sort: Uid[] }) {
 
 function extractCanais(
   state: AppInternalState,
-  e: EquipamentoSimples,
+  e: EquipamentoSimplesIS,
   tipo: Tipo
 ) {
   let count = e.inicio;
@@ -720,7 +729,7 @@ function salvarEquipamentoConfiguracao({
   const state = currentState();
   const equipamento = state.equipamentos.find(
     e => e.uid == uid
-  ) as EquipamentoSimples;
+  ) as EquipamentoSimplesIS;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
   ) as Tipo;
@@ -740,7 +749,7 @@ function salvarEquipamentoConfiguracao({
                   ? {
                       ...e,
                       configuracoes: [...e.configuracoes, novaConfiguracao]
-                  } as EquipamentoSimples
+                  } as EquipamentoSimplesIS
                   : e
           )
       });
@@ -751,7 +760,7 @@ function salvarTipoConfiguracao({ uid, nome }: { uid: Uid; nome: string }) {
   const state = currentState();
   const equipamento = state.equipamentos.find(
     e => e.uid == uid
-  ) as EquipamentoSimples;
+  ) as EquipamentoSimplesIS;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
   ) as Tipo;
@@ -775,7 +784,7 @@ function salvarTipoConfiguracao({ uid, nome }: { uid: Uid; nome: string }) {
 function criarCenaEquipamento({ uid, nome }: { uid: Uid; nome: string }) {
   const state = currentState(),
     equipamento = state.equipamentos.find(e => e.uid == uid);
-  if (!equipamento) throw new Error("Equipamento não encontrado.");
+  if (!equipamento) throw new Error("EquipamentoIS não encontrado.");
   let canais;
   let cor = null;
   if (equipamento.grupo) {
@@ -788,7 +797,7 @@ function criarCenaEquipamento({ uid, nome }: { uid: Uid; nome: string }) {
     ) as Tipo;
     canais = extractCanais(state, equipamento, tipo);
   }
-  const cenaEquipamento: EquipamentosCena = {
+  const cenaEquipamento: EquipamentosCenaIS = {
     tipo: "equipamentos",
     uid: generateUid(),
     nome,
@@ -817,7 +826,7 @@ function adicionarEquipamentoACena({
   const state = currentState();
   const equipamento = state.equipamentos.find(
     e => e.uid == uid
-  ) as EquipamentoSimples;
+  ) as EquipamentoSimplesIS;
   const tipo = state.equipamentoTipos.find(
     t => t.uid == equipamento.tipoUid
   ) as Tipo;
@@ -855,8 +864,8 @@ function removeEquipamentoCena({
     cenas: state.cenas.map(c =>
       c.uid == cenaUid
         ? {
-            ...(c as EquipamentosCena),
-            equipamentos: (c as EquipamentosCena).equipamentos.filter(
+            ...(c as EquipamentosCenaIS),
+            equipamentos: (c as EquipamentosCenaIS).equipamentos.filter(
               e => e.uid != equipamentoUid
             )
           }
@@ -878,9 +887,9 @@ function removeEquipamentoConfiguracao({
     equipamentos: state.equipamentos.map(e =>
       e.uid == equipamentoUid
         ? {
-            ...(e as Equipamento),
+            ...(e as EquipamentoIS),
             configuracoes: (e as any).configuracoes.filter((_:any, i:number) => i != index)
-          } as Equipamento
+          } as EquipamentoIS
         : e
     )
   });
@@ -917,7 +926,7 @@ function aplicarEquipamentoConfiguracao({
   const state = currentState();
   const equipamento = state.equipamentos.find(e => e.uid == equipamentoUid);
   if (!equipamento) {
-    throw new Error("EquipamentoSimples não encontrado");
+    throw new Error("EquipamentoSimplesIS não encontrado");
   }
   const conf = equipamento.configuracoes[index];
   const canais = {};
@@ -951,7 +960,7 @@ function aplicarTipoConfiguracao({
   const state = currentState();
   const equipamento = state.equipamentos.find(e => e.uid == equipamentoUid);
   if (!equipamento) {
-    throw new Error("EquipamentoSimples não encontrado");
+    throw new Error("EquipamentoSimplesIS não encontrado");
   }
   const canais = {};
   if (equipamento.grupo) {
@@ -976,11 +985,11 @@ function aplicarTipoConfiguracao({
   });
 }
 
-function cenaCanaisSlice(state: AppInternalState, cena: EquipamentosCena) {
+function cenaCanaisSlice(state: AppInternalState, cena: EquipamentosCenaIS) {
   const canais: { [key: number]: number } = {};
   cena.equipamentos.forEach(eConf => {
     const equipamento = state.equipamentos.find(e2 => e2.uid == eConf.uid);
-    if (!equipamento) throw "EquipamentoSimples nao encontrado";
+    if (!equipamento) throw "EquipamentoSimplesIS nao encontrado";
     // const tipo = state.equipamentoTipos.find(t=>t.uid == equipamento.tipoUid);
     // if ( !tipo )throw 'Tipo nao encontrado';
     if (equipamento.grupo) {
@@ -1005,7 +1014,7 @@ function slideCena({ uid, value }: { uid: Uid; value: number }) {
   const state = currentState();
   const cena = state.cenas.find(c => c.uid == uid);
   if (!cena) {
-    throw new Error("Cena não encontrada.");
+    throw new Error("CenaIS não encontrada.");
   }
   const canaisAnterior: { [key: number]: number } =
     state.cenaSlide && state.cenaSlide.uid == uid
@@ -1025,7 +1034,7 @@ function slideCena({ uid, value }: { uid: Uid; value: number }) {
     cena.equipamentos.forEach(e => {
       const equipamento = state.equipamentos.find(e2 => e2.uid == e.uid);
       if (!equipamento) {
-        throw new Error("EquipamentoSimples não encontrado.");
+        throw new Error("EquipamentoSimplesIS não encontrado.");
       }
       if (equipamento.grupo) {
         const canais3 = canaisGrupoMesaCanais(equipamento, state, e.canais);
@@ -1093,6 +1102,31 @@ function createEquipamentoGrupo({
   });
 }
 
+function httpCloseCall() {
+    httpClose();
+    const state = currentState();
+    setState({
+        ...state,
+        httpServer: {
+            ...state.httpServer,
+            open: false
+        }
+    })
+}
+
+function httpOpenCall(port:number) {
+    httpOpen(port);
+    const state = currentState();
+    setState({
+        ...state,
+        httpServer: {
+            ...state.httpServer,
+            port,
+            open: true
+        }
+    })
+}
+
 on(action => {
   if (action.type == "abrir") abrir();
   else if (action.type == "aplicar-cena-agora") aplicarCenaAgora(action);
@@ -1143,4 +1177,7 @@ on(action => {
   else if (action.type == "aplicar-equipamento-tipo-configuracao")
     aplicarTipoConfiguracao(action);
   else if (action.type == "slide-cena") slideCena(action);
+  else if (action.type == "http-close") httpCloseCall();
+  else if (action.type == "http-open") httpOpenCall(action.port);
 });
+

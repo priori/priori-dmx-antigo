@@ -1,39 +1,41 @@
 import * as React from "react";
+import {action} from "../util/action";
 
 const os = require("os");
 const ifaces = os.networkInterfaces();
-const express = require("express");
-const app = express();
-
-app.get("/", (_: any, res: any) => {
-  res.json({ asdfasdf: 1 });
-});
 
 export interface ServerState {
-  executando: boolean;
+  abrindo: boolean;
   fechando: boolean;
 }
+export interface ServerProps {
+    open: boolean,
+    port: number
+}
 
-let listening: any = null;
-
-export class Server extends React.Component<{}, ServerState> {
+export class Server extends React.Component<ServerProps, ServerState> {
   constructor(props: {}) {
     super(props);
     this.state = {
-      executando: false,
+      abrindo: false,
       fechando: false
     };
   }
-  closing = false;
   port: null | HTMLInputElement = null;
 
+  componentWillReceiveProps(){
+    this.setState({abrindo:false,fechando:false});
+  }
+
   iniciar() {
+    if (this.state.abrindo) return;
     const el = this.port;
     if (!el) return;
-    listening = app.listen(parseInt(el.value));
+    const port = parseInt(el.value);
+    action({type:"http-open",port});
     this.setState({
-      ...this.state,
-      executando: true
+        ...this.state,
+        abrindo: true
     });
   }
 
@@ -43,15 +45,7 @@ export class Server extends React.Component<{}, ServerState> {
       ...this.state,
       fechando: true
     });
-    if (listening)
-      listening.close(() => {
-        listening = null;
-        this.setState({
-          fechando: false,
-          executando: false
-        });
-      });
-    listening = null;
+    action({type:"http-close"});
   }
 
   render() {
@@ -70,7 +64,7 @@ export class Server extends React.Component<{}, ServerState> {
     }
     return (
       <div
-        style={{ opacity: this.state.fechando ? 0.5 : 1 }}
+        style={{ opacity: this.state.fechando || this.state.abrindo ? 0.5 : 1 }}
         className="servidor-http"
       >
         {networkAddress
@@ -78,11 +72,11 @@ export class Server extends React.Component<{}, ServerState> {
           : "Port: "}
         <input
           type="number"
-          readOnly={this.state.executando}
+          readOnly={this.state.abrindo || this.state.fechando || this.props.open}
           defaultValue="8080"
           ref={el => (this.port = el)}
         />{" "}
-        {this.state.executando ? (
+        {this.props.open ? (
           <span>
             <strong>Executando...</strong>{" "}
             <button onClick={() => this.parar()}>Parar</button>

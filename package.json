@@ -11,7 +11,8 @@
     "publish": "electron-forge publish",
     "lint": "tslint --project tsconfig.json --type-check --force",
     "watchpage": "./node_modules/.bin/tsc -p ./tsconfig-page.json",
-    "prettier": "./node_modules/.bin/prettier --write \"./src/**/*.{ts,tsx}\""
+    "prettier": "./node_modules/.bin/prettier --write \"./src/**/*.{ts,tsx}\"",
+    "parcel": "parcel watch ./src/web.html --cache-dir ../priori-dmx-yarn-cache --out-dir ./public"
   },
   "keywords": [],
   "author": "Leonardo",
@@ -63,11 +64,13 @@
     "@types/electron-devtools-installer": "^2.0.2",
     "@types/react": "^0.14.55",
     "@types/react-dom": "^0.14.20",
+    "body-parser": "^1.18.3",
     "dmx": "0.0.7",
     "electron-compile": "^6.4.3",
     "electron-devtools-installer": "^2.1.0",
     "electron-squirrel-startup": "^1.0.0",
     "express": "^4.16.3",
+    "express-ws": "^4.0.0",
     "parcel": "^1.10.3",
     "prettier": "^1.14.3",
     "react": "^15.4.1",

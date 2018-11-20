@@ -1,20 +1,20 @@
 import * as React from "react";
 import {
-  Cena,
-  EquipamentoSimples,
-  EquipamentosCena,
+  CenaIS,
+  EquipamentoSimplesIS,
+  EquipamentosCenaIS,
   Tipo,
-  EquipamentoGrupoInternalState,
+  EquipamentoGrupoIS,
   Uid
-} from "../../types/types";
+} from "../../types/internal-state";
 import { SoftPanel } from "../util/SoftPanel";
 import { action } from "../../util/action";
 
 export interface ConfiguracoesSalvasProps {
-  equipamento: EquipamentoSimples | EquipamentoGrupoInternalState;
+  equipamento: EquipamentoSimplesIS | EquipamentoGrupoIS;
   tipo: Tipo | null;
   onClose: () => void;
-  cenas: Cena[];
+  cenas: CenaIS[];
 }
 export interface ConfiguracoesSalvasState {}
 export class ConfiguracoesSalvas extends React.Component<
@@ -30,7 +30,7 @@ export class ConfiguracoesSalvas extends React.Component<
       c =>
         c.tipo == "equipamentos" &&
         c.equipamentos.find(e => e.uid == this.props.equipamento.uid)
-    ) as EquipamentosCena[];
+    ) as EquipamentosCenaIS[];
     const tipo = this.props.tipo;
     return (
       <SoftPanel
@@ -51,7 +51,7 @@ export class ConfiguracoesSalvas extends React.Component<
               <h2 style={{ margin: 0 }}>
                 Equipamento {this.props.equipamento.nome}
               </h2>
-              {this.props.equipamento.configuracoes.map((e, index: number) => (
+              {(this.props.equipamento.configuracoes as {nome:string}[]).map((e, index: number) => (
                 <div key={index}>
                   {e.nome}{" "}
                   <button onClick={() => this.remover(index)}>Remover</button>
@@ -107,7 +107,7 @@ export class ConfiguracoesSalvas extends React.Component<
     });
   }
 
-  private removerEquipamentoNaCena(uid: number) {
+  private removerEquipamentoNaCena(uid: Uid) {
     action({
       type: "remove-equipamento-cena",
       cenaUid: uid,

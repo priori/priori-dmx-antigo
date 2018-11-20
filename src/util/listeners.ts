@@ -1,12 +1,10 @@
-import { AppInternalState } from "../types/types";
+import { AppInternalState } from "../types/internal-state";
 
 const wm = new WeakMap();
 
 const webMode = !!(window as any).parcelRequire;
 const electron = webMode ? null : require("electron");
 const ipcRenderer = electron ? electron.ipcRenderer : null;
-
-console.log(ipcRenderer);
 
 export function close(func: (e: AppInternalState) => void) {
   if ( ipcRenderer )

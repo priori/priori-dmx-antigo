@@ -3,10 +3,10 @@ import * as React from "react";
 import { ConexaoDMX } from "./ConexaoDMX";
 import { Mesa } from "./Mesa";
 import { Equipamentos } from "./equipamentos/Equipamentos";
-import { AppInternalState } from "../types/types";
+import { AppInternalState } from "../types/internal-state";
 import { Cenas } from "./Cenas";
 import { action } from "../util/action";
-import { listen, close } from "../util/listeners";
+import { close } from "../util/listeners";
 import {deepFreeze} from "../util/equals";
 
 const empty = {};
@@ -14,16 +14,18 @@ export class WebApp extends React.Component<{}, AppInternalState | {}> {
   constructor(props: {}) {
     super(props);
     this.state = empty;
-    action({ type: "app-start" });
-    // this.stateListener = this.stateListener.bind(this);
-    listen(this.stateListener);
+    const socket = new WebSocket("ws://"+location.host+"/state");
+    socket.onmessage = event => {
+        this.stateListener(JSON.parse(event.data) as AppInternalState);
+    }
   }
-  stateListener = (data: AppInternalState) => {
+
+  stateListener(data: AppInternalState){
     for(const key in data ) {
       deepFreeze(data[key]);
     }
     this.setState(data);
-  };
+  }
 
   componentWillUnmount() {
     close(this.stateListener);
@@ -43,7 +45,7 @@ export class WebApp extends React.Component<{}, AppInternalState | {}> {
   }
 
   render() {
-    if (this.state == empty) return <div>Hello World!</div>;
+    if (this.state == empty) return <div>HELLO World!</div>;
     const state = this.state as AppInternalState;
     return (
       <div>
@@ -98,31 +100,3 @@ export class WebApp extends React.Component<{}, AppInternalState | {}> {
     );
   }
 }
-
-if ((window as any).destoryGlobalListeners) {
-  (window as any).destoryGlobalListeners();
-}
-(window as any).globalListenersStarted = true;
-const listener = (e: any) => {
-  const el = e.target;
-  if (
-    el instanceof HTMLElement &&
-    !(el.tagName in { INPUT: 1, TEXTAREA: 1, SELECT: 1, OPTION: 1 })
-  ) {
-    const el2 = el.closest("[tabindex]");
-    if (el2 && el2.getAttribute("tabindex") != "-1") {
-      (el2 as any).focus();
-    } else if (
-      document.activeElement &&
-      !(document.activeElement.tagName in { HTML: 1, BODY: 1 })
-    ) {
-      const el = document.activeElement;
-      if (el && (el as any).blur) (el as any).blur();
-    }
-    e.preventDefault();
-  }
-};
-window.addEventListener("mousedown", listener);
-(window as any).destoryGlobalListeners = () => {
-  window.removeEventListener("mousedown", listener);
-};

@@ -1,16 +1,20 @@
 import { BrowserWindow, ipcMain } from "electron";
 import {
     AppInternalState,
+    Tipo,
+    Uid, CanaisDmx
+} from "../types/internal-state";
+import {
     IpcSender,
     IpcEvent,
     AppAction,
-    Tipo,
-    Uid, CanaisDmx
 } from "../types/types";
 import * as path from "path";
 import * as fs from "fs";
 import * as dmx from "./dmx";
 import {deepFreeze} from "../util/equals";
+import {httpOpen, httpServerListener} from "./http-server";
+import {readState} from "./state-util";
 
 let screen: BrowserWindow | null,
   appSender: IpcSender | null = null;
@@ -29,6 +33,10 @@ export const emptyState: AppInternalState = {
     conectado: false,
     driver: "enttec-usb-dmx-pro",
     deviceId: "COM5"
+  },
+  httpServer: {
+    open: false,
+    port: 8080
   },
   cenaSlide: null,
   ultimaCena: null,
@@ -73,7 +81,7 @@ function getFile() {
 export function saveState(file: string, state:AppInternalState) {
   fs.writeFileSync(file, JSON.stringify(state));
 }
-const initialTipos = [
+export const initialTipos = [
   {
     // glow64
     nome: "LED 64 GLOW",
@@ -102,32 +110,6 @@ const initialTipos = [
     ]
   }
 ] as Tipo[];
-export function readState(file: string): AppInternalState | undefined {
-  const fileContent = fs.readFileSync(file).toString();
-  if (fileContent) {
-    const json = JSON.parse(fileContent) as AppInternalState;
-    if (!json.equipamentoTipos) (json as any).equipamentoTipos = initialTipos;
-    for (const e of json.equipamentos) {
-      if (!e.configuracoes) (e as any).configuracoes = [];
-      if ((e as any).tipo == "glow64") {
-        delete (e as any).tipo;
-        (e as any).tipoUid = 1;
-      } else if ((e as any).tipo == "par16") {
-        delete (e as any).tipo;
-        (e as any).tipoUid = 2;
-      } else if ((e as any).tipo) {
-        throw new Error("Json inválido");
-      }
-    }
-    for (const t of json.equipamentoTipos) {
-      if (!t.configuracoes) (t as any).configuracoes = [];
-    }
-      (json as any).animacao = false;
-    deepFreeze(json);
-    return json;
-  }
-  return undefined;
-}
 const file = getFile();
 if (!fs.existsSync(file)) {
   saveState(file,state);
@@ -141,6 +123,9 @@ if (!fs.existsSync(file)) {
         state.dmx.deviceId
       );
       dmx.update(state.canais);
+    }
+    if ( state.httpServer.open ) {
+      httpOpen(state.httpServer.port);
     }
   }
 }
@@ -179,6 +164,14 @@ const maxThrotle = 1000;
 const throtleTime = 20;
 let timeoutThrotle: any;
 let firstThrotle: Date | null = null;
+
+function sendState(state: AppInternalState) {
+    if (!appSender) throw "Sem appSender.";
+    appSender.send("state", state);
+    if (screenSender) screenSender.send("state", state);
+    httpServerListener(state);
+}
+
 export function setState(newState: AppInternalState, force = false) {
     if ( Object.keys(newState.canais).length != 255 )
       throw new Error("Canais inválido."+"\n"+JSON.stringify(newState.canais));
@@ -194,49 +187,65 @@ export function setState(newState: AppInternalState, force = false) {
   deepFreeze(newState);
   state = newState;
 
-  if (timeoutThrotle) clearTimeout(timeoutThrotle);
-  if (force) {
-    appSender.send("state", state);
-    if (screenSender) screenSender.send("state", state);
-  }
-  if (!firstThrotle) firstThrotle = new Date();
-  else if (new Date().getTime() - firstThrotle.getTime() > maxThrotle) {
-    firstThrotle = null;
-    if (!appSender) throw "Sem appSender.";
-    saveState(file,newState);
-    if (!force) {
-      appSender.send("state", state);
-      if (screenSender) screenSender.send("state", state);
+    if (timeoutThrotle) clearTimeout(timeoutThrotle);
+    if (force) {
+        sendState(state);
     }
-    return;
-  }
-  timeoutThrotle = setTimeout(() => {
-    if (!appSender) throw "Sem appSender.";
-    saveState(file,newState);
-    if (!force) {
-      appSender.send("state", state);
-      if (screenSender) screenSender.send("state", state);
+    if (!firstThrotle) firstThrotle = new Date();
+    else if (new Date().getTime() - firstThrotle.getTime() > maxThrotle) {
+        firstThrotle = null;
+        if (!appSender) throw "Sem appSender.";
+        saveState(file,newState);
+        if (!force) {
+            sendState(state);
+        }
+        return;
     }
-  }, throtleTime);
+    timeoutThrotle = setTimeout(() => {
+        if (!appSender) throw "Sem appSender.";
+        saveState(file,newState);
+        if (!force) {
+            sendState(state);
+        }
+    }, throtleTime);
+
 }
+
+
+
+let listeners:((_:AppAction)=>void)[] = [];
 
 export function currentState() {
   return state;
 }
 
 export function on(func: (e: AppAction) => void) {
-  ipcMain.on("action-call", (event: IpcEvent, e: AppAction) => {
+  listeners.push(func);
+}
+
+export function actionCall(e: AppAction) {
+    try {
+        for ( const l of listeners )
+            l(e);
+    }catch (err) {
+        if ( err && err.stack )
+            console.error(err.stack);
+        else
+            console.error(err);
+    }
+}
+
+ipcMain.on("action-call", (event: IpcEvent, e: AppAction) => {
     try {
         if (event.sender != appSender) throw "Invalid sender.";
-        func(e);
+        actionCall(e);
     }catch (err) {
-      if ( err && err.stack )
-        console.error(err.stack);
-      else
-        console.error(err);
+        if ( err && err.stack )
+            console.error(err.stack);
+        else
+            console.error(err);
     }
-  });
-}
+});
 
 // ipcMain.on('action',(event:IpcEvent,e:AppAction)=>{
 //     if ( event.sender != appSender )

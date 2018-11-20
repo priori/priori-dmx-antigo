@@ -1,10 +1,10 @@
 import {
     AppInternalState,
     CanaisTipo,
-    EquipamentoGrupoInternalState,
-    EquipamentoSimples,
+    EquipamentoGrupoIS,
+    EquipamentoSimplesIS,
     Tipo, Uid
-} from "../types/types";
+} from "../types/internal-state";
 
 function corParte(s: number) {
   const str = Math.round(s).toString(16);
@@ -118,7 +118,7 @@ export function extractColorInfo(tipo: Tipo): ColorInfo | null {
 }
 
 export function buildCor(
-  e: EquipamentoSimples,
+  e: EquipamentoSimplesIS,
   tipo: Tipo,
   canais: { [k: number]: number }
 ) {
@@ -150,8 +150,8 @@ export function buildCor(
 }
 
 export function value(
-  e: EquipamentoGrupoInternalState,
-  equipamentos: EquipamentoSimples[],
+  e: EquipamentoGrupoIS,
+  equipamentos: EquipamentoSimplesIS[],
   tipos: Tipo[],
   canais: { [key: number]: number },
   tipo: CanaisTipo
@@ -159,7 +159,7 @@ export function value(
   let value: string | undefined;
   for (const uid of e.equipamentos) {
     const e2 = equipamentos.find(e3 => e3.uid == uid);
-    if (!e2) throw new Error("Equipamento não encontrado.");
+    if (!e2) throw new Error("EquipamentoIS não encontrado.");
     const t = tipos.find(t2 => t2.uid == e2.tipoUid);
     if (!t) throw new Error("Tipo não encontrado.");
     const index = t.canais.findIndex(ct => ct.tipo == tipo);
@@ -182,8 +182,8 @@ export function value(
 }
 
 export function grupoCanais(
-  e: EquipamentoGrupoInternalState,
-  equipamentos: EquipamentoSimples[],
+  e: EquipamentoGrupoIS,
+  equipamentos: EquipamentoSimplesIS[],
   tipos: Tipo[],
   canaisValues: { [p: number]: number }
 ) {
@@ -243,8 +243,8 @@ export function grupoCanais(
   return canais;
 }
 export function extractGrupoInfo(
-  e: EquipamentoGrupoInternalState,
-  equipamentos: EquipamentoSimples[],
+  e: EquipamentoGrupoIS,
+  equipamentos: EquipamentoSimplesIS[],
   tipos: Tipo[]
 ) {
   let todosTemWhite = true;
@@ -253,7 +253,7 @@ export function extractGrupoInfo(
   let todosTemMaster = true;
   for (const uid of e.equipamentos) {
     const equipamento = equipamentos.find(e2 => e2.uid == uid);
-    if (!equipamento) throw new Error("Equipamento não encontrado.");
+    if (!equipamento) throw new Error("EquipamentoIS não encontrado.");
     const tipo = tipos.find(t => t.uid == equipamento.tipoUid);
     if (!tipo) throw new Error("Tipo não encontrado.");
     const info = extractColorInfo(tipo);
@@ -285,20 +285,20 @@ export function extractGrupoInfo(
 }
 
 export function grupoCor(
-  e: EquipamentoGrupoInternalState,
+  e: EquipamentoGrupoIS,
   state: AppInternalState
 ) {
   const equipamentos = state.equipamentos.filter(
       e => !e.grupo
-    ) as EquipamentoSimples[],
+    ) as EquipamentoSimplesIS[],
     tipos = state.equipamentoTipos,
     canais = state.canais;
   return grupoCor2(e, equipamentos, tipos, canais);
 }
 
 export function grupoCor2(
-  e: EquipamentoGrupoInternalState,
-  equipamentos: EquipamentoSimples[],
+  e: EquipamentoGrupoIS,
+  equipamentos: EquipamentoSimplesIS[],
   tipos: Tipo[],
   canais: { [p: number]: number }
 ) {
@@ -320,7 +320,7 @@ export function grupoCor2(
 }
 
 export function grupoCanaisMesaCor(
-  equipamento: EquipamentoGrupoInternalState,
+  equipamento: EquipamentoGrupoIS,
   state: AppInternalState,
   cor: string
 ) {
@@ -337,13 +337,13 @@ export function grupoCanaisMesaCor(
 }
 
 export function grupoCanaisMesa(
-  e: EquipamentoGrupoInternalState,
+  e: EquipamentoGrupoIS,
   state: AppInternalState,
   eConf: {uid:Uid,canais:(number|null)[],cor:string|null}
 ) {
   const info = grupoCanais(
     e,
-    state.equipamentos.filter(e => !e.grupo) as EquipamentoSimples[],
+    state.equipamentos.filter(e => !e.grupo) as EquipamentoSimplesIS[],
     state.equipamentoTipos,
     state.canais
   );
@@ -355,7 +355,7 @@ export function grupoCanaisMesa(
     for (const uid of e.equipamentos) {
       const e2 = state.equipamentos.find(
         e2 => e2.uid == uid
-      ) as EquipamentoSimples;
+      ) as EquipamentoSimplesIS;
       if (!e2) throw new Error("Não encontrado equipamento");
       const t = state.equipamentoTipos.find(t => t.uid == e2.tipoUid);
       if (!t) throw new Error("Não encontrado tipo");
@@ -388,13 +388,13 @@ export function grupoCanaisMesa(
 }
 
 export function canaisGrupoMesaCanais(
-  e: EquipamentoGrupoInternalState,
+  e: EquipamentoGrupoIS,
   state: AppInternalState,
   canais: (number | null)[]
 ) {
   const info = grupoCanais(
     e,
-    state.equipamentos.filter(e => !e.grupo) as EquipamentoSimples[],
+    state.equipamentos.filter(e => !e.grupo) as EquipamentoSimplesIS[],
     state.equipamentoTipos,
     state.canais
   );
@@ -409,7 +409,7 @@ export function canaisGrupoMesaCanais(
     for (const uid of e.equipamentos) {
       const e = state.equipamentos.find(
         e2 => e2.uid == uid
-      ) as EquipamentoSimples;
+      ) as EquipamentoSimplesIS;
       if (!e) throw new Error("Não encontrado equipamento");
       const t = state.equipamentoTipos.find(t => t.uid == e.tipoUid);
       if (!t) throw new Error("Não encontrado tipo");
@@ -441,7 +441,7 @@ export function canaisGrupoMesaCanais(
   return novo;
 }
 
-export function canaisMesaCor(e: EquipamentoSimples, tipo: Tipo, cor: string) {
+export function canaisMesaCor(e: EquipamentoSimplesIS, tipo: Tipo, cor: string) {
   const info = extractColorInfo(tipo);
   if (!info) {
     throw new Error("Tipo desconhecido. " + JSON.stringify(e));

@@ -1,30 +1,30 @@
 import * as React from "react";
 import { SoftPanel } from "../util/SoftPanel";
 import {
-  Cena,
-  EquipamentoSimples,
-  Tipo,
-  EquipamentoGrupoInternalState
-} from "../../types/types";
+    CenaIS,
+    EquipamentoSimplesIS,
+    Tipo,
+    EquipamentoGrupoIS, Uid
+} from "../../types/internal-state";
 import { action } from "../../util/action";
 
 export interface SalvarConfiguracaoProps {
-  equipamento: EquipamentoSimples | EquipamentoGrupoInternalState;
+  equipamento: EquipamentoSimplesIS | EquipamentoGrupoIS;
   tipo: Tipo | null;
   onClose: () => void;
-  cenas: Cena[];
+  cenas: CenaIS[];
 }
 export interface SalvarConfiguracaoState {
   tipo: string;
   nome: string;
-  cenaUid: number;
+  cenaUid: Uid|null;
 }
 
 // TODO
 // function conflitoDeFaixas(
-// equipamento: EquipamentoSimples,
+// equipamento: EquipamentoSimplesIS,
 // tipo: Tipo,
-// cena: EquipamentosCena
+// cena: EquipamentosCenaIS
 // ) {
 //   const de = equipamento.inicio;
 // const ate = de + tipo.canais.length;
@@ -42,7 +42,7 @@ export class SalvarConfiguracao extends React.Component<
     this.state = {
       tipo: "",
       nome: "",
-      cenaUid: -1
+      cenaUid: null
     };
   }
   private salvar() {
@@ -60,13 +60,13 @@ export class SalvarConfiguracao extends React.Component<
         nome
       });
     } else if (this.state.tipo == "cena") {
-      if (this.state.cenaUid == -1) {
+      if (this.state.cenaUid === null) {
         alert("Escolha uma cena para salvar.");
         return;
       }
       const cena = this.props.cenas.find(c => c.uid == this.state.cenaUid);
       if (!cena || cena.tipo == "mesa") {
-        alert("Cena não encontrada.");
+        alert("CenaIS não encontrada.");
         return;
       }
       // TODO
@@ -80,7 +80,7 @@ export class SalvarConfiguracao extends React.Component<
         type: "adicionar-equipamento-a-cena",
         uid: this.props.equipamento.uid,
         nome,
-        cenaUid: this.state.cenaUid
+        cenaUid: this.state.cenaUid as Uid
       });
     } else if (this.state.tipo == "novacena") {
       action({
@@ -130,11 +130,11 @@ export class SalvarConfiguracao extends React.Component<
                 onChange={(e: any) =>
                   this.setState({
                     ...this.state,
-                    cenaUid: parseInt(e.target.value)
+                    cenaUid: e.target.value ? parseInt(e.target.value) as Uid : null
                   })
                 }
               >
-                <option value="-1" />
+                <option value="" />
                 {this.props.cenas
                   .filter(c => c.tipo == "equipamentos")
                   .map(c => (

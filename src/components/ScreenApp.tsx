@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AppInternalState } from "../types/types";
+import { AppInternalState } from "../types/internal-state";
 import { listen, close } from "../util/listeners";
 import { action } from "../util/action";
 

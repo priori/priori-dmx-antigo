@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AppInternalState, Cena, Uid } from "../types/types";
+import { AppInternalState, CenaIS, Uid } from "../types/internal-state";
 import { action } from "../util/action";
 import { FastInput } from "./util/FastInput";
 import {
@@ -25,11 +25,11 @@ const SortableItem = SortableElement(
     onCancelEdit,
     onPencil
   }: {
-    cena: Cena;
-    onClick: (cena: Cena) => void;
-    onEdit: (cena: Cena, value: string) => void;
-    onCancelEdit: (cena: Cena) => void;
-    onPencil: (cena: Cena) => void;
+    cena: CenaIS;
+    onClick: (cena: CenaIS) => void;
+    onEdit: (cena: CenaIS, value: string) => void;
+    onCancelEdit: (cena: CenaIS) => void;
+    onPencil: (cena: CenaIS) => void;
     selected: boolean;
     editing: boolean;
   }) => (
@@ -79,12 +79,12 @@ const SortableList = SortableContainer(
     onPencil
   }: {
     selected: Uid | null;
-    cenas: Cena[];
-    onClick: (cena: Cena) => void;
-    onEdit: (cena: Cena, value: string) => void;
-    onCancelEdit: (cena: Cena) => void;
+    cenas: CenaIS[];
+    onClick: (cena: CenaIS) => void;
+    onEdit: (cena: CenaIS, value: string) => void;
+    onCancelEdit: (cena: CenaIS) => void;
     editing: number;
-    onPencil: (cena: Cena) => void;
+    onPencil: (cena: CenaIS) => void;
   }) => {
     return (
       <div>
@@ -175,7 +175,7 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
     action({ type: "cenas-sort", sort });
   };
 
-  select(cena: Cena) {
+  select(cena: CenaIS) {
     if (this.state.selected == cena.uid) {
       this.setState({
         ...this.state,
@@ -187,7 +187,7 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
   }
 
   render() {
-    const cena: Cena | null =
+    const cena: CenaIS | null =
       this.props.cenas.find(c => c.uid == this.state.selected) || null;
     let cenas = this.props.cenas;
     if (this.state.cenasSort) {
@@ -273,7 +273,7 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
           onEdit={(cena, nome) => this.novoNome(cena.uid, nome)}
           distance={5}
           cenas={cenas}
-          onClick={(cena: Cena) => this.select(cena)}
+          onClick={(cena: CenaIS) => this.select(cena)}
           onSortEnd={this.onSortEnd}
           selected={this.state.selected}
         />
