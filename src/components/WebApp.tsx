@@ -6,36 +6,38 @@ import { Equipamentos } from "./equipamentos/Equipamentos";
 import { AppInternalState } from "../types/internal-state";
 import { Cenas } from "./Cenas";
 import { action } from "../util/action";
-import { close } from "../util/listeners";
 import { deepFreeze } from "../util/equals";
+import {Arquivos} from "./Arquivos";
+import {Monitor} from "./Monitor";
 
 const empty = {};
-export class WebApp extends React.Component<{}, AppInternalState | {}> {
+export class WebApp extends React.Component<{closed:boolean}, AppInternalState & {ws:boolean} | {}> {
+  private socket: WebSocket;
   constructor(props: {}) {
     super(props);
     this.state = empty;
     const socket = new WebSocket("ws://" + location.host + "/state");
+    this.socket = socket;
     socket.onmessage = event => {
-      this.stateListener(JSON.parse(event.data) as AppInternalState);
+      const data = JSON.parse(event.data) as AppInternalState&{ws:boolean};
+      for (const key in data) {
+          if ( typeof data[key] == 'object' && data[key])
+              deepFreeze(data[key]);
+      }
+      data.ws = true;
+      this.setState(data);
     };
-  }
-
-  stateListener(data: AppInternalState) {
-    for (const key in data) {
-      deepFreeze(data[key]);
+    socket.onclose = () => {
+      this.setState({
+          ...this.state,
+          ws: false
+      });
     }
-    this.setState(data);
   }
 
   componentWillUnmount() {
-    close(this.stateListener);
+      this.socket.close();
   }
-
-  //     setArquivos(arquivos:Arquivo[]){
-  //         this.setState({
-  //             arquivos
-  //         },()=>ipcRenderer.send('state',this.state));
-  //     }
 
   inputEl: HTMLInputElement | null = null;
   salvarMesa() {
@@ -45,21 +47,11 @@ export class WebApp extends React.Component<{}, AppInternalState | {}> {
   }
 
   render() {
-    if (this.state == empty) return <div>HELLO World!</div>;
-    const state = this.state as AppInternalState;
+    if (this.state == empty) return null;
+    const state = this.state as AppInternalState&{ws:boolean};
     return (
       <div>
-        <div
-          style={{
-            borderBottom: "1px solid #ddd",
-            paddingBottom: "10px"
-          }}
-        >
-          <button onClick={() => action({ type: "novo" })}>Novo</button>{" "}
-          <button onClick={() => action({ type: "abrir" })}>Abrir</button>{" "}
-          <button onClick={() => action({ type: "salvar" })}>Salvar</button>{" "}
-        </div>
-        {state.animacao ? (
+        {state.animacao || !state.ws ? (
           <div
             style={{
               position: "fixed",
@@ -68,7 +60,11 @@ export class WebApp extends React.Component<{}, AppInternalState | {}> {
               bottom: "0",
               left: "0",
               background: "rgba(255,255,255,.6)",
-              zIndex: 1
+              zIndex: 1,
+              padding: '58px',
+              fontSize: '19px',
+              fontWeight: 'bold',
+              textAlign: 'center'
             }}
             ref={el => {
               if (el) {
@@ -79,9 +75,11 @@ export class WebApp extends React.Component<{}, AppInternalState | {}> {
                   (document.activeElement as any).blur();
               }
             }}
-          />
+          >
+              {!state.ws?'Desconectado':null}
+          </div>
         ) : null}
-        {/*<Monitor />*/}
+        <Monitor telas={state.telas} />
         <ConexaoDMX {...state.dmx} />
         <Cenas {...state} />
         <div style={{ textAlign: "right", paddingBottom: "5px" }}>
@@ -95,7 +93,7 @@ export class WebApp extends React.Component<{}, AppInternalState | {}> {
           canais={state.canais}
           cenas={state.cenas}
         />
-        {/*<Arquivos onChange={arquivos=>this.setArquivos(arquivos)} />*/}
+        <Arquivos arquivos={state.arquivos} />
       </div>
     );
   }

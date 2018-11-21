@@ -4,7 +4,7 @@ import installExtension, {
 } from "electron-devtools-installer";
 import { enableLiveReload } from "electron-compile";
 import { close } from "./main/actions";
-import { close as close2 } from "./main/state";
+import {close as close2, start} from "./main/state";
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -17,6 +17,7 @@ if (isDevMode) {
 }
 
 const createWindow = async () => {
+  start();
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600

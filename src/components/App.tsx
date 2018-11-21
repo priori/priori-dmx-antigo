@@ -4,12 +4,14 @@ import { Server } from "./Server";
 import { ConexaoDMX } from "./ConexaoDMX";
 import { Mesa } from "./Mesa";
 import { Equipamentos } from "./equipamentos/Equipamentos";
-import { AppInternalState } from "../types/internal-state";
+import {AppInternalState, Arquivo} from "../types/internal-state";
 import { Cenas } from "./Cenas";
 import { action } from "../util/action";
 import { listen, close } from "../util/listeners";
 import { deepFreeze } from "../util/equals";
 import "../util/prevent-selection";
+import {Arquivos} from "./Arquivos";
+import {Monitor} from "./Monitor";
 
 const empty = {};
 export class App extends React.Component<{}, AppInternalState | {}> {
@@ -31,11 +33,11 @@ export class App extends React.Component<{}, AppInternalState | {}> {
     close(this.stateListener);
   }
 
-  //     setArquivos(arquivos:Arquivo[]){
-  //         this.setState({
-  //             arquivos
-  //         },()=>ipcRenderer.send('state',this.state));
-  //     }
+  setArquivos(arquivos:Arquivo[]){
+      this.setState({
+          arquivos
+      });
+  }
 
   inputEl: HTMLInputElement | null = null;
   salvarMesa() {
@@ -81,7 +83,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
             }}
           />
         ) : null}
-        {/*<Monitor />*/}
+        <Monitor telas={state.telas} />
         <Server port={state.httpServer.port} open={state.httpServer.open} />
         <ConexaoDMX {...state.dmx} />
         <Cenas {...state} />
@@ -96,7 +98,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
           canais={state.canais}
           cenas={state.cenas}
         />
-        {/*<Arquivos onChange={arquivos=>this.setArquivos(arquivos)} />*/}
+        <Arquivos arquivos={state.arquivos} />
       </div>
     );
   }

@@ -2,6 +2,7 @@ import { AppInternalState } from "../types/internal-state";
 import * as fs from "fs";
 import { deepFreeze } from "../util/equals";
 import { initialTipos } from "./state";
+import {telasDisponiveis} from "./global";
 
 export function readState(file: string): AppInternalState | undefined {
   const fileContent = fs.readFileSync(file).toString();
@@ -24,6 +25,15 @@ export function readState(file: string): AppInternalState | undefined {
       if (!t.configuracoes) (t as any).configuracoes = [];
     }
     (json as any).animacao = false;
+    if ( !json.arquivos ) {
+      (json as any).arquivos = [];
+    }
+    if ( !json.telas ) {
+        (json as any).telas = {
+          aberta: null
+        }
+    }
+    (json as any).telas.disponiveis = telasDisponiveis();
     if (!json.httpServer)
       (json as any).httpServer = {
         open: false,

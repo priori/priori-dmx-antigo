@@ -12,6 +12,32 @@ import * as dmx from "./dmx";
 import { deepFreeze } from "../util/equals";
 import { httpOpen, httpServerListener } from "./http-server";
 import { readState } from "./state-util";
+import {telasDisponiveis} from "./global";
+
+let state:AppInternalState|undefined;
+const file = getFile();
+
+export function start(){
+    if (!fs.existsSync(file)) {
+        state = emptyState();
+        saveState(file, state);
+    } else {
+        const json = readState(file);
+        if (json) {
+            state = json;
+            if (state.dmx.conectado) {
+                dmx.connect(
+                    state.dmx.driver,
+                    state.dmx.deviceId
+                );
+                dmx.update(state.canais);
+            }
+            if (state.httpServer.open) {
+                httpOpen(state.httpServer.port);
+            }
+        }
+    }
+}
 
 let screen: BrowserWindow | null,
   appSender: IpcSender | null = null;
@@ -19,6 +45,7 @@ let screen: BrowserWindow | null,
 const emptyCanais = {} as CanaisDmx;
 for (let c = 1; c <= 255; c++) (emptyCanais as any)[c] = 0;
 deepFreeze(emptyCanais);
+
 
 export const initialTipos = [
     {
@@ -49,32 +76,37 @@ export const initialTipos = [
         ]
     }
 ] as Tipo[];
-
-export const emptyState: AppInternalState = {
-  window: {
-    criando: false,
-    criada: false
-  },
-  dmx: {
-    conectado: false,
-    driver: "enttec-usb-dmx-pro",
-    deviceId: "COM5"
-  },
-  httpServer: {
-    open: false,
-    port: 8080
-  },
-  cenaSlide: null,
-  ultimaCena: null,
-  animacao: false,
-  canais: emptyCanais,
-  equipamentos: [],
-  equipamentoTipos: initialTipos,
-  cenas: []
-};
-deepFreeze(emptyState);
-
-let state = emptyState;
+export function emptyState() {
+    const emptyState: AppInternalState = {
+        window: {
+            criando: false,
+            criada: false
+        },
+        dmx: {
+            conectado: false,
+            driver: "enttec-usb-dmx-pro",
+            deviceId: "COM5"
+        },
+        arquivos: [],
+        httpServer: {
+            open: false,
+            port: 8080
+        },
+        cenaSlide: null,
+        ultimaCena: null,
+        animacao: false,
+        canais: emptyCanais,
+        equipamentos: [],
+        equipamentoTipos: initialTipos,
+        cenas: [],
+        telas: {
+            aberta: null,
+            disponiveis: telasDisponiveis()
+        }
+    };
+    deepFreeze(emptyState);
+    return emptyState;
+}
 
 function getDir() {
   if ((global as any).process.env.APPDATA) {
@@ -106,25 +138,6 @@ function getFile() {
 }
 export function saveState(file: string, state: AppInternalState) {
   fs.writeFileSync(file, JSON.stringify(state));
-}
-const file = getFile();
-if (!fs.existsSync(file)) {
-  saveState(file, state);
-} else {
-  const json = readState(file);
-  if (json) {
-    state = json;
-    if (state.dmx.conectado) {
-      dmx.connect(
-        state.dmx.driver,
-        state.dmx.deviceId
-      );
-      dmx.update(state.canais);
-    }
-    if (state.httpServer.open) {
-      httpOpen(state.httpServer.port);
-    }
-  }
 }
 
 let screenSender: IpcSender | null;
@@ -162,6 +175,54 @@ const throtleTime = 20;
 let timeoutThrotle: any;
 let firstThrotle: Date | null = null;
 
+export function ativarTela({index}:{index:number}){
+    const state = currentState();
+
+    setState({
+        ...state,
+        telas: {
+            disponiveis: state.telas.disponiveis,
+            aberta: index
+        }
+    });
+
+    const electron = require('electron');
+    const screens = electron.screen.getAllDisplays();
+    const display = screens[index]||screens[screens.length-1];
+    if (!screen) {
+        screen = new BrowserWindow({
+            webPreferences: {
+                nodeIntegrationInWorker: true
+            },
+            width: display.workArea.width,
+            height: display.workArea.height,
+            x: display.workArea.x,
+            y: display.workArea.y
+        });
+        screen.setMenu(null);
+        screen.setFullScreen(true);
+        // screen.setResizable(false);
+        screen.loadURL(`file://${__dirname}/../screen.html`);
+        screen.on('closed', () => {
+            screen = null;
+            screenSender = null;
+            setState({
+                ...state,
+                telas: {
+                    ...state.telas,
+                    aberta: null
+                }
+            })
+        });
+        screen.webContents.openDevTools();
+    } else {
+        screen.setPosition(display.workArea.x, display.workArea.y);
+        screen.setSize(display.workArea.width, display.workArea.height);
+        screen.setFullScreen(true);
+    }
+}
+
+
 function sendState(state: AppInternalState) {
   if (!appSender) throw "Sem appSender.";
   appSender.send("state", state);
@@ -174,6 +235,17 @@ export function setState(newState: AppInternalState, force = false) {
     throw new Error(
       "Canais inválido." + "\n" + JSON.stringify(newState.canais)
     );
+
+  if ( newState.telas.disponiveis.length == 0 ) {
+      newState = {
+          ...newState,
+          telas: {
+              ...newState.telas,
+              disponiveis: telasDisponiveis()
+          }
+      };
+  }
+
   for (const key in newState.canais) {
     const index = parseInt(key);
     if (index < 1 || index > 255 || index != index || typeof index != "number")
@@ -221,7 +293,7 @@ export function setState(newState: AppInternalState, force = false) {
     if (!appSender) throw "Sem appSender.";
     saveState(file, newState);
     if (!force) {
-      sendState(state);
+      sendState(newState);
     }
   }, throtleTime);
 }
@@ -229,6 +301,7 @@ export function setState(newState: AppInternalState, force = false) {
 let listeners: ((_: AppAction) => void)[] = [];
 
 export function currentState() {
+    if ( typeof state == "undefined")throw new Error("Não iniciado ainda.")
   return state;
 }
 
