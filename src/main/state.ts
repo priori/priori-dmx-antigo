@@ -20,6 +20,36 @@ const emptyCanais = {} as CanaisDmx;
 for (let c = 1; c <= 255; c++) (emptyCanais as any)[c] = 0;
 deepFreeze(emptyCanais);
 
+export const initialTipos = [
+    {
+        // glow64
+        nome: "LED 64 GLOW",
+        uid: 1 as Uid,
+        canais: [
+            { tipo: "red" },
+            { tipo: "green" },
+            { tipo: "blue" },
+            { tipo: "white" },
+            { tipo: "master" },
+            { tipo: "piscar" },
+            { tipo: "hue" },
+            { tipo: "animacao" },
+            { tipo: "animacao-velocidade" }
+        ]
+    },
+    {
+        // par16
+        nome: "PAR LED 16",
+        uid: 2 as Uid,
+        canais: [
+            { tipo: "master" },
+            { tipo: "red" },
+            { tipo: "green" },
+            { tipo: "blue" }
+        ]
+    }
+] as Tipo[];
+
 export const emptyState: AppInternalState = {
   window: {
     criando: false,
@@ -39,7 +69,7 @@ export const emptyState: AppInternalState = {
   animacao: false,
   canais: emptyCanais,
   equipamentos: [],
-  equipamentoTipos: [],
+  equipamentoTipos: initialTipos,
   cenas: []
 };
 deepFreeze(emptyState);
@@ -77,35 +107,6 @@ function getFile() {
 export function saveState(file: string, state: AppInternalState) {
   fs.writeFileSync(file, JSON.stringify(state));
 }
-export const initialTipos = [
-  {
-    // glow64
-    nome: "LED 64 GLOW",
-    uid: 1 as Uid,
-    canais: [
-      { tipo: "red" },
-      { tipo: "green" },
-      { tipo: "blue" },
-      { tipo: "white" },
-      { tipo: "master" },
-      { tipo: "piscar" },
-      { tipo: "hue" },
-      { tipo: "animacao" },
-      { tipo: "animacao-velocidade" }
-    ]
-  },
-  {
-    // par16
-    nome: "PAR LED 16",
-    uid: 2 as Uid,
-    canais: [
-      { tipo: "master" },
-      { tipo: "red" },
-      { tipo: "green" },
-      { tipo: "blue" }
-    ]
-  }
-] as Tipo[];
 const file = getFile();
 if (!fs.existsSync(file)) {
   saveState(file, state);

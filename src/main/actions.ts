@@ -71,7 +71,7 @@ function createEquipamento({
         inicio,
         tipoUid,
         configuracoes: []
-      }
+      } as EquipamentoSimplesIS
     ]
   });
 }
