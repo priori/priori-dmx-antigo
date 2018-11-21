@@ -1,14 +1,14 @@
 import { dialog } from "electron";
 import {
-  AppInternalState,
-  CenaIS,
-  EquipamentoSimplesIS,
-  EquipamentosCenaIS,
-  Tipo,
-  MesaCenaIS,
-  Uid,
-  EquipamentoGrupoIS,
-  EquipamentoIS
+    AppInternalState,
+    CenaIS,
+    EquipamentoSimplesIS,
+    EquipamentosCenaIS,
+    Tipo,
+    MesaCenaIS,
+    Uid,
+    EquipamentoGrupoIS,
+    EquipamentoIS, ArquivoType
 } from "../types/internal-state";
 import {
   canaisMesaCor,
@@ -21,12 +21,12 @@ import {
 } from "../util/cores";
 import * as dmx from "./dmx";
 import {
-  currentState,
-  emptyState,
-  on,
-  saveState,
-  setState,
-  generateUid
+    currentState,
+    emptyState,
+    on,
+    saveState,
+    setState,
+    generateUid, ativarTela
 } from "./state";
 import { Animacao } from "../types/types";
 import { httpClose, httpOpen } from "./http-server";
@@ -584,7 +584,7 @@ function novo() {
   if (currentState().dmx.conectado) {
     dmx.close();
   }
-  setState(emptyState);
+  setState(emptyState());
 }
 
 function removeEquipamento({ uid }: { uid: Uid }) {
@@ -1133,6 +1133,22 @@ function httpOpenCall(port: number) {
   });
 }
 
+function novosArquivos({arquivos}:{arquivos:string[]}){
+  const state = currentState();
+  setState({
+    ...state,
+    arquivos: [
+      ...state.arquivos,
+      ...arquivos.map(a=>({
+          path: a,
+          type: (a.match(/\.(mp4)$/i) ? 'video' : 'img') as ArquivoType,
+          nome: a.replace(/.*\/([^\\\/]+)/,'$1')
+      }))
+    ]
+  });
+}
+
+
 on(action => {
   if (action.type == "abrir") abrir();
   else if (action.type == "aplicar-cena-agora") aplicarCenaAgora(action);
@@ -1185,4 +1201,7 @@ on(action => {
   else if (action.type == "slide-cena") slideCena(action);
   else if (action.type == "http-close") httpCloseCall();
   else if (action.type == "http-open") httpOpenCall(action.port);
+  else if (action.type == "novos-arquivos")novosArquivos(action);
+  else if ( action.type == "ativar-tela")ativarTela(action);
+  else if ( action.type != "app-start" )console.log(action);
 });

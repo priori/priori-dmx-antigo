@@ -11,6 +11,7 @@ export interface IpcSender {
 export type AppAction =
   | { type: "app-start" }
   | { type: "http-open"; port: number }
+  | { type: "novos-arquivos"; arquivos: string[] }
   | { type: "http-close" }
   | { type: "salvar-mesa"; nome: string }
   | { type: "novo" }
@@ -81,7 +82,8 @@ export type AppAction =
       equipamentoTipoUid: Uid;
       index: number;
     }
-  | { type: "slide-cena"; uid: Uid; value: number };
+  | { type: "slide-cena"; uid: Uid; value: number }
+  | { type: "ativar-tela", index: number };
 
 export type Animacao =
   | {

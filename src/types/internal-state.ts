@@ -80,6 +80,12 @@ export interface CanaisDmx {
   __canaisdmx__: never;
 }
 
+export type ArquivoType = "img"|"video";
+export interface Arquivo {
+  readonly type: ArquivoType,
+  readonly path: string,
+  readonly nome: string
+}
 export type EquipamentoIS = EquipamentoSimplesIS | EquipamentoGrupoIS;
 
 export interface AppInternalState {
@@ -92,6 +98,16 @@ export interface AppInternalState {
     open: boolean;
     port: number;
   };
+
+  readonly telas: {
+    readonly aberta: number|null,
+      readonly disponiveis: {
+      readonly width:number,
+          readonly height:number
+    }[]
+  };
+
+  readonly arquivos: Arquivo[];
 
   readonly cenaSlide: CenaSlideIS | null;
 

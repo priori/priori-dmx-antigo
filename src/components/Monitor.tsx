@@ -1,32 +1,20 @@
 import * as React from "react";
-import { screen } from "electron";
+import {action} from "../util/action";
 
-export interface MonitorState {
-  monitorCriado: boolean;
-}
-export class Monitor extends React.Component<{ monitorCriado: boolean }, {}> {
-  constructor(props: {}) {
-    super(props);
-    this.state = { monitorCriado: false };
-    // ipcRenderer.on('screen-closed',()=>{
-    //     this.setState({
-    //         monitorCriado: false
-    //     });
-    // });
-  }
+export class Monitor extends React.Component<{ telas: { aberta: number|null, disponiveis: {width:number,height:number}[] } }, {}> {
   select: any = null;
 
   render() {
     return (
       <div className="monitor">
         <select ref={el => (this.select = el)} onChange={() => this.change()}>
-          {screen.getAllDisplays().map((d, i) => (
-            <option key={d.id} value={d.id}>
-              {i + 1}) {d.size.width}x{d.size.height}
+          {this.props.telas.disponiveis.map((d, i) => (
+            <option key={i} value={i}>
+              {i + 1}) {d.width}x{d.height}
             </option>
           ))}
         </select>{" "}
-        {!this.props.monitorCriado ? (
+        {this.props.telas.aberta === null ? (
           <button onClick={() => this.criarMonitor()}>Criar Tela</button>
         ) : (
           <strong>Tela Criada</strong>
@@ -36,19 +24,16 @@ export class Monitor extends React.Component<{ monitorCriado: boolean }, {}> {
   }
 
   change() {
-    if (this.props.monitorCriado) {
-      // action({type:'new-screen-request',
-      //   id: parseInt(this.select.value)
-      // });
+    if (this.props.telas.aberta !== null ) {
+      action({type:'ativar-tela',
+          index: parseInt(this.select.value)
+      });
     }
   }
 
   criarMonitor() {
-    this.setState({
-      monitorCriado: true
+    action({type:'ativar-tela',
+      index: parseInt(this.select.value)
     });
-    // action({type:'new-screen-request',
-    //   id: parseInt(this.select.value)
-    // });
   }
 }
