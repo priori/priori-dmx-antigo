@@ -121,7 +121,7 @@ export class ScreenApp extends React.Component<undefined, ScreenAppState> {
                   position: "absolute",
                   width: "100%",
                   height: "100%",
-                  background: 'url("' + a.path + '") no-repeat 50% 50%',
+                  background: 'url(\'' + a.path.replace(/\\/g,'\\\\') + '\') no-repeat 50% 50%',
                   top: "0",
                   left: "0",
                   right: "0",

@@ -407,8 +407,8 @@ function smoth(val: number) {
 const intervalTime = 100;
 const animationInterval = setInterval(() => {
   try {
-    const state = currentState();
     if (animacao) {
+      const state = currentState();
       if (animacao.type == "slide-cena") {
         const now = new Date();
         const passouTime = now.getTime() - animacao.de.getTime();

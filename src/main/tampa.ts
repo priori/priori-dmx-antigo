@@ -1,7 +1,7 @@
-import * as http from "http";
+﻿import * as http from "http";
 
-const abrirEndPoint = "http://localhost:1234/";
-const fecharEndPoint = "http://localhost:1234/";
+const abrirEndPoint = "http://192.168.137.30/move/1024";
+const fecharEndPoint = "http://192.168.137.30/move/-1024";
 const tampaPlayDelay = 500;
 const tampaTime = 2500;
 
