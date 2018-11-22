@@ -4,7 +4,9 @@ import installExtension, {
 } from "electron-devtools-installer";
 import { enableLiveReload } from "electron-compile";
 import { close } from "./main/actions";
-import {close as close2, start} from "./main/state";
+import { close as close2, start } from "./main/state";
+
+app.commandLine.appendSwitch("--autoplay-policy", "no-user-gesture-required");
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

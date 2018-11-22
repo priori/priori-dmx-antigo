@@ -1,7 +1,15 @@
 import * as React from "react";
-import {action} from "../util/action";
+import { action } from "../util/action";
 
-export class Monitor extends React.Component<{ telas: { aberta: number|null, disponiveis: {width:number,height:number}[] } }, {}> {
+export class Monitor extends React.Component<
+  {
+    telas: {
+      aberta: number | null;
+      disponiveis: { width: number; height: number }[];
+    };
+  },
+  {}
+> {
   select: any = null;
 
   render() {
@@ -24,15 +32,17 @@ export class Monitor extends React.Component<{ telas: { aberta: number|null, dis
   }
 
   change() {
-    if (this.props.telas.aberta !== null ) {
-      action({type:'ativar-tela',
-          index: parseInt(this.select.value)
+    if (this.props.telas.aberta !== null) {
+      action({
+        type: "ativar-tela",
+        index: parseInt(this.select.value)
       });
     }
   }
 
   criarMonitor() {
-    action({type:'ativar-tela',
+    action({
+      type: "ativar-tela",
       index: parseInt(this.select.value)
     });
   }

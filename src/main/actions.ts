@@ -1,14 +1,15 @@
 import { dialog } from "electron";
 import {
-    AppInternalState,
-    CenaIS,
-    EquipamentoSimplesIS,
-    EquipamentosCenaIS,
-    Tipo,
-    MesaCenaIS,
-    Uid,
-    EquipamentoGrupoIS,
-    EquipamentoIS, ArquivoType
+  AppInternalState,
+  CenaIS,
+  EquipamentoSimplesIS,
+  EquipamentosCenaIS,
+  Tipo,
+  MesaCenaIS,
+  Uid,
+  EquipamentoGrupoIS,
+  EquipamentoIS,
+  ArquivoType
 } from "../types/internal-state";
 import {
   canaisMesaCor,
@@ -21,16 +22,18 @@ import {
 } from "../util/cores";
 import * as dmx from "./dmx";
 import {
-    currentState,
-    emptyState,
-    on,
-    saveState,
-    setState,
-    generateUid, ativarTela
+  currentState,
+  emptyState,
+  on,
+  saveState,
+  setState,
+  generateUid,
+  ativarTela
 } from "./state";
 import { Animacao } from "../types/types";
 import { httpClose, httpOpen } from "./http-server";
 import { readState } from "./state-util";
+import { abrirTampa, fecharTampa } from "./tampa";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
@@ -1133,21 +1136,66 @@ function httpOpenCall(port: number) {
   });
 }
 
-function novosArquivos({arquivos}:{arquivos:string[]}){
+function novosArquivos({ arquivos }: { arquivos: string[] }) {
   const state = currentState();
   setState({
     ...state,
     arquivos: [
       ...state.arquivos,
-      ...arquivos.map(a=>({
-          path: a,
-          type: (a.match(/\.(mp4)$/i) ? 'video' : 'img') as ArquivoType,
-          nome: a.replace(/.*\/([^\\\/]+)/,'$1')
+      ...arquivos.map(a => ({
+        path: a,
+        type: (a.match(/\.(mp4)$/i) ? "video" : "img") as ArquivoType,
+        nome: a.replace(/.*\/([^\\\/]+)/, "$1")
       }))
     ]
   });
 }
 
+function arquivoPlay({ path }: { path: string }) {
+  if (currentState().telas.aberta === null) return;
+  const func = () => {
+    const state = currentState();
+    setState({
+      ...state,
+      player: {
+        ...state.player,
+        arquivo: path,
+        state: "play"
+      }
+    });
+  };
+  if (currentState().player.state == "stop") {
+    abrirTampa(func);
+  } else {
+    func();
+  }
+}
+
+function arquivoStop() {
+  if (currentState().telas.aberta === null) return;
+  const state = currentState();
+  if (state.player.state != "stop") fecharTampa();
+  setState({
+    ...state,
+    player: {
+      ...state.player,
+      state: "stop",
+      arquivo: null
+    }
+  });
+}
+
+function arquivoPause() {
+  if (currentState().telas.aberta === null) return;
+  const state = currentState();
+  setState({
+    ...state,
+    player: {
+      ...state.player,
+      state: "pause"
+    }
+  });
+}
 
 on(action => {
   if (action.type == "abrir") abrir();
@@ -1201,7 +1249,11 @@ on(action => {
   else if (action.type == "slide-cena") slideCena(action);
   else if (action.type == "http-close") httpCloseCall();
   else if (action.type == "http-open") httpOpenCall(action.port);
-  else if (action.type == "novos-arquivos")novosArquivos(action);
-  else if ( action.type == "ativar-tela")ativarTela(action);
-  else if ( action.type != "app-start" )console.log(action);
+  else if (action.type == "novos-arquivos") novosArquivos(action);
+  else if (action.type == "ativar-tela") ativarTela(action);
+  else if (action.type == "arquivo-play") arquivoPlay(action);
+  else if (action.type == "arquivo-stop") arquivoStop();
+  else if (action.type == "arquivo-pause") arquivoPause();
+  else if (action.type != "app-start" && action.type != "screen-started")
+    console.log(action);
 });

@@ -12,31 +12,52 @@ import * as dmx from "./dmx";
 import { deepFreeze } from "../util/equals";
 import { httpOpen, httpServerListener } from "./http-server";
 import { readState } from "./state-util";
-import {telasDisponiveis} from "./global";
+import { abrirTela, moverTela, telasDisponiveis } from "./telas";
 
-let state:AppInternalState|undefined;
+let state: AppInternalState | undefined;
 const file = getFile();
 
-export function start(){
-    if (!fs.existsSync(file)) {
-        state = emptyState();
-        saveState(file, state);
-    } else {
-        const json = readState(file);
-        if (json) {
-            state = json;
-            if (state.dmx.conectado) {
-                dmx.connect(
-                    state.dmx.driver,
-                    state.dmx.deviceId
-                );
-                dmx.update(state.canais);
-            }
-            if (state.httpServer.open) {
-                httpOpen(state.httpServer.port);
-            }
-        }
+export function start() {
+  if (!fs.existsSync(file)) {
+    state = emptyState();
+    saveState(file, state);
+  } else {
+    const json = readState(file);
+    if (json) {
+      state = json;
+      if (state.dmx.conectado) {
+        dmx.connect(
+          state.dmx.driver,
+          state.dmx.deviceId
+        );
+        dmx.update(state.canais);
+      }
+      if (state.httpServer.open) {
+        httpOpen(state.httpServer.port);
+      }
+      if (state.telas.aberta !== null) {
+        const index = state.telas.aberta;
+        screen = abrirTela(index);
+      }
     }
+  }
+}
+
+export function onCloseTela() {
+  screen = null;
+  const state = currentState();
+  screenSender = null;
+  setState({
+    ...state,
+    telas: {
+      ...state.telas,
+      aberta: null
+    },
+    player: {
+      state: "stop",
+      arquivo: null
+    }
+  });
 }
 
 let screen: BrowserWindow | null,
@@ -77,35 +98,39 @@ export const initialTipos = [
     }
 ] as Tipo[];
 export function emptyState() {
-    const emptyState: AppInternalState = {
-        window: {
-            criando: false,
-            criada: false
-        },
-        dmx: {
-            conectado: false,
-            driver: "enttec-usb-dmx-pro",
-            deviceId: "COM5"
-        },
-        arquivos: [],
-        httpServer: {
-            open: false,
-            port: 8080
-        },
-        cenaSlide: null,
-        ultimaCena: null,
-        animacao: false,
-        canais: emptyCanais,
-        equipamentos: [],
-        equipamentoTipos: initialTipos,
-        cenas: [],
-        telas: {
-            aberta: null,
-            disponiveis: telasDisponiveis()
-        }
-    };
-    deepFreeze(emptyState);
-    return emptyState;
+  const emptyState: AppInternalState = {
+    window: {
+      criando: false,
+      criada: false
+    },
+    dmx: {
+      conectado: false,
+      driver: "enttec-usb-dmx-pro",
+      deviceId: "COM5"
+    },
+    arquivos: [],
+    httpServer: {
+      open: false,
+      port: 8080
+    },
+    cenaSlide: null,
+    ultimaCena: null,
+    animacao: false,
+    canais: emptyCanais,
+    equipamentos: [],
+    equipamentoTipos: initialTipos,
+    cenas: [],
+    telas: {
+      aberta: null,
+      disponiveis: telasDisponiveis()
+    },
+    player: {
+      arquivo: null,
+      state: "stop"
+    }
+  };
+  deepFreeze(emptyState);
+  return emptyState;
 }
 
 function getDir() {
@@ -162,66 +187,34 @@ let screenSender: IpcSender | null;
 //     }
 // });
 
-ipcMain.on("action-call", (event: IpcEvent, action: AppAction) => {
-  if (action.type == "app-start") {
-    if (appSender && appSender != event.sender) throw "Invalid sender.";
-    appSender = event.sender;
-    appSender.send("state", state);
-  }
-});
-
 const maxThrotle = 1000;
 const throtleTime = 20;
 let timeoutThrotle: any;
 let firstThrotle: Date | null = null;
 
-export function ativarTela({index}:{index:number}){
-    const state = currentState();
+export function ativarTela({ index }: { index: number }) {
+  const state = currentState();
 
-    setState({
-        ...state,
-        telas: {
-            disponiveis: state.telas.disponiveis,
-            aberta: index
+  setState({
+    ...state,
+    telas: {
+      disponiveis: state.telas.disponiveis,
+      aberta: index
+    },
+    player: screen
+      ? state.player
+      : {
+          state: "stop",
+          arquivo: null
         }
-    });
+  });
 
-    const electron = require('electron');
-    const screens = electron.screen.getAllDisplays();
-    const display = screens[index]||screens[screens.length-1];
-    if (!screen) {
-        screen = new BrowserWindow({
-            webPreferences: {
-                nodeIntegrationInWorker: true
-            },
-            width: display.workArea.width,
-            height: display.workArea.height,
-            x: display.workArea.x,
-            y: display.workArea.y
-        });
-        screen.setMenu(null);
-        screen.setFullScreen(true);
-        // screen.setResizable(false);
-        screen.loadURL(`file://${__dirname}/../screen.html`);
-        screen.on('closed', () => {
-            screen = null;
-            screenSender = null;
-            setState({
-                ...state,
-                telas: {
-                    ...state.telas,
-                    aberta: null
-                }
-            })
-        });
-        screen.webContents.openDevTools();
-    } else {
-        screen.setPosition(display.workArea.x, display.workArea.y);
-        screen.setSize(display.workArea.width, display.workArea.height);
-        screen.setFullScreen(true);
-    }
+  if (!screen) {
+    screen = abrirTela(index);
+  } else {
+    moverTela(screen, index);
+  }
 }
-
 
 function sendState(state: AppInternalState) {
   if (!appSender) throw "Sem appSender.";
@@ -236,14 +229,14 @@ export function setState(newState: AppInternalState, force = false) {
       "Canais inválido." + "\n" + JSON.stringify(newState.canais)
     );
 
-  if ( newState.telas.disponiveis.length == 0 ) {
-      newState = {
-          ...newState,
-          telas: {
-              ...newState.telas,
-              disponiveis: telasDisponiveis()
-          }
-      };
+  if (newState.telas.disponiveis.length == 0) {
+    newState = {
+      ...newState,
+      telas: {
+        ...newState.telas,
+        disponiveis: telasDisponiveis()
+      }
+    };
   }
 
   for (const key in newState.canais) {
@@ -301,7 +294,7 @@ export function setState(newState: AppInternalState, force = false) {
 let listeners: ((_: AppAction) => void)[] = [];
 
 export function currentState() {
-    if ( typeof state == "undefined")throw new Error("Não iniciado ainda.")
+  if (typeof state == "undefined") throw new Error("Não iniciado ainda.");
   return state;
 }
 
@@ -320,67 +313,24 @@ export function actionCall(e: AppAction) {
 
 ipcMain.on("action-call", (event: IpcEvent, e: AppAction) => {
   try {
+    if (e.type == "screen-started") {
+      screenSender = event.sender;
+      screenSender.send("state", state);
+      return;
+    }
+    if (e.type == "app-start") {
+      if (appSender && appSender != event.sender) throw "Invalid sender.";
+      appSender = event.sender;
+      appSender.send("state", state);
+      return;
+    }
     if (event.sender != appSender) throw "Invalid sender.";
     actionCall(e);
   } catch (err) {
-    if (err && err.stack) console.error(err.stack);
-    else console.error(err);
+    if (err && err.stack) console.error(e, err.stack);
+    else console.error(e, err);
   }
 });
-
-// ipcMain.on('action',(event:IpcEvent,e:AppAction)=>{
-//     if ( event.sender != appSender )
-//         throw 'Invalid sender.';
-//     if ( e.type == 'new-screen-request' ) {
-//         if (state.window.criada)
-//             throw 'Já existe janela.';
-//         if (state.window.criando)
-//             throw 'Já está sendo criada.';
-//         setState({
-//             ...state,
-//             window: {
-//                 criando: true,
-//                 criada: false
-//             }
-//         });
-//         const id = e.id,
-//             electron = require('electron'),
-//             display = electron.screen.getAllDisplays().filter(d => d.id == id)[0];
-//         if (!screen) {
-//             screen = new BrowserWindow({
-//                 webPreferences: {
-//                     nodeIntegrationInWorker: true
-//                 },
-//                 width: display.workArea.width,
-//                 height: display.workArea.height,
-//                 x: display.workArea.x,
-//                 y: display.workArea.y
-//             });
-//             screen.setMenu(null);
-//             screen.setFullScreen(true);
-//             // screen.setResizable(false);
-//             screen.loadURL(`file://${__dirname}/screen.html`);
-//             screen.on('closed', () => {
-//                 screen = null;
-//                 screenSender = null;
-//                 appSender = null;
-//                 setState({
-//                     ...state,
-//                     window: {
-//                         ...state.window,
-//                         criando: false,
-//                         criada: false
-//                     }
-//                 })
-//             });
-//             screen.webContents.openDevTools();
-//         } else {
-//             screen.setPosition(display.workArea.x, display.workArea.y);
-//             screen.setSize(display.workArea.width, display.workArea.height);
-//             screen.setFullScreen(true);
-//         }
-//     }
-// });
 
 export function close() {
   appSender = null;

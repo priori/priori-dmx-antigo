@@ -7,11 +7,13 @@ import { AppInternalState } from "../types/internal-state";
 import { Cenas } from "./Cenas";
 import { action } from "../util/action";
 import { deepFreeze } from "../util/equals";
-import {Arquivos} from "./Arquivos";
-import {Monitor} from "./Monitor";
+import { Arquivos } from "./Arquivos";
 
 const empty = {};
-export class WebApp extends React.Component<{closed:boolean}, AppInternalState & {ws:boolean} | {}> {
+export class WebApp extends React.Component<
+  { closed: boolean },
+  AppInternalState & { ws: boolean } | {}
+> {
   private socket: WebSocket;
   constructor(props: {}) {
     super(props);
@@ -19,24 +21,23 @@ export class WebApp extends React.Component<{closed:boolean}, AppInternalState &
     const socket = new WebSocket("ws://" + location.host + "/state");
     this.socket = socket;
     socket.onmessage = event => {
-      const data = JSON.parse(event.data) as AppInternalState&{ws:boolean};
+      const data = JSON.parse(event.data) as AppInternalState & { ws: boolean };
       for (const key in data) {
-          if ( typeof data[key] == 'object' && data[key])
-              deepFreeze(data[key]);
+        if (typeof data[key] == "object" && data[key]) deepFreeze(data[key]);
       }
       data.ws = true;
       this.setState(data);
     };
     socket.onclose = () => {
       this.setState({
-          ...this.state,
-          ws: false
+        ...this.state,
+        ws: false
       });
-    }
+    };
   }
 
   componentWillUnmount() {
-      this.socket.close();
+    this.socket.close();
   }
 
   inputEl: HTMLInputElement | null = null;
@@ -48,7 +49,7 @@ export class WebApp extends React.Component<{closed:boolean}, AppInternalState &
 
   render() {
     if (this.state == empty) return null;
-    const state = this.state as AppInternalState&{ws:boolean};
+    const state = this.state as AppInternalState & { ws: boolean };
     return (
       <div>
         {state.animacao || !state.ws ? (
@@ -61,10 +62,10 @@ export class WebApp extends React.Component<{closed:boolean}, AppInternalState &
               left: "0",
               background: "rgba(255,255,255,.6)",
               zIndex: 1,
-              padding: '58px',
-              fontSize: '19px',
-              fontWeight: 'bold',
-              textAlign: 'center'
+              padding: "58px",
+              fontSize: "19px",
+              fontWeight: "bold",
+              textAlign: "center"
             }}
             ref={el => {
               if (el) {
@@ -76,10 +77,9 @@ export class WebApp extends React.Component<{closed:boolean}, AppInternalState &
               }
             }}
           >
-              {!state.ws?'Desconectado':null}
+            {!state.ws ? "Desconectado" : null}
           </div>
         ) : null}
-        <Monitor telas={state.telas} />
         <ConexaoDMX {...state.dmx} />
         <Cenas {...state} />
         <div style={{ textAlign: "right", paddingBottom: "5px" }}>
@@ -93,7 +93,7 @@ export class WebApp extends React.Component<{closed:boolean}, AppInternalState &
           canais={state.canais}
           cenas={state.cenas}
         />
-        <Arquivos arquivos={state.arquivos} />
+        <Arquivos arquivos={state.arquivos} showThumbs={false} telas={state.telas} />
       </div>
     );
   }

@@ -4,14 +4,13 @@ import { Server } from "./Server";
 import { ConexaoDMX } from "./ConexaoDMX";
 import { Mesa } from "./Mesa";
 import { Equipamentos } from "./equipamentos/Equipamentos";
-import {AppInternalState, Arquivo} from "../types/internal-state";
+import { AppInternalState, Arquivo } from "../types/internal-state";
 import { Cenas } from "./Cenas";
 import { action } from "../util/action";
 import { listen, close } from "../util/listeners";
 import { deepFreeze } from "../util/equals";
 import "../util/prevent-selection";
-import {Arquivos} from "./Arquivos";
-import {Monitor} from "./Monitor";
+import { Arquivos } from "./Arquivos";
 
 const empty = {};
 export class App extends React.Component<{}, AppInternalState | {}> {
@@ -33,10 +32,10 @@ export class App extends React.Component<{}, AppInternalState | {}> {
     close(this.stateListener);
   }
 
-  setArquivos(arquivos:Arquivo[]){
-      this.setState({
-          arquivos
-      });
+  setArquivos(arquivos: Arquivo[]) {
+    this.setState({
+      arquivos
+    });
   }
 
   inputEl: HTMLInputElement | null = null;
@@ -83,7 +82,6 @@ export class App extends React.Component<{}, AppInternalState | {}> {
             }}
           />
         ) : null}
-        <Monitor telas={state.telas} />
         <Server port={state.httpServer.port} open={state.httpServer.open} />
         <ConexaoDMX {...state.dmx} />
         <Cenas {...state} />
@@ -98,7 +96,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
           canais={state.canais}
           cenas={state.cenas}
         />
-        <Arquivos arquivos={state.arquivos} />
+        <Arquivos arquivos={state.arquivos} showThumbs={true} telas={state.telas} />
       </div>
     );
   }

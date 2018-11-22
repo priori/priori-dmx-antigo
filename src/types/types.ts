@@ -37,6 +37,9 @@ export type AppAction =
       tipoUid: Uid;
     }
   | { type: "screen-started" }
+  | { type: "arquivo-play"; path: string }
+  | { type: "arquivo-stop" }
+  | { type: "arquivo-pause" }
   | { type: "slide"; index: number; value: number }
   | { type: "multiple-slide"; canais: { [k: number]: number } }
   | { type: "remove-equipamento"; uid: Uid }
@@ -83,7 +86,7 @@ export type AppAction =
       index: number;
     }
   | { type: "slide-cena"; uid: Uid; value: number }
-  | { type: "ativar-tela", index: number };
+  | { type: "ativar-tela"; index: number };
 
 export type Animacao =
   | {
