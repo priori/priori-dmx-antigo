@@ -45,6 +45,12 @@ button:focus {
 .arquivos {
   height: 400px;
   background: #ddd;
+  position: relative;
+}
+.monitor {
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
 .arquivos.over {
   background: #ccc;
@@ -52,6 +58,7 @@ button:focus {
 .arquivos img {
   max-width: 100px;
   max-height: 100px;
+  vertical-align: middle;
 }
 .arquivos h2 {
   padding: 20px;
@@ -399,4 +406,11 @@ input.cena__nome {
   height: 10px;
   width: 300px;
   margin-bottom: 9px;
+}
+
+.arquivo {
+  padding: 10px 20px;
+}
+.arquivo.selected {
+  background: #fe0;
 }

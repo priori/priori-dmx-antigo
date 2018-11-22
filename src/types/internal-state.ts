@@ -80,13 +80,15 @@ export interface CanaisDmx {
   __canaisdmx__: never;
 }
 
-export type ArquivoType = "img"|"video";
+export type ArquivoType = "img" | "video";
 export interface Arquivo {
-  readonly type: ArquivoType,
-  readonly path: string,
-  readonly nome: string
+  readonly type: ArquivoType;
+  readonly path: string;
+  readonly nome: string;
 }
 export type EquipamentoIS = EquipamentoSimplesIS | EquipamentoGrupoIS;
+
+export type PlayerState = "play" | "stop" | "pause";
 
 export interface AppInternalState {
   readonly window: {
@@ -100,11 +102,11 @@ export interface AppInternalState {
   };
 
   readonly telas: {
-    readonly aberta: number|null,
-      readonly disponiveis: {
-      readonly width:number,
-          readonly height:number
-    }[]
+    readonly aberta: number | null;
+    readonly disponiveis: {
+      readonly width: number;
+      readonly height: number;
+    }[];
   };
 
   readonly arquivos: Arquivo[];
@@ -124,6 +126,11 @@ export interface AppInternalState {
   readonly cenas: CenaIS[];
 
   readonly ultimaCena: number | null;
+
+  readonly player: {
+    arquivo: string | null;
+    state: PlayerState;
+  };
 
   readonly animacao: boolean;
 
