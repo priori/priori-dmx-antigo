@@ -139,6 +139,8 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
   }
 
   salvarCena(uid: Uid) {
+      if ( !confirm("Deseja realmente sobrescrever esta cena?"))
+        return;
     action({ type: "salvar-cena", uid });
   }
 
@@ -209,16 +211,16 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
               }
             />{" "}
             <button onClick={() => this.salvarCena(cena.uid)}>
-              Salvar <i className="fa fa-save" />
+                <span>Salvar </span><i className="fa fa-save" />
             </button>{" "}
             <button onClick={() => this.removeCena(cena.uid)}>
-              Remover <i className="fa fa-close" />
+                <span>Remover </span><i className="fa fa-close" />
             </button>{" "}
             <button onClick={() => this.aplicar(cena.uid)}>
-              Agora <i className="fa fa-check" />
+                <span>Agora </span><i className="fa fa-check" />
             </button>{" "}
             <button onClick={() => this.transicao(cena.uid)}>
-              Transição <i className="fa fa-play" />
+                <span>Transição </span><i className="fa fa-play" />
             </button>
             {this.state.editandoTempo != -1 ? (
               <FastInput
@@ -245,16 +247,16 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
           <div className="cenas__controller" style={{ opacity: 0.5 }}>
             <input readOnly={true} disabled={true} type="range" value={"0"} />{" "}
             <button disabled={true}>
-              Salvar <i className="fa fa-save" />
+                <span>Salvar </span><i className="fa fa-save" />
             </button>{" "}
             <button disabled={true}>
-              Remover <i className="fa fa-close" />
+                <span>Remover </span><i className="fa fa-close" />
             </button>{" "}
             <button disabled={true}>
-              Agora <i className="fa fa-check" />
+                <span>Agora </span><i className="fa fa-check" />
             </button>{" "}
             <button disabled={true}>
-              Transição <i className="fa fa-play" />
+                <span>Transição </span><i className="fa fa-play" />
             </button>
             <span style={{ display: "inline-block", width: "60px" }} />
           </div>
@@ -271,7 +273,8 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
             this.setState({ ...this.state, editandoNome: -1 })
           }
           onEdit={(cena, nome) => this.novoNome(cena.uid, nome)}
-          distance={5}
+          distance={(window as any).webMode ? undefined : 5}
+          pressDelay={(window as any).webMode ? 1000 : undefined}
           cenas={cenas}
           onClick={(cena: CenaIS) => this.select(cena)}
           onSortEnd={this.onSortEnd}

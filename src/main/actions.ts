@@ -101,14 +101,13 @@ function changeColor(e: { cor: string; equipamento: Uid }): void {
       ...state.canais,
       ...canais
     },
-    equipamentos: state.equipamentos.map(
-      e =>
-        e.uid == uid
-          ? {
-              ...e,
-              cor
-            }
-          : e
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid
+        ? {
+            ...e,
+            cor
+          }
+        : e
     ),
     cenaSlide: null
   });
@@ -602,8 +601,8 @@ function editarEquipamentoNome({ uid, nome }: { uid: Uid; nome: string }) {
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e => (e.uid == uid ? { ...e, nome } : e)
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid ? { ...e, nome } : e
     )
   });
 }
@@ -626,8 +625,8 @@ function equipamentoEditarInicio({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e => (e.uid == uid ? { ...e, inicio } : e)
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid ? { ...e, inicio } : e
     )
   });
 }
@@ -745,14 +744,13 @@ function salvarEquipamentoConfiguracao({
     };
     setState({
       ...state,
-      equipamentos: state.equipamentos.map(
-        e =>
-          e.uid == uid
-            ? ({
-                ...e,
-                configuracoes: [...e.configuracoes, novaConfiguracao]
-              } as EquipamentoSimplesIS)
-            : e
+      equipamentos: state.equipamentos.map(e =>
+        e.uid == uid
+          ? ({
+              ...e,
+              configuracoes: [...e.configuracoes, novaConfiguracao]
+            } as EquipamentoSimplesIS)
+          : e
       )
     });
   }
@@ -772,14 +770,13 @@ function salvarTipoConfiguracao({ uid, nome }: { uid: Uid; nome: string }) {
   };
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(
-      t =>
-        t.uid != equipamento.tipoUid
-          ? t
-          : {
-              ...t,
-              configuracoes: [...t.configuracoes, novaConfiguracao]
-            }
+    equipamentoTipos: state.equipamentoTipos.map(t =>
+      t.uid != equipamento.tipoUid
+        ? t
+        : {
+            ...t,
+            configuracoes: [...t.configuracoes, novaConfiguracao]
+          }
     )
   });
 }
@@ -836,21 +833,20 @@ function adicionarEquipamentoACena({
   const canais = extractCanais(state, equipamento, tipo);
   setState({
     ...state,
-    cenas: state.cenas.map(
-      c =>
-        c.uid != cenaUid || c.tipo != "equipamentos"
-          ? c
-          : {
-              ...c,
-              equipamentos: [
-                ...c.equipamentos,
-                {
-                  canais,
-                  uid,
-                  cor: null
-                }
-              ]
-            }
+    cenas: state.cenas.map(c =>
+      c.uid != cenaUid || c.tipo != "equipamentos"
+        ? c
+        : {
+            ...c,
+            equipamentos: [
+              ...c.equipamentos,
+              {
+                canais,
+                uid,
+                cor: null
+              }
+            ]
+          }
     )
   });
 }
@@ -865,16 +861,15 @@ function removeEquipamentoCena({
   const state = currentState();
   setState({
     ...state,
-    cenas: state.cenas.map(
-      c =>
-        c.uid == cenaUid
-          ? {
-              ...(c as EquipamentosCenaIS),
-              equipamentos: (c as EquipamentosCenaIS).equipamentos.filter(
-                e => e.uid != equipamentoUid
-              )
-            }
-          : c
+    cenas: state.cenas.map(c =>
+      c.uid == cenaUid
+        ? {
+            ...(c as EquipamentosCenaIS),
+            equipamentos: (c as EquipamentosCenaIS).equipamentos.filter(
+              e => e.uid != equipamentoUid
+            )
+          }
+        : c
     )
   });
 }
@@ -889,16 +884,15 @@ function removeEquipamentoConfiguracao({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e =>
-        e.uid == equipamentoUid
-          ? ({
-              ...(e as EquipamentoIS),
-              configuracoes: (e as any).configuracoes.filter(
-                (_: any, i: number) => i != index
-              )
-            } as EquipamentoIS)
-          : e
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == equipamentoUid
+        ? ({
+            ...(e as EquipamentoIS),
+            configuracoes: (e as any).configuracoes.filter(
+              (_: any, i: number) => i != index
+            )
+          } as EquipamentoIS)
+        : e
     )
   });
 }
@@ -913,14 +907,13 @@ function removeTipoConfiguracao({
   const state = currentState();
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(
-      e =>
-        e.uid == equipamentoTipoUid
-          ? {
-              ...e,
-              configuracoes: e.configuracoes.filter((_, i) => i != index)
-            }
-          : e
+    equipamentoTipos: state.equipamentoTipos.map(e =>
+      e.uid == equipamentoTipoUid
+        ? {
+            ...e,
+            configuracoes: e.configuracoes.filter((_, i) => i != index)
+          }
+        : e
     )
   });
 }
@@ -1029,8 +1022,8 @@ function slideCena({ uid, value }: { uid: Uid; value: number }) {
     state.cenaSlide && state.cenaSlide.uid == uid
       ? state.cenaSlide.canaisAnterior
       : cena.tipo == "mesa"
-        ? ({ ...state.canais } as any)
-        : cenaCanaisSlice(state, cena);
+      ? ({ ...state.canais } as any)
+      : cenaCanaisSlice(state, cena);
   const canais: { [key: number]: number } = {};
   const perc = value / 100;
   if (cena.tipo == "mesa") {

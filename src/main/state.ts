@@ -15,6 +15,7 @@ import { readState } from "./state-util";
 import { abrirTela, moverTela, telasDisponiveis } from "./telas";
 
 let state: AppInternalState | undefined;
+let closing = false;
 const file = getFile();
 
 export function start() {
@@ -67,35 +68,34 @@ const emptyCanais = {} as CanaisDmx;
 for (let c = 1; c <= 255; c++) (emptyCanais as any)[c] = 0;
 deepFreeze(emptyCanais);
 
-
 export const initialTipos = [
-    {
-        // glow64
-        nome: "LED 64 GLOW",
-        uid: 1 as Uid,
-        canais: [
-            { tipo: "red" },
-            { tipo: "green" },
-            { tipo: "blue" },
-            { tipo: "white" },
-            { tipo: "master" },
-            { tipo: "piscar" },
-            { tipo: "hue" },
-            { tipo: "animacao" },
-            { tipo: "animacao-velocidade" }
-        ]
-    },
-    {
-        // par16
-        nome: "PAR LED 16",
-        uid: 2 as Uid,
-        canais: [
-            { tipo: "master" },
-            { tipo: "red" },
-            { tipo: "green" },
-            { tipo: "blue" }
-        ]
-    }
+  {
+    // glow64
+    nome: "LED 64 GLOW",
+    uid: 1 as Uid,
+    canais: [
+      { tipo: "red" },
+      { tipo: "green" },
+      { tipo: "blue" },
+      { tipo: "white" },
+      { tipo: "master" },
+      { tipo: "piscar" },
+      { tipo: "hue" },
+      { tipo: "animacao" },
+      { tipo: "animacao-velocidade" }
+    ]
+  },
+  {
+    // par16
+    nome: "PAR LED 16",
+    uid: 2 as Uid,
+    canais: [
+      { tipo: "master" },
+      { tipo: "red" },
+      { tipo: "green" },
+      { tipo: "blue" }
+    ]
+  }
 ] as Tipo[];
 export function emptyState() {
   const emptyState: AppInternalState = {
@@ -217,7 +217,8 @@ export function ativarTela({ index }: { index: number }) {
 }
 
 function sendState(state: AppInternalState) {
-  if (!appSender) throw "Sem appSender.";
+  if (closing) return;
+  if (!appSender) throw new Error("Sem appSender.");
   appSender.send("state", state);
   if (screenSender) screenSender.send("state", state);
   httpServerListener(state);
@@ -264,7 +265,7 @@ export function setState(newState: AppInternalState, force = false) {
           JSON.stringify(newState.canais)
       );
   }
-  if (!appSender) throw "Sem appSender.";
+  if (!appSender && !closing) throw new Error("Sem appSender.");
   deepFreeze(newState);
   state = newState;
 
@@ -275,7 +276,7 @@ export function setState(newState: AppInternalState, force = false) {
   if (!firstThrotle) firstThrotle = new Date();
   else if (new Date().getTime() - firstThrotle.getTime() > maxThrotle) {
     firstThrotle = null;
-    if (!appSender) throw "Sem appSender.";
+    if (!appSender && !closing) throw new Error("Sem appSender.");
     saveState(file, newState);
     if (!force) {
       sendState(state);
@@ -283,7 +284,7 @@ export function setState(newState: AppInternalState, force = false) {
     return;
   }
   timeoutThrotle = setTimeout(() => {
-    if (!appSender) throw "Sem appSender.";
+    if (!appSender && !closing) throw new Error("Sem appSender.");
     saveState(file, newState);
     if (!force) {
       sendState(newState);
@@ -333,6 +334,7 @@ ipcMain.on("action-call", (event: IpcEvent, e: AppAction) => {
 });
 
 export function close() {
+  closing = true;
   appSender = null;
   if (screen) {
     screen.close();

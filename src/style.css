@@ -43,13 +43,12 @@ button:focus {
 }
 
 .arquivos {
-  height: 400px;
-  background: #ddd;
+  background: #eee;
   position: relative;
 }
 .monitor {
   position: absolute;
-  top: 10px;
+  top: 0;
   right: 10px;
 }
 .arquivos.over {
@@ -78,7 +77,6 @@ button:focus {
 .monitor {
   padding-top: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #ddd;
 }
 .conexao-dmx {
   padding-top: 10px;
@@ -417,4 +415,73 @@ input.cena__nome {
 .arquivo strong {
   font-size: 16px;
   margin-right: 5px;
+}
+
+.arquivos__controles {
+  font-size: 16px;
+  padding: 12px 20px 10px 20px;
+}
+@media only screen and (max-width: 600px) {
+  .arquivos__controles {
+    font-size: 32px;
+  }
+  .cena {
+    font-size: 14px;
+    padding: 7px 5px;
+  }
+  .cenas__controller input[type="range"] {
+    width: 100%;
+    height: 30px;
+  }
+  .cenas__controller button span {
+    display: none;
+  }
+  .cenas__controller button {
+    font-size: 32px;
+  }
+}
+.abrir-fechar {
+  font-size: 20px;
+  font-weight: bold;
+  background: #eee;
+  padding: 5px;
+  margin-bottom: 5px;
+}
+.cena {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.arquivo__state {
+  display: inline-block;
+  width: 20px;
+  font-size: 15px;
+}
+.arquivo.na-tela {
+  color: #03b;
+}
+
+.arquivo.na-tela .arquivo__state {
+  animation: blinkingText 0.5s infinite;
+}
+@keyframes blinkingText {
+  0% {
+    opacity: 1;
+  }
+  49% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.75;
+  }
+  99% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.abrir-fechar:hover {
+  background: #ddd;
 }

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { action } from "../util/action";
-import { Arquivo } from "../types/internal-state";
-import {Monitor} from "./Monitor";
+import { Arquivo, PlayerState } from "../types/internal-state";
+import { Monitor } from "./Monitor";
 
 export interface ArquivosState {
   over: boolean;
@@ -11,8 +11,12 @@ export interface ArquivosProps {
   arquivos: Arquivo[];
   showThumbs: boolean;
   telas: {
-      aberta: number | null;
-      disponiveis: { width: number; height: number }[];
+    aberta: number | null;
+    disponiveis: { width: number; height: number }[];
+  };
+  player: {
+    state: PlayerState;
+    arquivo: string | null;
   };
 }
 export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
@@ -89,29 +93,61 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
         className={"arquivos" + (this.state.over ? " over" : "")}
         {...dragListeners}
       >
-        <h2 style={{ margin: "0", paddingBottom: "10px" }}>Arquivos</h2>
+        {this.props.arquivos.length ? null : (
+          <h2 style={{ margin: "0", paddingBottom: "10px" }}>Arquivos</h2>
+        )}
 
-          <Monitor telas={this.props.telas} />
+        <Monitor telas={this.props.telas} />
 
-        <div
-          style={{
-            padding: "0 20px 10px 20px",
-            opacity: null === this.props.telas.aberta || this.state.selected === null ? 0.5 : 1
-          }}
-        >
-          <button onClick={() => this.pause()}>Pause</button>{" "}
-          <button onClick={() => this.play()}>Play</button>{" "}
-          <button onClick={() => this.stop()}>Stop</button>{" "}
+        <div className="arquivos__controles">
+          <button
+            style={{
+              opacity: null === this.props.telas.aberta ? 0.5 : 1
+            }}
+            onClick={() => this.stop()}
+          >
+            <i className="fa fa-stop" />
+          </button>{" "}
+          <button
+            style={{
+              opacity:
+                null === this.props.telas.aberta || this.state.selected === null
+                  ? 0.5
+                  : 1
+            }}
+            onClick={() => this.play()}
+          >
+            <i className="fa fa-play" />
+          </button>{" "}
+          <button
+            style={{
+              opacity: this.props.telas.aberta === null ? 0.5 : 1
+            }}
+            onClick={() => this.pause()}
+          >
+            <i className="fa fa-pause" />
+          </button>{" "}
         </div>
         <div style={{ overflow: "auto", height: "300px" }}>
           {this.props.arquivos.map((f: Arquivo) => (
             <div
               key={f.path}
               className={
-                "arquivo" + (this.state.selected == f.path ? " selected" : "")
+                "arquivo" +
+                (this.state.selected == f.path ? " selected" : "") +
+                (this.props.player.arquivo === f.path ? " na-tela" : "")
               }
               onClick={() => this.select(f)}
             >
+              <span className="arquivo__state">
+                {this.props.player.arquivo == f.path ? (
+                  this.props.player.state == "play" ? (
+                    <i className="fa fa-play" />
+                  ) : this.props.player.state == "pause" ? (
+                    <i className="fa fa-pause" />
+                  ) : null
+                ) : null}
+              </span>
               <strong>{f.nome}</strong>{" "}
               {f.type == "img" && this.props.showThumbs ? (
                 <img src={f.path} />
@@ -139,17 +175,18 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
   }
 
   private stop() {
-    if (this.props.telas.aberta===null || this.state.selected === null) throw "Arquivo não selecionado.";
+    if (this.props.telas.aberta === null) throw "Arquivo não selecionado.";
     action({ type: "arquivo-stop" });
   }
 
   private play() {
-    if (this.props.telas.aberta===null || this.state.selected === null) throw "Arquivo não selecionado.";
+    if (this.props.telas.aberta === null || this.state.selected === null)
+      throw "Arquivo não selecionado.";
     action({ type: "arquivo-play", path: this.state.selected });
   }
 
   private pause() {
-    if (this.props.telas.aberta===null || this.state.selected === null) throw "Arquivo não selecionado.";
+    if (this.props.telas.aberta === null) throw "Arquivo não selecionado.";
     action({ type: "arquivo-pause" });
   }
 }

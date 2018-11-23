@@ -9,24 +9,37 @@ import { action } from "../util/action";
 import { deepFreeze } from "../util/equals";
 import { Arquivos } from "./Arquivos";
 
-const empty = {};
-export class WebApp extends React.Component<
-  { closed: boolean },
-  AppInternalState & { ws: boolean } | {}
-> {
+export interface WebAppState {
+  appState: AppInternalState | null;
+  ws: boolean;
+  mesaAberta: boolean;
+  equipamentosAberto: boolean;
+}
+
+export class WebApp extends React.Component<{ closed: boolean }, WebAppState> {
   private socket: WebSocket;
   constructor(props: {}) {
     super(props);
-    this.state = empty;
+    this.state = {
+      appState: null,
+      ws: false,
+      mesaAberta: false,
+      equipamentosAberto: false
+    };
+    this.connect();
+  }
+
+  connect() {
     const socket = new WebSocket("ws://" + location.host + "/state");
     this.socket = socket;
     socket.onmessage = event => {
       const data = JSON.parse(event.data) as AppInternalState & { ws: boolean };
-      for (const key in data) {
-        if (typeof data[key] == "object" && data[key]) deepFreeze(data[key]);
-      }
-      data.ws = true;
-      this.setState(data);
+      deepFreeze(data);
+      this.setState({
+        ...this.state,
+        ws: true,
+        appState: data
+      });
     };
     socket.onclose = () => {
       this.setState({
@@ -48,11 +61,11 @@ export class WebApp extends React.Component<
   }
 
   render() {
-    if (this.state == empty) return null;
-    const state = this.state as AppInternalState & { ws: boolean };
+    if (!this.state.appState) return null;
+    const state = this.state.appState;
     return (
       <div>
-        {state.animacao || !state.ws ? (
+        {state.animacao || !this.state.ws ? (
           <div
             style={{
               position: "fixed",
@@ -76,8 +89,11 @@ export class WebApp extends React.Component<
                   (document.activeElement as any).blur();
               }
             }}
+            onClick={() => {
+              if (!this.state.ws) this.connect();
+            }}
           >
-            {!state.ws ? "Desconectado" : null}
+            {!this.state.ws ? "Desconectado" : null}
           </div>
         ) : null}
         <ConexaoDMX {...state.dmx} />
@@ -86,14 +102,73 @@ export class WebApp extends React.Component<
           <input type="text" ref={el => (this.inputEl = el)} />{" "}
           <button onClick={() => this.salvarMesa()}>Salvar</button>
         </div>
-        <Mesa canais={state.canais} />
-        <Equipamentos
-          equipamentoTipos={state.equipamentoTipos}
-          equipamentos={state.equipamentos}
-          canais={state.canais}
-          cenas={state.cenas}
+        {this.state.mesaAberta ? (
+          <div>
+            <div
+              className="abrir-fechar"
+              onClick={() =>
+                this.setState({
+                  ...this.state,
+                  mesaAberta: false
+                })
+              }
+            >
+              Mesa +
+            </div>
+            <Mesa canais={state.canais} />
+          </div>
+        ) : (
+          <div
+            onClick={() =>
+              this.setState({
+                ...this.state,
+                mesaAberta: true
+              })
+            }
+            className="abrir-fechar"
+          >
+            Mesa -
+          </div>
+        )}
+        {this.state.equipamentosAberto ? (
+          <div>
+            <div
+              className="abrir-fechar"
+              onClick={() =>
+                this.setState({
+                  ...this.state,
+                  equipamentosAberto: false
+                })
+              }
+            >
+              Equipamentos +
+            </div>
+            <Equipamentos
+              equipamentoTipos={state.equipamentoTipos}
+              equipamentos={state.equipamentos}
+              canais={state.canais}
+              cenas={state.cenas}
+            />
+          </div>
+        ) : (
+          <div
+            onClick={() =>
+              this.setState({
+                ...this.state,
+                equipamentosAberto: true
+              })
+            }
+            className="abrir-fechar"
+          >
+            Equipamentos -
+          </div>
+        )}
+        <Arquivos
+          player={state.player}
+          arquivos={state.arquivos}
+          showThumbs={false}
+          telas={state.telas}
         />
-        <Arquivos arquivos={state.arquivos} showThumbs={false} telas={state.telas} />
       </div>
     );
   }

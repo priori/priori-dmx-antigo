@@ -51,3 +51,7 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+(process as any).on("uncaughtException", (e: any) => {
+  console.error("uncaughtException", e && e.stack ? e.stack : e);
+});

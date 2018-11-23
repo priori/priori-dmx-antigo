@@ -49,6 +49,7 @@ export class EquipamentoComponent extends React.Component<
   EquipamentoComponentState
 > {
   private colorInput: HTMLInputElement;
+  private canaisStateTimeout: NodeJS.Timer;
   constructor(props: EquipamentoComponentProps) {
     super(props);
     this.state = {
@@ -119,6 +120,13 @@ export class EquipamentoComponent extends React.Component<
           [index]: value
         }
       });
+      if (this.canaisStateTimeout) clearTimeout(this.canaisStateTimeout);
+      this.canaisStateTimeout = setTimeout(() => {
+        this.setState({
+          ...this.state,
+          canais: {}
+        });
+      }, 500);
       action({ type: "slide", index, value });
     }
   }
@@ -474,8 +482,8 @@ export class EquipamentoComponent extends React.Component<
           typeof this.state.canais[index + e.inicio] != "undefined"
             ? this.state.canais[e.inicio + index] + ""
             : this.props.canais[index + e.inicio]
-              ? this.props.canais[index + e.inicio] + "" || "0"
-              : "0"
+            ? this.props.canais[index + e.inicio] + "" || "0"
+            : "0"
       }));
     }
     const tipos = this.props.tipos,

@@ -111,46 +111,46 @@ export class ScreenApp extends React.Component<undefined, ScreenAppState> {
     const state = componentState.state;
     return (
       <div>
-        {state.arquivos.map(
-          a =>
-            a.type == "img" ? (
-              <div
-                key={a.path}
-                ref={el => (this.imgs[a.path] = el)}
-                style={{
-                  position: "absolute",
-                  width: "100%",
-                  height: "100%",
-                  background: 'url(\'' + a.path.replace(/\\/g,'\\\\') + '\') no-repeat 50% 50%',
-                  top: "0",
-                  left: "0",
-                  right: "0",
-                  bottom: "0",
-                  opacity:
-                    state.player.arquivo == a.path &&
-                    state.player.state != "stop"
-                      ? 1
-                      : 0
-                }}
-              />
-            ) : (
-              <video
-                key={a.path}
-                src={a.path}
-                preload="auto"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  position: "absolute",
-                  opacity:
-                    state.player.arquivo == a.path &&
-                    state.player.state != "stop"
-                      ? 1
-                      : 0
-                }}
-                ref={el => (this.videos[a.path] = el)}
-              />
-            )
+        {state.arquivos.map(a =>
+          a.type == "img" ? (
+            <div
+              key={a.path}
+              ref={el => (this.imgs[a.path] = el)}
+              style={{
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                background:
+                  "url('" +
+                  a.path.replace(/\\/g, "\\\\") +
+                  "') no-repeat 50% 50%",
+                top: "0",
+                left: "0",
+                right: "0",
+                bottom: "0",
+                opacity:
+                  state.player.arquivo == a.path && state.player.state != "stop"
+                    ? 1
+                    : 0
+              }}
+            />
+          ) : (
+            <video
+              key={a.path}
+              src={a.path}
+              preload="auto"
+              style={{
+                width: "100%",
+                height: "100%",
+                position: "absolute",
+                opacity:
+                  state.player.arquivo == a.path && state.player.state != "stop"
+                    ? 1
+                    : 0
+              }}
+              ref={el => (this.videos[a.path] = el)}
+            />
+          )
         )}
       </div>
     );

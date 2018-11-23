@@ -96,7 +96,12 @@ export class App extends React.Component<{}, AppInternalState | {}> {
           canais={state.canais}
           cenas={state.cenas}
         />
-        <Arquivos arquivos={state.arquivos} showThumbs={true} telas={state.telas} />
+        <Arquivos
+          player={state.player}
+          arquivos={state.arquivos}
+          showThumbs={true}
+          telas={state.telas}
+        />
       </div>
     );
   }
