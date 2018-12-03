@@ -485,3 +485,14 @@ input.cena__nome {
 .abrir-fechar:hover {
   background: #ddd;
 }
+
+.arquivos .fa-close {
+  opacity: 0.5;
+  position: relative;
+  top: -4px;
+  left: 3px;
+  cursor: pointer;
+}
+.arquivos .fa-close:hover {
+  opacity: 1;
+}

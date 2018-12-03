@@ -407,8 +407,7 @@ const intervalTime = 100;
 const animationInterval = setInterval(() => {
   try {
     if (animacao) {
-      const state = currentState();
-      if (animacao.type == "slide-cena") {
+      if (animacao.type == "slide-cena" || animacao.type == "transicao") {
         const now = new Date();
         const passouTime = now.getTime() - animacao.de.getTime();
         const totalTime = animacao.ate.getTime() - animacao.de.getTime();
@@ -426,43 +425,44 @@ const animationInterval = setInterval(() => {
         const perc = passouTime / totalTime;
         const value = smoth(perc) * 100;
         slideCena({ uid, value });
-      } else if (animacao.type == "transicao") {
-        const now = new Date();
-        const cena = state.cenas.find(
-          c => c.uid == (animacao as any).cena
-        ) as CenaIS;
-        if (cena.tipo == "mesa") {
-          const passouTime = now.getTime() - animacao.de.getTime();
-          const totalTime = animacao.ate.getTime() - animacao.de.getTime();
-          if (passouTime > totalTime) {
-            // canaisPrecisos = null;
-            animacao = null;
-            setState({
-              ...state,
-              animacao: false,
-              canais: cena.canais
-            });
-            if (state.dmx.conectado) dmx.update(cena.canais);
-            return;
-          }
-          const canais = {} as { [k: number]: number };
-          for (const index in canais) {
-            const valorInicial = animacao.canaisIniciais[index],
-              valorObjetivo = cena.canais[index],
-              proximoValor =
-                valorInicial +
-                ((valorObjetivo - valorInicial) * passouTime) / totalTime;
-            canais[index] = Math.round(proximoValor);
-          }
-          if (state.dmx.conectado) dmx.update(canais);
-          setState({
-            ...state,
-            canais: {
-              ...state.canais,
-              ...canais
-            }
-          });
-        }
+      // } else if (animacao.type == "transicao") {
+      //   const state = currentState();
+      //   const now = new Date();
+      //   const cena = state.cenas.find(
+      //     c => c.uid == (animacao as any).cena
+      //   ) as CenaIS;
+      //   if (cena.tipo == "mesa") {
+      //     const passouTime = now.getTime() - animacao.de.getTime();
+      //     const totalTime = animacao.ate.getTime() - animacao.de.getTime();
+      //     if (passouTime > totalTime) {
+      //       // canaisPrecisos = null;
+      //       animacao = null;
+      //       setState({
+      //         ...state,
+      //         animacao: false,
+      //         canais: cena.canais
+      //       });
+      //       if (state.dmx.conectado) dmx.update(cena.canais);
+      //       return;
+      //     }
+      //     const canais = {} as { [k: number]: number };
+      //     for (const index in cena.canais) {
+      //       const valorInicial = animacao.canaisIniciais[index],
+      //         valorObjetivo = cena.canais[index],
+      //         proximoValor =
+      //           valorInicial +
+      //           ((valorObjetivo - valorInicial) * passouTime) / totalTime;
+      //       canais[index] = Math.round(proximoValor);
+      //     }
+      //     if (state.dmx.conectado) dmx.update(canais);
+      //     setState({
+      //       ...state,
+      //       canais: {
+      //         ...state.canais,
+      //         ...canais
+      //       }
+      //     });
+      //   }
       } else if (animacao.type == "pulsar") {
         const inicial = animacao.valorInicial;
         const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
@@ -1189,6 +1189,13 @@ function arquivoPause() {
     }
   });
 }
+function removeArquivo({arquivo}:{arquivo:string}){
+    const state = currentState();
+    setState({
+        ...state,
+        arquivos: state.arquivos.filter(f=>f.path!=arquivo)
+    });
+}
 
 on(action => {
   if (action.type == "abrir") abrir();
@@ -1209,6 +1216,7 @@ on(action => {
   // else if ( action.type == "screen-started")
   // screenStarted
   else if (action.type == "slide") slide(action);
+  else if (action.type == "remove-arquivo") removeArquivo(action);
   else if (action.type == "multiple-slide") multipleSlide(action);
   else if (action.type == "transicao-para-cena") transicaoParaCena(action);
   else if (action.type == "remove-equipamento") removeEquipamento(action);
