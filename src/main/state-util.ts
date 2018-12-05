@@ -8,7 +8,7 @@ export function readState(file: string): AppInternalState | undefined {
   const fileContent = fs.readFileSync(file).toString();
   if (fileContent) {
     const json = JSON.parse(fileContent) as AppInternalState;
-    if (!json.equipamentoTipos) (json as any).equipamentoTipos = initialTipos;
+    if (!json.equipamentoTipos /* || !json.equipamentoTipos.length */ ) (json as any).equipamentoTipos = initialTipos;
     for (const e of json.equipamentos) {
       if (!e.configuracoes) (e as any).configuracoes = [];
       if ((e as any).tipo == "glow64") {

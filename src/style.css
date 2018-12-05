@@ -570,3 +570,13 @@ input.cena__nome {
 .cenas__controller input[type="range"]:focus::-ms-fill-upper {
   background: rgba(13, 13, 13, 0.5);
 }
+.arquivos .fa-close {
+  opacity: 0.5;
+  position: relative;
+  top: -4px;
+  left: 3px;
+  cursor: pointer;
+}
+.arquivos .fa-close:hover {
+  opacity: 1;
+}

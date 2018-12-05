@@ -94,41 +94,47 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
         {...dragListeners}
       >
         {this.props.arquivos.length ? null : (
-          <h2 style={{ margin: "0", paddingBottom: "10px" }}>Arquivos</h2>
+          <h2 style={{ margin: "0", paddingBottom: "20px" }}>Arquivos</h2>
         )}
 
         <Monitor telas={this.props.telas} />
 
-        <div className="arquivos__controles">
-          <button
-            style={{
-              opacity: null === this.props.telas.aberta ? 0.5 : 1
-            }}
-            onClick={() => this.stop()}
-          >
-            <i className="fa fa-stop" />
-          </button>{" "}
-          <button
-            style={{
-              opacity:
-                null === this.props.telas.aberta || this.state.selected === null
-                  ? 0.5
-                  : 1
-            }}
-            onClick={() => this.play()}
-          >
-            <i className="fa fa-play" />
-          </button>{" "}
-          <button
-            style={{
-              opacity: this.props.telas.aberta === null ? 0.5 : 1
-            }}
-            onClick={() => this.pause()}
-          >
-            <i className="fa fa-pause" />
-          </button>{" "}
-        </div>
-        <div style={{ overflow: "auto", height: "300px" }}>
+          {this.props.arquivos.length ?
+              <div className="arquivos__controles">
+                  <button
+                      style={{
+                          opacity: null === this.props.telas.aberta ? 0.5 : 1
+                      }}
+                      onClick={() => this.stop()}
+                  >
+                      <i className="fa fa-stop"/>
+                  </button>
+                  {" "}
+                  <button
+                      style={{
+                          opacity:
+                              null === this.props.telas.aberta || this.state.selected === null
+                                  ? 0.5
+                                  : 1
+                      }}
+                      onClick={() => this.play()}
+                  >
+                      <i className="fa fa-play"/>
+                  </button>
+                  {" "}
+                  <button
+                      style={{
+                          opacity: this.props.telas.aberta === null ? 0.5 : 1
+                      }}
+                      onClick={() => this.pause()}
+                  >
+                      <i className="fa fa-pause"/>
+                  </button>
+                  {" "}
+              </div>
+              : null
+          }
+        <div style={{ overflow: "auto", maxHeight: "300px" }}>
           {this.props.arquivos.map((f: Arquivo) => (
             <div
               key={f.path}
@@ -151,13 +157,20 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
               <strong>{f.nome}</strong>{" "}
               {f.type == "img" && this.props.showThumbs ? (
                 <img src={f.path} />
-              ) : null}
+              ) : null}{" "}
               {f.path}
+                <i className="fa fa-close" onClick={()=>this.removeArquivo(f)}></i>
             </div>
           ))}
         </div>
       </div>
     );
+  }
+
+  private removeArquivo(f:Arquivo){
+    if ( !confirm("Tem certeza que deseja remover o arquivo?"))
+      return;
+    action({type:"remove-arquivo",arquivo: f.path})
   }
 
   private select(f: Arquivo) {

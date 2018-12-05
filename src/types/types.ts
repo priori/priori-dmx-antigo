@@ -51,6 +51,7 @@ export type AppAction =
   | { type: "cenas-sort"; sort: Uid[] }
   | { type: "equipamentos-sort"; sort: Uid[] }
   | { type: "criar-cena-equipamento"; uid: Uid; nome: string }
+  | { type: "remove-arquivo", arquivo: string }
   | {
       type: "salvar-equipamento-tipo-configuracao";
       uid: Uid;
