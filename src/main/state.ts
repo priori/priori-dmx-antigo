@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from "electron";
+﻿import { BrowserWindow, ipcMain } from "electron";
 import {
   AppInternalState,
   Tipo,
@@ -82,7 +82,7 @@ export const initialTipos = [
       { tipo: "piscar" },
       { tipo: "hue" },
       { tipo: "animacao" },
-      { tipo: "animacao-velocidade" }
+   //   { tipo: "animacao-velocidade" }
     ]
   },
   {
@@ -94,6 +94,21 @@ export const initialTipos = [
       { tipo: "red" },
       { tipo: "green" },
       { tipo: "blue" }
+    ]
+  },
+  {
+    nome: 'SESC',
+    uid: 3 as Uid,
+    canais: [
+      {tipo:"master"},
+      {tipo:"piscar"},
+      {tipo:"animacao"},
+      {tipo:"animacao-velocidade"},
+     { tipo: "red" },
+      { tipo: "green" },
+      { tipo: "blue" },
+      { tipo: "white" },
+        
     ]
   }
 ] as Tipo[];
