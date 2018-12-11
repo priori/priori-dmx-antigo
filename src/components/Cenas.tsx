@@ -7,8 +7,10 @@ import {
   SortableElement,
   arrayMove
 } from "react-sortable-hoc";
+import Timer = NodeJS.Timer;
 
 export interface CenasState {
+  cenaSlide: number|undefined;
   editandoTempo: number;
   editandoNome: number;
   selected: Uid | null;
@@ -115,7 +117,8 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
       editandoNome: -1,
       editandoTempo: -1,
       selected: null,
-      cenasSort: null
+      cenasSort: null,
+      cenaSlide: undefined
     };
   }
 
@@ -184,7 +187,7 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
         selected: null
       });
     } else {
-      this.setState({ ...this.state, selected: cena.uid });
+      this.setState({ ...this.state, selected: cena.uid, cenaSlide: undefined });
     }
   }
 
@@ -205,6 +208,7 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
               type="range"
               onChange={(e: any) => this.cenaSlide(parseFloat(e.target.value))}
               value={
+                typeof this.state.cenaSlide != 'undefined' ? this.state.cenaSlide :
                 this.props.cenaSlide && this.props.cenaSlide.uid == cena.uid
                   ? this.props.cenaSlide.value
                   : "0"
@@ -290,7 +294,20 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
     }
   }
 
+  private slideValueTimeout: Timer;
   private cenaSlide(value: number) {
+      this.setState({
+          ...this.state,
+          cenaSlide: value
+      });
+      if ( this.slideValueTimeout )
+        clearTimeout(this.slideValueTimeout);
+      this.slideValueTimeout = setTimeout(()=>{
+        this.setState({
+            ...this.state,
+            cenaSlide: undefined
+        })
+      },2000);
     action({ type: "slide-cena", uid: this.state.selected as Uid, value });
     // this.setState({...this.state,slide:parseFloat(e.target.value)})
   }

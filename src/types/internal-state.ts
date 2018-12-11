@@ -80,7 +80,7 @@ export interface CanaisDmx {
   __canaisdmx__: never;
 }
 
-export type ArquivoType = "img" | "video";
+export type ArquivoType = "img" | "video" | "audio";
 export interface Arquivo {
   readonly type: ArquivoType;
   readonly path: string;
@@ -130,6 +130,8 @@ export interface AppInternalState {
   readonly player: {
     arquivo: string | null;
     state: PlayerState;
+    repeat: boolean;
+    volume: number;
   };
 
   readonly animacao: boolean;

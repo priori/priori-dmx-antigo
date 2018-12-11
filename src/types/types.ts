@@ -10,6 +10,8 @@ export interface IpcSender {
 
 export type AppAction =
   | { type: "app-start" }
+    | { type: "repeat" }
+    | { type: "volume", volume: number }
   | { type: "http-open"; port: number }
   | { type: "novos-arquivos"; arquivos: string[] }
   | { type: "http-close" }

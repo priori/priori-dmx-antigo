@@ -1,15 +1,15 @@
 import { dialog } from "electron";
 import {
-  AppInternalState,
-  CenaIS,
-  EquipamentoSimplesIS,
-  EquipamentosCenaIS,
-  Tipo,
-  MesaCenaIS,
-  Uid,
-  EquipamentoGrupoIS,
-  EquipamentoIS,
-  ArquivoType
+    AppInternalState,
+    CenaIS,
+    EquipamentoSimplesIS,
+    EquipamentosCenaIS,
+    Tipo,
+    MesaCenaIS,
+    Uid,
+    EquipamentoGrupoIS,
+    EquipamentoIS,
+    ArquivoType
 } from "../types/internal-state";
 import {
   canaisMesaCor,
@@ -1137,15 +1137,24 @@ function novosArquivos({ arquivos }: { arquivos: string[] }) {
       ...state.arquivos,
       ...arquivos.map(a => ({
         path: a,
-        type: (a.match(/\.(mp4)$/i) ? "video" : "img") as ArquivoType,
+        type: (a.match(/\.(mp4)$/i) ? "video" :
+            a.match(/\.(ogg|mp3)$/i) ? "audio" :
+            "img") as ArquivoType,
         nome: a.replace(/.*\/([^\\\/]+)/, "$1")
       }))
     ]
   });
 }
 
+function isAudio(state:AppInternalState,selected:string|null){
+    const s = selected ? state.arquivos.filter(a=>a.path == selected)[0] : undefined;
+    const audio = s && s.type == "audio";
+    return !!audio;
+}
+
 function arquivoPlay({ path }: { path: string }) {
-  if (currentState().telas.aberta === null) return;
+  const state = currentState();
+  if (state.telas.aberta === null && !isAudio(state,path)) return;
   const func = () => {
     const state = currentState();
     setState({
@@ -1157,17 +1166,19 @@ function arquivoPlay({ path }: { path: string }) {
       }
     });
   };
-  if (currentState().player.state == "stop") {
+  if ( (state.player.state == "stop" || state.player.arquivo && isAudio(state,state.player.arquivo) ) && !isAudio(state,path)  ) {
     abrirTampa(func);
   } else {
+    if ( isAudio(state,path) && state.player.arquivo && !isAudio(state,state.player.arquivo) )
+      fecharTampa();
     func();
   }
 }
 
 function arquivoStop() {
-  if (currentState().telas.aberta === null) return;
   const state = currentState();
-  if (state.player.state != "stop") fecharTampa();
+  if (state.telas.aberta === null && !isAudio(state,state.player.arquivo)) return;
+  if (state.player.state != "stop" && !isAudio(state,state.player.arquivo)) fecharTampa();
   setState({
     ...state,
     player: {
@@ -1179,8 +1190,8 @@ function arquivoStop() {
 }
 
 function arquivoPause() {
-  if (currentState().telas.aberta === null) return;
   const state = currentState();
+  if (state.telas.aberta === null && !isAudio(state,state.player.arquivo)) return;
   setState({
     ...state,
     player: {
@@ -1194,6 +1205,26 @@ function removeArquivo({arquivo}:{arquivo:string}){
     setState({
         ...state,
         arquivos: state.arquivos.filter(f=>f.path!=arquivo)
+    });
+}
+function repeat(){
+    const state = currentState();
+    setState({
+        ...state,
+        player: {
+          ...state.player,
+            repeat: !state.player.repeat
+        }
+    });
+}
+function volume({volume}:{volume:number}){
+    const state = currentState();
+    setState({
+        ...state,
+        player: {
+            ...state.player,
+            volume
+        }
     });
 }
 
@@ -1255,6 +1286,8 @@ on(action => {
   else if (action.type == "arquivo-play") arquivoPlay(action);
   else if (action.type == "arquivo-stop") arquivoStop();
   else if (action.type == "arquivo-pause") arquivoPause();
+  else if (action.type == "volume") volume(action);
+  else if (action.type == "repeat") repeat();
   else if (action.type != "app-start" && action.type != "screen-started")
     console.log(action);
 });
