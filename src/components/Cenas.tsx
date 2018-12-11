@@ -187,7 +187,7 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
         selected: null
       });
     } else {
-      this.setState({ ...this.state, selected: cena.uid });
+      this.setState({ ...this.state, selected: cena.uid, cenaSlide: undefined });
     }
   }
 
