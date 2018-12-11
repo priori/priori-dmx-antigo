@@ -136,7 +136,7 @@ export class ScreenApp extends React.Component<undefined, ScreenAppState> {
                     : 0
               }}
             />
-          ) : (
+          ) : a.type == "video" ? (
             <video
               key={a.path}
               src={a.path}
@@ -152,7 +152,7 @@ export class ScreenApp extends React.Component<undefined, ScreenAppState> {
               }}
               ref={el => (this.videos[a.path] = el)}
             />
-          )
+          ) : null
         )}
       </div>
     );

@@ -36,7 +36,9 @@ export function readState(file: string): AppInternalState | undefined {
     // if (!json.player) {
     (json as any).player = {
       arquivo: null,
-      state: "stop"
+      state: "stop",
+      volume: 1,
+      repeat: false
     };
     //}
     (json as any).telas.disponiveis = telasDisponiveis();

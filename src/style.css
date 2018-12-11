@@ -421,25 +421,6 @@ input.cena__nome {
   font-size: 16px;
   padding: 12px 20px 10px 20px;
 }
-@media only screen and (max-width: 600px) {
-  .arquivos__controles {
-    font-size: 32px;
-  }
-  .cena {
-    font-size: 14px;
-    padding: 7px 5px;
-  }
-  .cenas__controller input[type="range"] {
-    width: 100%;
-    height: 30px;
-  }
-  .cenas__controller button span {
-    display: none;
-  }
-  .cenas__controller button {
-    font-size: 32px;
-  }
-}
 .abrir-fechar {
   font-size: 20px;
   font-weight: bold;
@@ -495,4 +476,40 @@ input.cena__nome {
 }
 .arquivos .fa-close:hover {
   opacity: 1;
+}
+.volume {
+  float: right;
+  margin-top: 32px;
+  margin-right: -10px;
+  font-size: 12px;
+  vertical-align: top;
+}
+.volume input {
+  vertical-align: middle;
+}
+
+@media only screen and (max-width: 600px) {
+  .arquivos__controles {
+    font-size: 32px;
+  }
+  .cena {
+    font-size: 14px;
+    padding: 7px 5px;
+  }
+  .cenas__controller input[type="range"],
+  .volume input[type="range"] {
+    width: 100%;
+    height: 30px;
+  }
+  .cenas__controller button span {
+    display: none;
+  }
+  .cenas__controller button {
+    font-size: 32px;
+  }
+  .volume {
+    float: none;
+    margin: 0;
+    margin-top: 20px;
+  }
 }

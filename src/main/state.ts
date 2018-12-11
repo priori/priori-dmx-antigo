@@ -56,7 +56,9 @@ export function onCloseTela() {
     },
     player: {
       state: "stop",
-      arquivo: null
+      arquivo: null,
+      volume: state.player.volume,
+      repeat: state.player.repeat
     }
   });
 }
@@ -126,7 +128,9 @@ export function emptyState() {
     },
     player: {
       arquivo: null,
-      state: "stop"
+      state: "stop",
+      volume: 1,
+      repeat: false
     }
   };
   deepFreeze(emptyState);
@@ -205,7 +209,9 @@ export function ativarTela({ index }: { index: number }) {
       ? state.player
       : {
           state: "stop",
-          arquivo: null
+          arquivo: null,
+          volume: state.player.volume,
+          repeat: state.player.repeat
         }
   });
 

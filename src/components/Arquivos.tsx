@@ -2,10 +2,13 @@ import * as React from "react";
 import { action } from "../util/action";
 import { Arquivo, PlayerState } from "../types/internal-state";
 import { Monitor } from "./Monitor";
+import {Audios} from "./Audios";
+import Timer = NodeJS.Timer;
 
 export interface ArquivosState {
   over: boolean;
   selected: string | null;
+  volume: undefined|number;
 }
 export interface ArquivosProps {
   arquivos: Arquivo[];
@@ -16,15 +19,20 @@ export interface ArquivosProps {
   };
   player: {
     state: PlayerState;
+    repeat: boolean;
     arquivo: string | null;
+    volume: number;
   };
 }
+
+
 export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
   constructor(props: undefined) {
     super(props);
     this.state = {
       over: false,
-      selected: null
+      selected: null,
+      volume: undefined
     };
   }
 
@@ -47,6 +55,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
       if (this.props.arquivos.find(f => f.path == file.path)) return;
       if (file.path.match(/\.(png|jpg|jpeg|gif)$/i)) files.push(file.path);
       else if (file.path.match(/\.(mp4)$/i)) files.push(file.path);
+      else if (file.path.match(/\.(mp3|ogg)$/i)) files.push(file.path);
       else {
         invalids.push(file.path);
       }
@@ -78,6 +87,12 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
     });
   }
 
+  isAudio(){
+      const selected = this.state.selected ? this.props.arquivos.filter(a=>a.path == this.state.selected)[0] : undefined;
+      const audio = selected && selected.type == "audio";
+      return audio;
+  }
+
   render() {
     const dragListeners = (window as any).webMode
       ? {}
@@ -87,6 +102,9 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
           onDragOver: (e: any) => this.onDragOver(e),
           onDragLeave: (e: any) => this.onDragLeave(e)
         };
+
+    const telaAberta = this.props.telas.aberta !== null;
+    const audio = this.isAudio();
 
     return (
       <div
@@ -103,7 +121,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
               <div className="arquivos__controles">
                   <button
                       style={{
-                          opacity: null === this.props.telas.aberta ? 0.5 : 1
+                          opacity: !audio && !telaAberta ? 0.5 : 1
                       }}
                       onClick={() => this.stop()}
                   >
@@ -113,7 +131,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
                   <button
                       style={{
                           opacity:
-                              null === this.props.telas.aberta || this.state.selected === null
+                              this.state.selected === null || !audio && !telaAberta
                                   ? 0.5
                                   : 1
                       }}
@@ -124,13 +142,32 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
                   {" "}
                   <button
                       style={{
-                          opacity: this.props.telas.aberta === null ? 0.5 : 1
+                          opacity: !audio && !telaAberta ? 0.5 : 1
                       }}
                       onClick={() => this.pause()}
                   >
                       <i className="fa fa-pause"/>
                   </button>
                   {" "}
+                  <button
+                      onClick={()=>this.repeat()}
+                  >
+                    <i
+                        className="fa fa-repeat"
+                        style={{opacity: this.props.player.repeat ? 1: 0.33,
+                            color: this.props.player.repeat ? '#029' : undefined
+                        }}
+                    ></i>
+                  </button>
+
+                <div className="volume">
+                <strong>Volume:</strong>
+                  <input type="range"
+                         value={typeof this.state.volume == "undefined" ? this.props.player.volume * 100.0 :
+                         this.state.volume * 100.0 }
+                         onChange={(e:any)=>this.setVolume(parseFloat(e.target.value) / 100.0 )}
+                  />
+                </div>
               </div>
               : null
           }
@@ -163,6 +200,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
             </div>
           ))}
         </div>
+      <Audios arquivos={this.props.arquivos} player={this.props.player}/>
       </div>
     );
   }
@@ -188,18 +226,33 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
   }
 
   private stop() {
-    if (this.props.telas.aberta === null) throw "Arquivo não selecionado.";
+    if (!this.isAudio() && this.props.telas.aberta === null) throw "Não há tela aberta.";
     action({ type: "arquivo-stop" });
   }
 
   private play() {
-    if (this.props.telas.aberta === null || this.state.selected === null)
+    if (!this.isAudio() && this.props.telas.aberta === null) throw "Não há tela aberta.";
+    if (this.state.selected === null)
       throw "Arquivo não selecionado.";
     action({ type: "arquivo-play", path: this.state.selected });
   }
 
   private pause() {
-    if (this.props.telas.aberta === null) throw "Arquivo não selecionado.";
+    if (!this.isAudio() && this.props.telas.aberta === null) throw "Não há tela aberta.";
     action({ type: "arquivo-pause" });
+  }
+
+  private repeat() {
+    action({type:"repeat"});
+  }
+
+  private volumeSlideTimeout:undefined|Timer;
+  private setVolume(volume: number) {
+    this.setState({...this.state, volume});
+    if ( this.volumeSlideTimeout )clearTimeout(this.volumeSlideTimeout);
+    this.volumeSlideTimeout = setTimeout(()=>{
+      this.setState({...this.state,volume:undefined});
+    },2000);
+    action(({type:"volume",volume}));
   }
 }
