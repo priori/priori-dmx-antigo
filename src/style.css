@@ -43,13 +43,7 @@ button:focus {
 }
 
 .arquivos {
-  background: #eee;
-  position: relative;
-}
-.monitor {
-  position: absolute;
-  top: 0;
-  right: 10px;
+  /* position: relative; */
 }
 .arquivos.over {
   background: #ccc;
@@ -73,8 +67,7 @@ button:focus {
   width: 50px;
 }
 
-.servidor-http,
-.monitor {
+.servidor-http {
   padding-top: 10px;
   padding-bottom: 10px;
 }
@@ -287,7 +280,6 @@ input[type="color"] {
   margin: 5px 0;
 }
 .cena {
-  line-height: 2.5em;
   padding: 0 5px;
 }
 .cena .fa.fa-close:hover {
@@ -303,6 +295,24 @@ input[type="color"] {
   line-height: 2.5em;
   margin-top: 5px;
   z-index: 1;
+}
+
+.equipamentos__mapa {
+  width: 100%;
+  table-layout: fixed;
+  font-size: 14px;
+  border-collapse: collapse;
+  margin-top: -6px;
+}
+.equipamentos__mapa td {
+  border: solid 1px #bbb;
+  padding: 6px 2px;
+  width: 20%;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  height: 16px;
 }
 
 .equipamento__canal {
@@ -407,7 +417,8 @@ input.cena__nome {
 }
 
 .arquivo {
-  padding: 10px 20px;
+  padding: 10px 20px 10px 28px;
+  position: relative;
 }
 .arquivo.selected {
   background: #fe0;
@@ -419,7 +430,6 @@ input.cena__nome {
 
 .arquivos__controles {
   font-size: 16px;
-  padding: 12px 20px 10px 20px;
 }
 .abrir-fechar {
   font-size: 20px;
@@ -438,6 +448,8 @@ input.cena__nome {
   display: inline-block;
   width: 20px;
   font-size: 15px;
+  position: absolute;
+  left: 10px;
 }
 .arquivo.na-tela {
   color: #03b;
@@ -587,13 +599,45 @@ input.cena__nome {
   vertical-align: middle;
 }
 
+.cenas__transicao-tempo {
+  display: inline-block;
+  width: 60px;
+}
+.cenas__nova-cena-form {
+  text-align: right;
+  padding-bottom: 5px;
+}
 @media only screen and (max-width: 600px) {
+  .mesa > div {
+    margin-top: 100px;
+  }
   .arquivos__controles {
     font-size: 32px;
+    text-align: center;
+  }
+  .cenas__controller {
+    text-align: center;
+  }
+  .equipamentos-nomes {
+    position: absolute;
+    top: 223px;
+    left: 0;
+    right: 0;
+    height: 127px;
+    overflow: auto;
+  }
+  .equipamentos {
+    position: absolute;
+    left: 0;
+    right: 0;
+    overflow: auto;
+    top: 347px;
+    bottom: 0;
+    padding: 1px 10px 10px 10px;
   }
   .cena {
     font-size: 14px;
-    padding: 7px 5px;
+    padding: 10px 5px;
   }
   .cenas__controller input[type="range"],
   .volume input[type="range"] {
@@ -604,12 +648,69 @@ input.cena__nome {
     display: none;
   }
   .cenas__controller button {
-    font-size: 32px;
+    font-size: 50px;
   }
   .volume {
     float: none;
     margin: 0;
-    margin-top: 20px;
+    margin-top: 10px;
+  }
+  .arquivos__controles {
+    font-size: 50px;
+    text-align: center;
+  }
+  .cenas__transicao-tempo {
+    position: absolute;
+    right: 0;
+  }
+
+  .cenas__controller {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+
+    padding: 0 20px;
+  }
+  .cenas .cenas {
+    position: absolute;
+    top: 180px;
+    left: 0;
+    right: 0;
+    bottom: 40px;
+    overflow: auto;
+  }
+  .cenas__nova-cena-form {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: right;
+    padding: 10px;
+    font-size: 18px;
+  }
+  .arquivos__controles {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 60px;
+    padding: 10px 20px 0 20px;
+  }
+  .arquivos__itens {
+    position: absolute;
+    top: 220px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: auto;
+  }
+  .mesa {
+    height: auto;
+    position: absolute;
+    top: 60px;
+    bottom: 0;
+    right: 0;
+    left: 0;
   }
 }
 
@@ -630,4 +731,22 @@ input.cena__nome {
   color: #029;
   opacity: 1 !important;
   background: transparent;
+}
+
+.volume {
+  text-align: left;
+}
+
+.arquivo strong {
+  font-size: 16px;
+  margin-right: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  display: block;
+  font-weight: normal;
+}
+.equipamento-option {
+  padding: 6px 7px;
+  font-size: 14px;
 }

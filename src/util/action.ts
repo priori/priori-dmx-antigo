@@ -5,7 +5,9 @@ const electron = !webMode ? require("electron") : null;
 const ipcRenderer = electron ? electron.ipcRenderer : null;
 export function action(e: AppAction) {
   if (ipcRenderer) ipcRenderer.send("action-call", e);
-  else if (typeof fetch != "undefined") {
+  else if ((window as any).socket) {
+    (window as any).socket.send(JSON.stringify(e));
+  } else if (typeof fetch != "undefined") {
     fetch("/action-call", {
       headers: {
         Accept: "application/json",

@@ -83,8 +83,8 @@ export const initialTipos = [
       { tipo: "master" },
       { tipo: "piscar" },
       { tipo: "hue" },
-      { tipo: "animacao" },
-   //   { tipo: "animacao-velocidade" }
+      { tipo: "animacao" }
+      //   { tipo: "animacao-velocidade" }
     ]
   },
   {
@@ -99,19 +99,23 @@ export const initialTipos = [
     ]
   },
   {
-    nome: 'SESC',
+    nome: "SESC",
     uid: 3 as Uid,
     canais: [
-      {tipo:"master"},
-      {tipo:"piscar"},
-      {tipo:"animacao"},
-      {tipo:"animacao-velocidade"},
-     { tipo: "red" },
+      { tipo: "master" },
+      { tipo: "piscar" },
+      { tipo: "animacao" },
+      { tipo: "animacao-velocidade" },
+      { tipo: "red" },
       { tipo: "green" },
       { tipo: "blue" },
-      { tipo: "white" },
-        
+      { tipo: "white" }
     ]
+  },
+  {
+    nome: "Um Canal",
+    uid: 4 as Uid,
+    canais: [{ tipo: "master" }]
   }
 ] as Tipo[];
 export function emptyState() {

@@ -1,5 +1,5 @@
 import * as React from "react";
-// import {Monitor} from './Monitor'
+import { Monitor } from "./Monitor";
 import { ConexaoDMX } from "./ConexaoDMX";
 import { Mesa } from "./Mesa";
 import { Equipamentos } from "./equipamentos/Equipamentos";
@@ -12,7 +12,7 @@ import { Arquivos } from "./Arquivos";
 export interface WebAppState {
   appState: AppInternalState | null;
   ws: boolean;
-  selected: "cenas"|"player"|"equipamentos"|"mesa"|"conf"|"arquivos"
+  selected: "cenas" | "player" | "equipamentos" | "mesa" | "conf" | "arquivos";
 }
 
 export class WebApp extends React.Component<{ closed: boolean }, WebAppState> {
@@ -29,6 +29,7 @@ export class WebApp extends React.Component<{ closed: boolean }, WebAppState> {
 
   connect() {
     const socket = new WebSocket("ws://" + location.host + "/state");
+    (window as any).socket = socket;
     this.socket = socket;
     socket.onmessage = event => {
       const data = JSON.parse(event.data) as AppInternalState & { ws: boolean };
@@ -57,10 +58,10 @@ export class WebApp extends React.Component<{ closed: boolean }, WebAppState> {
     if (this.inputEl) this.inputEl.value = "";
     action({ type: "salvar-mesa", nome });
   }
-  select(selected:"cenas"|"player"|"equipamentos"|"mesa"|"conf"){
+  select(selected: "cenas" | "player" | "equipamentos" | "mesa" | "conf") {
     this.setState({
-        ...this.state,
-        selected
+      ...this.state,
+      selected
     });
   }
 
@@ -102,47 +103,104 @@ export class WebApp extends React.Component<{ closed: boolean }, WebAppState> {
         ) : null}
 
         <div className="tabs">
-          <i className={"fa fa-image"+(this.state.selected == "cenas"?" selected":"")} onClick={()=>{this.select("cenas")}}></i>
-          <i className={"fa fa-play-circle"+(this.state.selected == "player"?" selected":"")} onClick={()=>{this.select("player")}}></i>
-          <i className={"fa fa-cubes"+(this.state.selected == "equipamentos"?" selected":"")} onClick={()=>{this.select("equipamentos")}}></i>
-          <i className={"fa fa-th"+(this.state.selected == "mesa"?" selected":"")} onClick={()=>{this.select("mesa")}}></i>
-          <i className={"fa fa-cog"+(this.state.selected == "conf"?" selected":"")} onClick={()=>{this.select("conf")}}></i>
+          <i
+            className={
+              "fa fa-image" +
+              (this.state.selected == "cenas" ? " selected" : "")
+            }
+            onClick={() => {
+              this.select("cenas");
+            }}
+          />
+          <i
+            className={
+              "fa fa-play-circle" +
+              (this.state.selected == "player" ? " selected" : "")
+            }
+            onClick={() => {
+              this.select("player");
+            }}
+          />
+          <i
+            className={
+              "fa fa-cubes" +
+              (this.state.selected == "equipamentos" ? " selected" : "")
+            }
+            onClick={() => {
+              this.select("equipamentos");
+            }}
+          />
+          <i
+            className={
+              "fa fa-th" + (this.state.selected == "mesa" ? " selected" : "")
+            }
+            onClick={() => {
+              this.select("mesa");
+            }}
+          />
+          <i
+            className={
+              "fa fa-cog" + (this.state.selected == "conf" ? " selected" : "")
+            }
+            onClick={() => {
+              this.select("conf");
+            }}
+          />
         </div>
 
-          <div style={{display:this.state.selected == "conf"?undefined:"none"}}>
-        <ConexaoDMX {...state.dmx} />
-
-          </div>
-          <div style={{display:this.state.selected == "cenas"?undefined:"none"}}>
-
-        <Cenas {...state} />
-
-        <div style={{ textAlign: "right", paddingBottom: "5px" }}>
-          <input type="text" ref={el => (this.inputEl = el)} />{" "}
-          <button onClick={() => this.salvarMesa()}>Salvar</button>
+        <div
+          style={{
+            display: this.state.selected == "conf" ? undefined : "none"
+          }}
+        >
+          <ConexaoDMX {...state.dmx} />
+          <Monitor telas={state.telas} />
         </div>
+        <div
+          style={{
+            display: this.state.selected == "cenas" ? undefined : "none"
+          }}
+        >
+          <Cenas {...state} />
+
+          <div className="cenas__nova-cena-form">
+            <input type="text" ref={el => (this.inputEl = el)} />{" "}
+            <button onClick={() => this.salvarMesa()}>Salvar</button>
           </div>
-          <div style={{display:this.state.selected == "mesa"?undefined:"none"}}>
-              {this.state.selected == "mesa" ?
+        </div>
+        <div
+          style={{
+            display: this.state.selected == "mesa" ? undefined : "none"
+          }}
+        >
+          {this.state.selected == "mesa" ? (
             <Mesa canais={state.canais} />
-                  : null }
-          </div>
-          <div style={{display:this.state.selected == "equipamentos"?undefined:"none"}}>
-            <Equipamentos
-              equipamentoTipos={state.equipamentoTipos}
-              equipamentos={state.equipamentos}
-              canais={state.canais}
-              cenas={state.cenas}
-            />
-          </div>
-          <div style={{display:this.state.selected == "player"?undefined:"none"}}>
-        <Arquivos
-          player={state.player}
-          arquivos={state.arquivos}
-          showThumbs={false}
-          telas={state.telas}
-        />
-          </div>
+          ) : null}
+        </div>
+        <div
+          style={{
+            display: this.state.selected == "equipamentos" ? undefined : "none"
+          }}
+        >
+          <Equipamentos
+            equipamentoTipos={state.equipamentoTipos}
+            equipamentos={state.equipamentos}
+            canais={state.canais}
+            cenas={state.cenas}
+          />
+        </div>
+        <div
+          style={{
+            display: this.state.selected == "player" ? undefined : "none"
+          }}
+        >
+          <Arquivos
+            player={state.player}
+            arquivos={state.arquivos}
+            showThumbs={false}
+            telas={state.telas}
+          />
+        </div>
       </div>
     );
   }

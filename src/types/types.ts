@@ -10,8 +10,8 @@ export interface IpcSender {
 
 export type AppAction =
   | { type: "app-start" }
-    | { type: "repeat" }
-    | { type: "volume", volume: number }
+  | { type: "repeat" }
+  | { type: "volume"; volume: number }
   | { type: "http-open"; port: number }
   | { type: "novos-arquivos"; arquivos: string[] }
   | { type: "http-close" }
@@ -23,6 +23,7 @@ export type AppAction =
   | { type: "transicao-para-cena"; uid: Uid }
   | { type: "salvar-cena"; uid: Uid }
   | { type: "editar-nome-da-cena"; uid: Uid; nome: string }
+  | { type: "editar-nome-do-arquivo"; path: string; nome: string }
   | { type: "editar-tempo-da-cena"; uid: Uid; tempo: number }
   | { type: "dmx-conectar"; driver: string; deviceId: string }
   | { type: "dmx-desconectar" }
@@ -53,7 +54,7 @@ export type AppAction =
   | { type: "cenas-sort"; sort: Uid[] }
   | { type: "equipamentos-sort"; sort: Uid[] }
   | { type: "criar-cena-equipamento"; uid: Uid; nome: string }
-  | { type: "remove-arquivo", arquivo: string }
+  | { type: "remove-arquivo"; arquivo: string }
   | {
       type: "salvar-equipamento-tipo-configuracao";
       uid: Uid;

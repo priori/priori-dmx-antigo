@@ -1,6 +1,7 @@
 import { actionCall, currentState } from "./state";
 import * as path from "path";
 import { AppInternalState } from "../types/internal-state";
+import { AppAction } from "../types/types";
 
 const express = require("express");
 var bodyParser = require("body-parser");
@@ -16,6 +17,9 @@ app.get("/", function(_: any, res: any) {
 });
 app.ws("/state", function(ws: any) {
   ws.send(JSON.stringify(currentState()));
+  ws.on("message", (msg: string) => {
+    actionCall(JSON.parse(msg) as AppAction);
+  });
 });
 
 export function httpServerListener(state: AppInternalState) {

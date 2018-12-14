@@ -77,6 +77,7 @@ export interface EquipamentosProps {
 export interface EquipamentosState {
   add: boolean;
   equipamentosSort: Uid[] | null;
+  selected: string | undefined | Uid;
 }
 
 export class Equipamentos extends React.Component<
@@ -87,7 +88,8 @@ export class Equipamentos extends React.Component<
     super(props);
     this.state = {
       add: false,
-      equipamentosSort: null
+      equipamentosSort: null,
+      selected: undefined
     };
   }
 
@@ -112,6 +114,29 @@ export class Equipamentos extends React.Component<
     };
   }
 
+  select(i: number, j: number) {
+    const selected = "!" + (j + 1) + "," + (i + 1);
+    const selection = this.props.equipamentos.filter(e =>
+      e.nome.endsWith(selected)
+    );
+    if (selection.length == 1) {
+      this.setState({
+        ...this.state,
+        selected: selection[0].uid
+      });
+    } else if (selection.length) {
+      this.setState({
+        ...this.state,
+        selected
+      });
+    } else {
+      this.setState({
+        ...this.state,
+        selected: undefined
+      });
+    }
+  }
+
   onSortEnd = ({
     oldIndex,
     newIndex
@@ -132,9 +157,107 @@ export class Equipamentos extends React.Component<
       const sort = this.state.equipamentosSort as Uid[];
       equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
     }
+    const areas = [] as (EquipamentoSimplesIS)[][][];
+    for (let c = 0; c < 4; c++) {
+      const row = [] as (EquipamentoSimplesIS)[][];
+      for (let c2 = 0; c2 < 5; c2++) {
+        const cell = equipamentos.filter(
+          (e: any) =>
+            e.tipoUid && e.nome.endsWith("!" + (c2 + 1) + "," + (c + 1))
+        ) as (EquipamentoSimplesIS)[];
+        row.push(cell);
+      }
+      areas.push(row);
+    }
+    if (typeof this.state.selected == "string")
+      equipamentos = equipamentos.filter(e =>
+        e.nome.endsWith(this.state.selected as string)
+      );
+    else if (typeof this.state.selected == "number") {
+      equipamentos = equipamentos.filter(
+        e => e.uid == (this.state.selected as Uid)
+      );
+    }
+
     return (
       <div>
-        <div style={{ textAlign: "right", marginTop: "11px" }}>
+        <table className="equipamentos__mapa">
+          <tbody>
+            {areas.map((row, i) => (
+              <tr key={i}>
+                {row.map((cell, j) => (
+                  <td
+                    key={j}
+                    onClick={() => {
+                      this.select(i, j);
+                    }}
+                  >
+                    {cell
+                      .map(e => e.nome.replace(/\s*![0-9],[0-9]\s*$/gi, ""))
+                      .join(",")}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div
+          className="equipamentos-nomes"
+          style={{
+            borderBottom: "solid 1px #ccc",
+            borderTop: "solid 1px #ccc"
+          }}
+        >
+          <div
+            className={
+              "equipamento-option" + (!this.state.selected ? " selected" : "")
+            }
+            onClick={() =>
+              this.setState({ ...this.state, selected: undefined })
+            }
+            style={{ fontWeight: "bold" }}
+          >
+            Todos
+          </div>
+          {(this.props.equipamentos.filter(
+            e => e.grupo
+          ) as EquipamentoGrupoIS[]).map((g, gi) => (
+            <div
+              className={
+                "equipamento-option" +
+                (this.state.selected == g.uid ? " selected" : "")
+              }
+              style={{
+                fontWeight: "bold",
+                borderTop: gi == 0 ? "solid 1px #ccc" : undefined
+              }}
+              key={g.uid}
+              onClick={() => this.setState({ ...this.state, selected: g.uid })}
+            >
+              <i className="fa fa-cubes" />{" "}
+              {g.nome.replace(/\s*![0-9],[0-9]\s*$/gi, "")}
+            </div>
+          ))}
+          {(this.props.equipamentos.filter(
+            e => !e.grupo
+          ) as EquipamentoSimplesIS[]).map((g, gi) => (
+            <div
+              style={{
+                borderTop: gi == 0 ? "solid 1px #ccc" : undefined
+              }}
+              className={
+                "equipamento-option" +
+                (this.state.selected == g.uid ? " selected" : "")
+              }
+              key={g.uid}
+              onClick={() => this.setState({ ...this.state, selected: g.uid })}
+            >
+              {g.nome.replace(/\s*![0-9],[0-9]\s*$/gi, "")}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ textAlign: "right", marginTop: "4px" }}>
           {/*Equipamentos{" "}*/}
           <button onClick={() => this.add()}>Novo Equipamento</button>
         </div>

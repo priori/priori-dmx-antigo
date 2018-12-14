@@ -1,15 +1,16 @@
 import { dialog } from "electron";
 import {
-    AppInternalState,
-    CenaIS,
-    EquipamentoSimplesIS,
-    EquipamentosCenaIS,
-    Tipo,
-    MesaCenaIS,
-    Uid,
-    EquipamentoGrupoIS,
-    EquipamentoIS,
-    ArquivoType
+  AppInternalState,
+  CenaIS,
+  EquipamentoSimplesIS,
+  EquipamentosCenaIS,
+  Tipo,
+  MesaCenaIS,
+  Uid,
+  EquipamentoGrupoIS,
+  EquipamentoIS,
+  ArquivoType,
+  Arquivo
 } from "../types/internal-state";
 import {
   canaisMesaCor,
@@ -221,6 +222,29 @@ function salvarMesa({ nome }: { nome: string }): void {
   });
 }
 
+function editarNomeDoArquivo({
+  path,
+  nome
+}: {
+  path: string;
+  nome: string;
+}): void {
+  const state = currentState();
+  const index = state.arquivos.findIndex(a => a.path == path);
+  const a = state.arquivos[index] as Arquivo;
+  setState({
+    ...state,
+    arquivos: [
+      ...state.arquivos.filter((_: any, index2: number) => index2 < index),
+      {
+        ...a,
+        nome
+      },
+      ...state.arquivos.filter((_: any, index2: number) => index2 > index)
+    ]
+  });
+}
+
 function editarNomeDaCena({ uid, nome }: { uid: Uid; nome: string }): void {
   const state = currentState();
   const cenaIndex = state.cenas.findIndex(cena => cena.uid == uid);
@@ -425,44 +449,44 @@ const animationInterval = setInterval(() => {
         const perc = passouTime / totalTime;
         const value = smoth(perc) * 100;
         slideCena({ uid, value });
-      // } else if (animacao.type == "transicao") {
-      //   const state = currentState();
-      //   const now = new Date();
-      //   const cena = state.cenas.find(
-      //     c => c.uid == (animacao as any).cena
-      //   ) as CenaIS;
-      //   if (cena.tipo == "mesa") {
-      //     const passouTime = now.getTime() - animacao.de.getTime();
-      //     const totalTime = animacao.ate.getTime() - animacao.de.getTime();
-      //     if (passouTime > totalTime) {
-      //       // canaisPrecisos = null;
-      //       animacao = null;
-      //       setState({
-      //         ...state,
-      //         animacao: false,
-      //         canais: cena.canais
-      //       });
-      //       if (state.dmx.conectado) dmx.update(cena.canais);
-      //       return;
-      //     }
-      //     const canais = {} as { [k: number]: number };
-      //     for (const index in cena.canais) {
-      //       const valorInicial = animacao.canaisIniciais[index],
-      //         valorObjetivo = cena.canais[index],
-      //         proximoValor =
-      //           valorInicial +
-      //           ((valorObjetivo - valorInicial) * passouTime) / totalTime;
-      //       canais[index] = Math.round(proximoValor);
-      //     }
-      //     if (state.dmx.conectado) dmx.update(canais);
-      //     setState({
-      //       ...state,
-      //       canais: {
-      //         ...state.canais,
-      //         ...canais
-      //       }
-      //     });
-      //   }
+        // } else if (animacao.type == "transicao") {
+        //   const state = currentState();
+        //   const now = new Date();
+        //   const cena = state.cenas.find(
+        //     c => c.uid == (animacao as any).cena
+        //   ) as CenaIS;
+        //   if (cena.tipo == "mesa") {
+        //     const passouTime = now.getTime() - animacao.de.getTime();
+        //     const totalTime = animacao.ate.getTime() - animacao.de.getTime();
+        //     if (passouTime > totalTime) {
+        //       // canaisPrecisos = null;
+        //       animacao = null;
+        //       setState({
+        //         ...state,
+        //         animacao: false,
+        //         canais: cena.canais
+        //       });
+        //       if (state.dmx.conectado) dmx.update(cena.canais);
+        //       return;
+        //     }
+        //     const canais = {} as { [k: number]: number };
+        //     for (const index in cena.canais) {
+        //       const valorInicial = animacao.canaisIniciais[index],
+        //         valorObjetivo = cena.canais[index],
+        //         proximoValor =
+        //           valorInicial +
+        //           ((valorObjetivo - valorInicial) * passouTime) / totalTime;
+        //       canais[index] = Math.round(proximoValor);
+        //     }
+        //     if (state.dmx.conectado) dmx.update(canais);
+        //     setState({
+        //       ...state,
+        //       canais: {
+        //         ...state.canais,
+        //         ...canais
+        //       }
+        //     });
+        //   }
       } else if (animacao.type == "pulsar") {
         const inicial = animacao.valorInicial;
         const tempoQuePassou = new Date().getTime() - animacao.inicio.getTime();
@@ -1137,24 +1161,28 @@ function novosArquivos({ arquivos }: { arquivos: string[] }) {
       ...state.arquivos,
       ...arquivos.map(a => ({
         path: a,
-        type: (a.match(/\.(mp4)$/i) ? "video" :
-            a.match(/\.(ogg|mp3)$/i) ? "audio" :
-            "img") as ArquivoType,
-        nome: a.replace(/.*\/([^\\\/]+)/, "$1")
+        type: (a.match(/\.(mp4)$/i)
+          ? "video"
+          : a.match(/\.(ogg|mp3)$/i)
+          ? "audio"
+          : "img") as ArquivoType,
+        nome: a.replace(/.*(\/|\\)([^\\\/]+)\.[a-zA-Z0-9]+/, "$2")
       }))
     ]
   });
 }
 
-function isAudio(state:AppInternalState,selected:string|null){
-    const s = selected ? state.arquivos.filter(a=>a.path == selected)[0] : undefined;
-    const audio = s && s.type == "audio";
-    return !!audio;
+function isAudio(state: AppInternalState, selected: string | null) {
+  const s = selected
+    ? state.arquivos.filter(a => a.path == selected)[0]
+    : undefined;
+  const audio = s && s.type == "audio";
+  return !!audio;
 }
 
 function arquivoPlay({ path }: { path: string }) {
   const state = currentState();
-  if (state.telas.aberta === null && !isAudio(state,path)) return;
+  if (state.telas.aberta === null && !isAudio(state, path)) return;
   const func = () => {
     const state = currentState();
     setState({
@@ -1166,10 +1194,18 @@ function arquivoPlay({ path }: { path: string }) {
       }
     });
   };
-  if ( (state.player.state == "stop" || state.player.arquivo && isAudio(state,state.player.arquivo) ) && !isAudio(state,path)  ) {
+  if (
+    (state.player.state == "stop" ||
+      (state.player.arquivo && isAudio(state, state.player.arquivo))) &&
+    !isAudio(state, path)
+  ) {
     abrirTampa(func);
   } else {
-    if ( isAudio(state,path) && state.player.arquivo && !isAudio(state,state.player.arquivo) )
+    if (
+      isAudio(state, path) &&
+      state.player.arquivo &&
+      !isAudio(state, state.player.arquivo)
+    )
       fecharTampa();
     func();
   }
@@ -1177,8 +1213,10 @@ function arquivoPlay({ path }: { path: string }) {
 
 function arquivoStop() {
   const state = currentState();
-  if (state.telas.aberta === null && !isAudio(state,state.player.arquivo)) return;
-  if (state.player.state != "stop" && !isAudio(state,state.player.arquivo)) fecharTampa();
+  if (state.telas.aberta === null && !isAudio(state, state.player.arquivo))
+    return;
+  if (state.player.state != "stop" && !isAudio(state, state.player.arquivo))
+    fecharTampa();
   setState({
     ...state,
     player: {
@@ -1191,7 +1229,8 @@ function arquivoStop() {
 
 function arquivoPause() {
   const state = currentState();
-  if (state.telas.aberta === null && !isAudio(state,state.player.arquivo)) return;
+  if (state.telas.aberta === null && !isAudio(state, state.player.arquivo))
+    return;
   setState({
     ...state,
     player: {
@@ -1200,32 +1239,32 @@ function arquivoPause() {
     }
   });
 }
-function removeArquivo({arquivo}:{arquivo:string}){
-    const state = currentState();
-    setState({
-        ...state,
-        arquivos: state.arquivos.filter(f=>f.path!=arquivo)
-    });
+function removeArquivo({ arquivo }: { arquivo: string }) {
+  const state = currentState();
+  setState({
+    ...state,
+    arquivos: state.arquivos.filter(f => f.path != arquivo)
+  });
 }
-function repeat(){
-    const state = currentState();
-    setState({
-        ...state,
-        player: {
-          ...state.player,
-            repeat: !state.player.repeat
-        }
-    });
+function repeat() {
+  const state = currentState();
+  setState({
+    ...state,
+    player: {
+      ...state.player,
+      repeat: !state.player.repeat
+    }
+  });
 }
-function volume({volume}:{volume:number}){
-    const state = currentState();
-    setState({
-        ...state,
-        player: {
-            ...state.player,
-            volume
-        }
-    });
+function volume({ volume }: { volume: number }) {
+  const state = currentState();
+  setState({
+    ...state,
+    player: {
+      ...state.player,
+      volume
+    }
+  });
 }
 
 on(action => {
@@ -1239,6 +1278,7 @@ on(action => {
   else if (action.type == "dmx-conectar") dmxConectar(action);
   else if (action.type == "dmx-desconectar") dmxDesconectar();
   else if (action.type == "editar-nome-da-cena") editarNomeDaCena(action);
+  else if (action.type == "editar-nome-do-arquivo") editarNomeDoArquivo(action);
   else if (action.type == "editar-tempo-da-cena") editarTempoDaCena(action);
   else if (action.type == "novo") novo();
   else if (action.type == "salvar") salvar();

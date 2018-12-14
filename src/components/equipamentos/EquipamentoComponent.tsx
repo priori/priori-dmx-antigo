@@ -204,7 +204,7 @@ export class EquipamentoComponent extends React.Component<
             />
           ) : (
             <span>
-              {e.nome}{" "}
+              {e.nome.replace(/\s*![0-9],[0-9]\s*$/gi, "")}{" "}
               <i className="fa fa-pencil" onClick={() => this.editNome()} />{" "}
               <i
                 className="fa fa-close"

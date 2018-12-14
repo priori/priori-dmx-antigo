@@ -10,7 +10,7 @@ import {
 import Timer = NodeJS.Timer;
 
 export interface CenasState {
-  cenaSlide: number|undefined;
+  cenaSlide: number | undefined;
   editandoTempo: number;
   editandoNome: number;
   selected: Uid | null;
@@ -142,8 +142,7 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
   }
 
   salvarCena(uid: Uid) {
-      if ( !confirm("Deseja realmente sobrescrever esta cena?"))
-        return;
+    if (!confirm("Deseja realmente sobrescrever esta cena?")) return;
     action({ type: "salvar-cena", uid });
   }
 
@@ -187,7 +186,11 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
         selected: null
       });
     } else {
-      this.setState({ ...this.state, selected: cena.uid, cenaSlide: undefined });
+      this.setState({
+        ...this.state,
+        selected: cena.uid,
+        cenaSlide: undefined
+      });
     }
   }
 
@@ -208,23 +211,28 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
               type="range"
               onChange={(e: any) => this.cenaSlide(parseFloat(e.target.value))}
               value={
-                typeof this.state.cenaSlide != 'undefined' ? this.state.cenaSlide :
-                this.props.cenaSlide && this.props.cenaSlide.uid == cena.uid
+                typeof this.state.cenaSlide != "undefined"
+                  ? this.state.cenaSlide
+                  : this.props.cenaSlide && this.props.cenaSlide.uid == cena.uid
                   ? this.props.cenaSlide.value
                   : "0"
               }
             />{" "}
             <button onClick={() => this.salvarCena(cena.uid)}>
-                <span>Salvar </span><i className="fa fa-save" />
+              <span>Salvar </span>
+              <i className="fa fa-save" />
             </button>{" "}
             <button onClick={() => this.removeCena(cena.uid)}>
-                <span>Remover </span><i className="fa fa-close" />
+              <span>Remover </span>
+              <i className="fa fa-close" />
             </button>{" "}
             <button onClick={() => this.aplicar(cena.uid)}>
-                <span>Agora </span><i className="fa fa-check" />
+              <span>Agora </span>
+              <i className="fa fa-check" />
             </button>{" "}
             <button onClick={() => this.transicao(cena.uid)}>
-                <span>Transição </span><i className="fa fa-play" />
+              <span>Transição </span>
+              <i className="fa fa-play" />
             </button>
             {this.state.editandoTempo != -1 ? (
               <FastInput
@@ -238,7 +246,8 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
               />
             ) : (
               <span
-                style={{ display: "inline-block", width: "60px" }}
+                className="cenas__transicao-tempo"
+                style={{}}
                 onDoubleClick={() =>
                   this.setState({ ...this.state, editandoTempo: cena.uid })
                 }
@@ -251,18 +260,22 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
           <div className="cenas__controller" style={{ opacity: 0.5 }}>
             <input readOnly={true} disabled={true} type="range" value={"0"} />{" "}
             <button disabled={true}>
-                <span>Salvar </span><i className="fa fa-save" />
+              <span>Salvar </span>
+              <i className="fa fa-save" />
             </button>{" "}
             <button disabled={true}>
-                <span>Remover </span><i className="fa fa-close" />
+              <span>Remover </span>
+              <i className="fa fa-close" />
             </button>{" "}
             <button disabled={true}>
-                <span>Agora </span><i className="fa fa-check" />
+              <span>Agora </span>
+              <i className="fa fa-check" />
             </button>{" "}
             <button disabled={true}>
-                <span>Transição </span><i className="fa fa-play" />
+              <span>Transição </span>
+              <i className="fa fa-play" />
             </button>
-            <span style={{ display: "inline-block", width: "60px" }} />
+            <span className="cenas__transicao-tempo" />
           </div>
         )}
         <SortableList
@@ -296,18 +309,17 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
 
   private slideValueTimeout: Timer;
   private cenaSlide(value: number) {
+    this.setState({
+      ...this.state,
+      cenaSlide: value
+    });
+    if (this.slideValueTimeout) clearTimeout(this.slideValueTimeout);
+    this.slideValueTimeout = setTimeout(() => {
       this.setState({
-          ...this.state,
-          cenaSlide: value
+        ...this.state,
+        cenaSlide: undefined
       });
-      if ( this.slideValueTimeout )
-        clearTimeout(this.slideValueTimeout);
-      this.slideValueTimeout = setTimeout(()=>{
-        this.setState({
-            ...this.state,
-            cenaSlide: undefined
-        })
-      },2000);
+    }, 2000);
     action({ type: "slide-cena", uid: this.state.selected as Uid, value });
     // this.setState({...this.state,slide:parseFloat(e.target.value)})
   }
