@@ -298,21 +298,41 @@ input[type="color"] {
 }
 
 .equipamentos__mapa {
-  width: 100%;
-  table-layout: fixed;
-  font-size: 14px;
-  border-collapse: collapse;
-  margin-top: -6px;
+  background: #eee;
+  padding: 5px;
+  margin: 20px 0;
 }
-.equipamentos__mapa td {
-  border: solid 1px #bbb;
-  padding: 6px 2px;
-  width: 20%;
+.equipamentos__mapa__equipamento {
+  border: 5px solid;
+  border-radius: 5px;
+  display: inline-block;
+  margin-right: 10px;
+}
+.equipamentos__mapa__equipamentos .equipamentos__mapa__equipamento {
+  opacity: 0.3;
+}
+.equipamentos__mapa__equipamentos-selecionados
+  .equipamentos__mapa__equipamento {
+  transform: scale(1.5);
+  opacity: 1;
+}
+.equipamentos__mapa__celula {
+  background: #ccc;
+  border: 1px solid #aaa;
+  height: 25px;
+  flex: 1;
+  padding: 5px;
+  margin: 0 5px;
   text-align: center;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  height: 16px;
+}
+.equipamentos__mapa__linha {
+  padding: 5px 0;
+  margin-bottom: 5px;
+  background: #e2e2e2;
+  border: 1px solid #ddd;
+}
+.equipamentos__mapa__celula.equipamentos__mapa__equipamentos-selecionados {
+  border-color: #05a;
 }
 
 .equipamento__canal {

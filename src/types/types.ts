@@ -27,18 +27,23 @@ export type AppAction =
   | { type: "editar-tempo-da-cena"; uid: Uid; tempo: number }
   | { type: "dmx-conectar"; driver: string; deviceId: string }
   | { type: "dmx-desconectar" }
+| { type: "editar-equipamento-posicao"; uid: Uid; row?: number, col?: number }
   | { type: "change-color"; equipamento: Uid; cor: string }
   | {
-      type: "create-equipamento-grupo";
-      nome: string;
-      equipamentos: Uid[];
-    }
-  | {
-      type: "create-equipamento";
-      nome: string;
-      inicio: number;
-      tipoUid: Uid;
-    }
+    type: "create-equipamento-grupo";
+    nome: string;
+    equipamentos: Uid[];
+  row?: number;
+  col?: number;
+  }
+| {
+    type: "create-equipamento";
+    nome: string;
+    inicio: number;
+    tipoUid: Uid;
+  row?: number;
+  col?: number;
+  }
   | { type: "screen-started" }
   | { type: "arquivo-play"; path: string }
   | { type: "arquivo-stop" }

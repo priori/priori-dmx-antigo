@@ -23,12 +23,15 @@ export type Tipo = {
     readonly tipo: CanaisTipo;
   }[];
 };
+
 export interface EquipamentoSimplesIS {
   readonly grupo: false;
   readonly inicio: number;
   readonly tipoUid: Uid;
   readonly uid: Uid;
   readonly nome: string;
+  readonly row?: number;
+  readonly col?: number;
   readonly configuracoes: {
     readonly nome: string;
     readonly canais: number[];
@@ -40,12 +43,15 @@ export interface EquipamentoGrupoIS {
   readonly nome: string;
   readonly uid: Uid;
   readonly grupo: true;
+  readonly row?: number;
+  readonly col?: number;
   readonly configuracoes: {
     readonly nome: string;
     readonly canais: (number | null)[];
     readonly cor: string | null;
   }[];
 }
+
 
 export interface EquipamentosCenaIS {
   readonly uid: Uid;

@@ -65,6 +65,14 @@ const SortableList = SortableContainer(
   )
 );
 
+function times(t:number):null[]{
+  const a = [];
+  while(t--){
+    a.push(null);
+  }
+  return a;
+}
+
 export interface EquipamentosProps {
   equipamentos: (EquipamentoSimplesIS | EquipamentoGrupoIS)[];
   equipamentoTipos: Tipo[];
@@ -77,7 +85,8 @@ export interface EquipamentosProps {
 export interface EquipamentosState {
   add: boolean;
   equipamentosSort: Uid[] | null;
-  selected: string | undefined | Uid;
+  selected: Uid[];
+  selections: { col?: number; row?: number}[]
 }
 
 export class Equipamentos extends React.Component<
@@ -89,7 +98,8 @@ export class Equipamentos extends React.Component<
     this.state = {
       add: false,
       equipamentosSort: null,
-      selected: undefined
+      selected: [],
+      selections: []
     };
   }
 
@@ -114,29 +124,6 @@ export class Equipamentos extends React.Component<
     };
   }
 
-  select(i: number, j: number) {
-    const selected = "!" + (j + 1) + "," + (i + 1);
-    const selection = this.props.equipamentos.filter(e =>
-      e.nome.endsWith(selected)
-    );
-    if (selection.length == 1) {
-      this.setState({
-        ...this.state,
-        selected: selection[0].uid
-      });
-    } else if (selection.length) {
-      this.setState({
-        ...this.state,
-        selected
-      });
-    } else {
-      this.setState({
-        ...this.state,
-        selected: undefined
-      });
-    }
-  }
-
   onSortEnd = ({
     oldIndex,
     newIndex
@@ -157,50 +144,78 @@ export class Equipamentos extends React.Component<
       const sort = this.state.equipamentosSort as Uid[];
       equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
     }
-    const areas = [] as (EquipamentoSimplesIS)[][][];
-    for (let c = 0; c < 4; c++) {
-      const row = [] as (EquipamentoSimplesIS)[][];
-      for (let c2 = 0; c2 < 5; c2++) {
-        const cell = equipamentos.filter(
-          (e: any) =>
-            e.tipoUid && e.nome.endsWith("!" + (c2 + 1) + "," + (c + 1))
-        ) as (EquipamentoSimplesIS)[];
-        row.push(cell);
+
+
+    const rowsCount = equipamentos.map(e=>e.row).reduce((a,b)=>!a ? b : !b? a : a > b ? a : b ) || 0;
+    const colsCount = equipamentos.map(e=>e.col).reduce((a,b)=>!a ? b : !b? a : a > b ? a : b ) || 0;
+    const semPosicaoCount = this.props.equipamentos.filter(e=>typeof e.row == 'undefined' && typeof e.col == 'undefined').length;
+
+    const mapa:(number[])[] = [];
+    const rows:number[] = [];
+    for (let c = 0; c < rowsCount; c++) {
+      const row:number[] = [];
+      for ( let c2=0; c2 <colsCount; c2++ ){
+        row.push( equipamentos.filter(e=>e.row == c+1 && e.col == c2 + 1).length );
       }
-      areas.push(row);
+      mapa.push(row);
+      rows.push( equipamentos.filter(e=>e.row == c+1 && typeof e.col == 'undefined').length )
     }
-    if (typeof this.state.selected == "string")
-      equipamentos = equipamentos.filter(e =>
-        e.nome.endsWith(this.state.selected as string)
-      );
-    else if (typeof this.state.selected == "number") {
-      equipamentos = equipamentos.filter(
-        e => e.uid == (this.state.selected as Uid)
-      );
-    }
+
+    const equipamentosSelecionadosNoMapa = this.state.selections.length == 0 ? this.props.equipamentos :
+        this.props.equipamentos.filter(e=> this.state.selections.filter(s=>s.col === e.col && s.row === e.row ).length );
+
+    const equipamentosSelecionados = equipamentosSelecionadosNoMapa.filter(g=>
+        this.state.selected.length == 0 ||
+        this.state.selected.indexOf(g.uid)!= -1);
 
     return (
       <div>
-        <table className="equipamentos__mapa">
-          <tbody>
-            {areas.map((row, i) => (
-              <tr key={i}>
-                {row.map((cell, j) => (
-                  <td
-                    key={j}
-                    onClick={() => {
-                      this.select(i, j);
-                    }}
-                  >
-                    {cell
-                      .map(e => e.nome.replace(/\s*![0-9],[0-9]\s*$/gi, ""))
-                      .join(",")}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="equipamentos__mapa"
+             style={{paddingTop: semPosicaoCount ? 0: undefined}}>
+          { semPosicaoCount ? <div
+              className={this.state.selections.filter(s=>s.col === undefined && s.row === undefined ).length ?
+                  'equipamentos__mapa__equipamentos-selecionados' : 'equipamentos__mapa__equipamentos'}
+              style={{paddingTop:'10px',paddingBottom:'5px', paddingLeft: '5px'}}
+              onClick={()=>this.addSelection({row:undefined,col:undefined})}
+          >
+          { semPosicaoCount ? times(semPosicaoCount).map((_,k)=><span
+              key={k}
+              className="equipamentos__mapa__equipamento"></span>): null }
+          </div> : null }
+          {rows.map((count,index)=><div
+              key={index}
+              className="equipamentos__mapa__linha"
+              style={{paddingTop: count ? 0: undefined}}
+          >
+            {count ?
+            <div style={{paddingTop:'10px',paddingBottom:'5px', paddingLeft:'10px'}}
+
+                 className={this.state.selections.filter(s=>s.col === undefined && s.row === index+1 ).length ?
+                     'equipamentos__mapa__equipamentos-selecionados' : 'equipamentos__mapa__equipamentos'}
+
+                 onClick={()=>this.addSelection({row:index+1,col:undefined})}
+            >
+            {count ? times(count).map((_,k)=><span
+                key={k} className="equipamentos__mapa__equipamento"></span>): null}
+            </div>
+                : null }
+            <div style={{display:'flex'}}>
+            {mapa[index].map((row,col)=><div
+                key={col}
+                onClick={()=>this.addSelection({row:index+1,col:col+1})}
+                className={"equipamentos__mapa__celula "+(this.state.selections.filter(s=>s.col === col+1 && s.row === index+1 ).length ?
+                    'equipamentos__mapa__equipamentos-selecionados' : 'equipamentos__mapa__equipamentos')}
+                style={{ opacity: row ? 1 : 0.25}}
+
+            >
+              { row ? times(row).map((_,k)=><span
+                  key={k} className="equipamentos__mapa__equipamento"
+              ></span>): '' }
+            </div>)}
+            </div>
+          </div>)}
+        </div>
+
         <div
           className="equipamentos-nomes"
           style={{
@@ -210,35 +225,40 @@ export class Equipamentos extends React.Component<
         >
           <div
             className={
-              "equipamento-option" + (!this.state.selected ? " selected" : "")
+              "equipamento-option" + (this.state.selected.length == 0 ? " selected" : "")
             }
             onClick={() =>
-              this.setState({ ...this.state, selected: undefined })
+              this.setState({ ...this.state, selected: [] })
             }
             style={{ fontWeight: "bold" }}
           >
             Todos
           </div>
-          {(this.props.equipamentos.filter(
+          {(equipamentosSelecionadosNoMapa.filter(
             e => e.grupo
           ) as EquipamentoGrupoIS[]).map((g, gi) => (
             <div
               className={
                 "equipamento-option" +
-                (this.state.selected == g.uid ? " selected" : "")
+                (this.state.selected.indexOf(g.uid) != -1 ? " selected" : "")
               }
               style={{
                 fontWeight: "bold",
                 borderTop: gi == 0 ? "solid 1px #ccc" : undefined
               }}
               key={g.uid}
-              onClick={() => this.setState({ ...this.state, selected: g.uid })}
+              onClick={() => {
+                if ( this.state.selected.indexOf(g.uid) == -1 )
+                  this.setState({ ...this.state, selected: [...this.state.selected,g.uid] });
+                else
+                  this.setState({ ...this.state, selected: this.state.selected.filter(uid=>uid != g.uid) });
+              }}
             >
               <i className="fa fa-cubes" />{" "}
               {g.nome.replace(/\s*![0-9],[0-9]\s*$/gi, "")}
             </div>
           ))}
-          {(this.props.equipamentos.filter(
+          {(equipamentosSelecionadosNoMapa.filter(
             e => !e.grupo
           ) as EquipamentoSimplesIS[]).map((g, gi) => (
             <div
@@ -247,10 +267,15 @@ export class Equipamentos extends React.Component<
               }}
               className={
                 "equipamento-option" +
-                (this.state.selected == g.uid ? " selected" : "")
+                (this.state.selected.indexOf(g.uid) != -1 ? " selected" : "")
               }
               key={g.uid}
-              onClick={() => this.setState({ ...this.state, selected: g.uid })}
+              onClick={() => {
+                if ( this.state.selected.indexOf(g.uid) == -1 )
+                  this.setState({ ...this.state, selected: [...this.state.selected,g.uid] });
+                else
+                  this.setState({ ...this.state, selected: this.state.selected.filter(uid=>uid != g.uid) });
+              }}
             >
               {g.nome.replace(/\s*![0-9],[0-9]\s*$/gi, "")}
             </div>
@@ -269,21 +294,24 @@ export class Equipamentos extends React.Component<
               ) as EquipamentoSimplesIS[]
             }
             equipamentoTipos={this.props.equipamentoTipos}
-            onSubmitSimples={(nome: string, tipo: Tipo, inicio: number) => {
+            onSubmitSimples={(nome: string, tipo: Tipo, inicio: number, row?:number, col?: number
+            ) => {
               action({
                 type: "create-equipamento",
                 nome,
                 inicio,
-                tipoUid: tipo.uid
+                tipoUid: tipo.uid,
+                row, col
               });
               this.setState({ ...this.state, add: false });
             }}
             onCancelar={() => this.setState({ ...this.state, add: false })}
-            onSubmitGrupo={(nome: string, equipamentos: Uid[]) => {
+            onSubmitGrupo={(nome: string, equipamentos: Uid[], row?:number, col?: number) => {
               action({
                 type: "create-equipamento-grupo",
                 nome,
-                equipamentos
+                equipamentos,
+                row, col
               });
               this.setState({ ...this.state, add: false });
             }}
@@ -292,7 +320,7 @@ export class Equipamentos extends React.Component<
           undefined
         )}
         <SortableList
-          equipamentos={equipamentos}
+          equipamentos={equipamentosSelecionados}
           canais={this.props.canais}
           onSortEnd={this.onSortEnd}
           axis="xy"
@@ -303,5 +331,20 @@ export class Equipamentos extends React.Component<
         {/*getHelperDimensions={}*/}
       </div>
     );
+  }
+
+  addSelection( {col,row}: { col?: number; row?: number} ) {
+    if ( this.state.selections.filter(s=>s.col===col && s.row === row ).length ) {
+      this.setState({
+        ...this.state,
+        selections: this.state.selections.filter(s => !(s.col===col && s.row === row ) )
+      });
+    } else {
+      this.setState({
+        ...this.state,
+        selections: [...this.state.selections,{col,row}]
+      });
+    }
+
   }
 }

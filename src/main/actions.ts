@@ -1267,6 +1267,18 @@ function volume({ volume }: { volume: number }) {
   });
 }
 
+function editarEquipamentoPosicao({uid,row,col}: { type: "editar-equipamento-posicao"; uid: Uid; row?: number; col?: number }) {
+
+  const state = currentState();
+  setState({
+    ...state,
+    equipamentos: state.equipamentos.map(e =>
+        e.uid == uid ? { ...e, row, col } : e
+    )
+  });
+}
+
+
 on(action => {
   if (action.type == "abrir") abrir();
   else if (action.type == "aplicar-cena-agora") aplicarCenaAgora(action);
@@ -1293,6 +1305,8 @@ on(action => {
   else if (action.type == "remove-equipamento") removeEquipamento(action);
   else if (action.type == "editar-equipamento-nome")
     editarEquipamentoNome(action);
+  else if (action.type == "editar-equipamento-posicao")
+    editarEquipamentoPosicao(action);
   else if (action.type == "remove-cena") removeCena(action);
   else if (action.type == "equipamento-editar-inicio")
     equipamentoEditarInicio(action);
