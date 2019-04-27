@@ -631,11 +631,29 @@ function editarEquipamentoNome({ uid, nome }: { uid: Uid; nome: string }) {
   });
 }
 
+function editarArquivoNome({path,nome}:{path:string,nome:string}) {
+  const state = currentState();
+  setState({
+    ...state,
+    arquivos: state.arquivos.map(e =>
+      e.path == path ? { ...e, nome } : e
+    )
+  });
+}
+
 function removeCena({ uid }: { uid: Uid }) {
   const state = currentState();
   setState({
     ...state,
     cenas: state.cenas.filter(e => e.uid != uid)
+  });
+}
+
+function removeArquivo({path }: { path: string }) {
+  const state = currentState();
+  setState({
+    ...state,
+    arquivos: state.arquivos.filter(e => e.path != path)
   });
 }
 
@@ -727,6 +745,16 @@ function cenasSort({ sort }: { sort: Uid[] }) {
     ...state,
     cenas
   });
+}
+
+function arquivosSort({sort}:{sort:string[]}) {
+ const state = currentState(),
+    arquivos = [...state.arquivos];
+  arquivos.sort((a, b) => sort.indexOf(a.path) - sort.indexOf(b.path));
+  setState({
+    ...state,
+    arquivos
+  }); 
 }
 
 function extractCanais(
@@ -1239,13 +1267,6 @@ function arquivoPause() {
     }
   });
 }
-function removeArquivo({ arquivo }: { arquivo: string }) {
-  const state = currentState();
-  setState({
-    ...state,
-    arquivos: state.arquivos.filter(f => f.path != arquivo)
-  });
-}
 function repeat() {
   const state = currentState();
   setState({
@@ -1305,6 +1326,8 @@ on(action => {
   else if (action.type == "remove-equipamento") removeEquipamento(action);
   else if (action.type == "editar-equipamento-nome")
     editarEquipamentoNome(action);
+  else if (action.type == "editar-arquivo-nome")
+    editarArquivoNome(action);
   else if (action.type == "editar-equipamento-posicao")
     editarEquipamentoPosicao(action);
   else if (action.type == "remove-cena") removeCena(action);
@@ -1313,6 +1336,7 @@ on(action => {
   else if (action.type == "piscar-equipamento") piscarEquipamento(action);
   else if (action.type == "pulsar-equipamento") pulsarEquipamento(action);
   else if (action.type == "cenas-sort") cenasSort(action);
+  else if (action.type == "arquivos-sort") arquivosSort(action);
   else if (action.type == "equipamentos-sort") equipamentosSort(action);
   else if (action.type == "salvar-equipamento-configuracao")
     salvarEquipamentoConfiguracao(action);

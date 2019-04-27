@@ -47,6 +47,7 @@ export type AppAction =
   | { type: "screen-started" }
   | { type: "arquivo-play"; path: string }
   | { type: "arquivo-stop" }
+  | { type: "editar-arquivo-nome"; path: string; nome: string }
   | { type: "arquivo-pause" }
   | { type: "slide"; index: number; value: number }
   | { type: "multiple-slide"; canais: { [k: number]: number } }
@@ -58,8 +59,9 @@ export type AppAction =
   | { type: "pulsar-equipamento"; uid: Uid }
   | { type: "cenas-sort"; sort: Uid[] }
   | { type: "equipamentos-sort"; sort: Uid[] }
+  | { type: "arquivos-sort"; sort: string[] }
   | { type: "criar-cena-equipamento"; uid: Uid; nome: string }
-  | { type: "remove-arquivo"; arquivo: string }
+  | { type: "remove-arquivo"; path: string }
   | {
       type: "salvar-equipamento-tipo-configuracao";
       uid: Uid;
