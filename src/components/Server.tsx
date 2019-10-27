@@ -1,7 +1,7 @@
 import * as React from "react";
 import { action } from "../util/action";
 
-const os = require("os");
+const os = (window as any).require("os");
 const ifaces = os.networkInterfaces();
 
 export interface ServerState {

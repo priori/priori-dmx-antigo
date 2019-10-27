@@ -122,6 +122,11 @@ input[type="range"]::-webkit-slider-thumb {
     width: 34px; height: 34px;
 }
 */
+.monitor {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
 input[type="range"].mesa__canal__input {
   height: 20px;
   transform: rotate(-90deg);
@@ -437,12 +442,18 @@ input.cena__nome {
 }
 
 .arquivo {
-  padding: 10px 20px 10px 28px;
+  padding: 6px 16px 6px 24px;
+  border: 2px transparent solid;
   position: relative;
 }
 .arquivo.selected {
   background: #fe0;
 }
+.arquivo.active {
+  border: dashed #060 2px;
+  color: #060;
+}
+
 .arquivo strong {
   font-size: 16px;
   margin-right: 5px;
@@ -710,15 +721,14 @@ input.cena__nome {
     font-size: 18px;
   }
   .arquivos__controles {
-    position: absolute;
     left: 0;
     right: 0;
     top: 60px;
-    padding: 10px 20px 0 20px;
+    padding: 10px 20px 10 20px;
   }
   .arquivos__itens {
     position: absolute;
-    top: 220px;
+    top: 230px;
     left: 0;
     right: 0;
     bottom: 0;

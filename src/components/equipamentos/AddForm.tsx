@@ -15,8 +15,8 @@ export interface AddFormState {
   inicio: number;
   grupo: boolean;
   selecionados: Uid[];
-  col?: number,
-  row?: number
+  col?: number;
+  row?: number;
 }
 export class AddForm extends React.Component<AddFormProps, AddFormState> {
   constructor(props: any) {
@@ -52,14 +52,14 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
         Posição: linha:
         <input
             type="number"
-            style={{width:'25px'}}
+            style={{width: "25px"}}
             value={this.state.row}
-            onChange={(e:any)=>this.setState({...this.state,row:e.target.value?parseInt(e.target.value):undefined})}
+            onChange={(e: any) => this.setState({...this.state, row: e.target.value ? parseInt(e.target.value) : undefined})}
         /> coluna: <input
           type="number"
-          style={{width:'25px'}}
+          style={{width: "25px"}}
           value={this.state.col}
-          onChange={(e:any)=>this.setState({...this.state,col:e.target.value?parseInt(e.target.value):undefined})}
+          onChange={(e: any) => this.setState({...this.state, col: e.target.value ? parseInt(e.target.value) : undefined})}
       />
         <br />
         Tipo:{" "}

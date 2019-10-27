@@ -21,7 +21,8 @@ if (isDevMode) {
 const createWindow = async () => {
   start();
   mainWindow = new BrowserWindow({
-    width: 800,
+    // width: 800,
+    width: 500, maxWidth: 500, minWidth: 500,
     height: 600
   });
   mainWindow.setMenu(null);

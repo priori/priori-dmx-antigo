@@ -177,7 +177,7 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
     sort = arrayMove(sort, oldIndex, newIndex);
     this.setState({ ...this.state, cenasSort: sort });
     action({ type: "cenas-sort", sort });
-  };
+  }
 
   select(cena: CenaIS) {
     if (this.state.selected == cena.uid) {

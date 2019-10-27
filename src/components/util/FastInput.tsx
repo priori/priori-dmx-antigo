@@ -35,14 +35,14 @@ export class FastInput extends React.Component<FastInputProps, {}> {
       el.focus();
       el.select();
     }
-  };
+  }
   onKeyDown = (e: any) => {
     if (e.key == "Escape") {
       this.props.onCancel();
     } else if (e.key == "Enter") {
       this.props.onChange(e.target.value);
     }
-  };
+  }
   onBlur = (e: any) => this.props.onChange(e.target.value);
   render() {
     const props = this.props;

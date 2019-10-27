@@ -52,7 +52,6 @@ export interface EquipamentoGrupoIS {
   }[];
 }
 
-
 export interface EquipamentosCenaIS {
   readonly uid: Uid;
   readonly tipo: "equipamentos";

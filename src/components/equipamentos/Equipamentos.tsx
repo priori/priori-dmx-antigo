@@ -65,9 +65,9 @@ const SortableList = SortableContainer(
   )
 );
 
-function times(t:number):null[]{
+function times(t: number): null[] {
   const a = [];
-  while(t--){
+  while (t--) {
     a.push(null);
   }
   return a;
@@ -86,7 +86,7 @@ export interface EquipamentosState {
   add: boolean;
   equipamentosSort: Uid[] | null;
   selected: Uid[];
-  selections: { col?: number; row?: number}[]
+  selections: { col?: number; row?: number}[];
 }
 
 export class Equipamentos extends React.Component<
@@ -135,7 +135,7 @@ export class Equipamentos extends React.Component<
     sort = arrayMove(sort, oldIndex, newIndex);
     this.setState({ ...this.state, equipamentosSort: sort });
     action({ type: "equipamentos-sort", sort });
-  };
+  }
 
   render() {
     let equipamentos = this.props.equipamentos;
@@ -145,72 +145,71 @@ export class Equipamentos extends React.Component<
       equipamentos.sort((a, b) => sort.indexOf(a.uid) - sort.indexOf(b.uid));
     }
 
+    const rowsCount = equipamentos.map(e => e.row).reduce((a, b) => !a ? b : !b ? a : a > b ? a : b, false ) || 0;
+    const colsCount = equipamentos.map(e => e.col).reduce((a, b) => !a ? b : !b ? a : a > b ? a : b, false ) || 0;
+    const semPosicaoCount = this.props.equipamentos.filter(e => typeof e.row == "undefined" && typeof e.col == "undefined").length;
 
-    const rowsCount = equipamentos.map(e=>e.row).reduce((a,b)=>!a ? b : !b? a : a > b ? a : b, false ) || 0;
-    const colsCount = equipamentos.map(e=>e.col).reduce((a,b)=>!a ? b : !b? a : a > b ? a : b, false ) || 0;
-    const semPosicaoCount = this.props.equipamentos.filter(e=>typeof e.row == 'undefined' && typeof e.col == 'undefined').length;
-
-    const mapa:(number[])[] = [];
-    const rows:number[] = [];
+    const mapa: (number[])[] = [];
+    const rows: number[] = [];
     for (let c = 0; c < rowsCount; c++) {
-      const row:number[] = [];
-      for ( let c2=0; c2 <colsCount; c2++ ){
-        row.push( equipamentos.filter(e=>e.row == c+1 && e.col == c2 + 1).length );
+      const row: number[] = [];
+      for ( let c2 = 0; c2 < colsCount; c2++ ) {
+        row.push( equipamentos.filter(e => e.row == c + 1 && e.col == c2 + 1).length );
       }
       mapa.push(row);
-      rows.push( equipamentos.filter(e=>e.row == c+1 && typeof e.col == 'undefined').length )
+      rows.push( equipamentos.filter(e => e.row == c + 1 && typeof e.col == "undefined").length );
     }
 
     const equipamentosSelecionadosNoMapa = this.state.selections.length == 0 ? this.props.equipamentos :
-        this.props.equipamentos.filter(e=> this.state.selections.filter(s=>s.col === e.col && s.row === e.row ).length );
+        this.props.equipamentos.filter(e => this.state.selections.filter(s => s.col === e.col && s.row === e.row ).length );
 
-    const equipamentosSelecionados = equipamentosSelecionadosNoMapa.filter(g=>
+    const equipamentosSelecionados = equipamentosSelecionadosNoMapa.filter(g =>
         this.state.selected.length == 0 ||
-        this.state.selected.indexOf(g.uid)!= -1);
+        this.state.selected.indexOf(g.uid) != -1);
 
     return (
       <div>
         <div className="equipamentos__mapa"
-             style={{paddingTop: semPosicaoCount ? 0: undefined}}>
+             style={{paddingTop: semPosicaoCount ? 0 : undefined}}>
           { semPosicaoCount ? <div
-              className={this.state.selections.filter(s=>s.col === undefined && s.row === undefined ).length ?
-                  'equipamentos__mapa__equipamentos-selecionados' : 'equipamentos__mapa__equipamentos'}
-              style={{paddingTop:'10px',paddingBottom:'5px', paddingLeft: '5px'}}
-              onClick={()=>this.addSelection({row:undefined,col:undefined})}
+              className={this.state.selections.filter(s => s.col === undefined && s.row === undefined ).length ?
+                  "equipamentos__mapa__equipamentos-selecionados" : "equipamentos__mapa__equipamentos"}
+              style={{paddingTop: "10px", paddingBottom: "5px", paddingLeft: "5px"}}
+              onClick={() => this.addSelection({row: undefined, col: undefined})}
           >
-          { semPosicaoCount ? times(semPosicaoCount).map((_,k)=><span
+          { semPosicaoCount ? times(semPosicaoCount).map((_, k) => <span
               key={k}
-              className="equipamentos__mapa__equipamento"></span>): null }
+              className="equipamentos__mapa__equipamento"></span>) : null }
           </div> : null }
-          {rows.map((count,index)=><div
+          {rows.map((count, index) => <div
               key={index}
               className="equipamentos__mapa__linha"
-              style={{paddingTop: count ? 0: undefined}}
+              style={{paddingTop: count ? 0 : undefined}}
           >
             {count ?
-            <div style={{paddingTop:'10px',paddingBottom:'5px', paddingLeft:'10px'}}
+            <div style={{paddingTop: "10px", paddingBottom: "5px", paddingLeft: "10px"}}
 
-                 className={this.state.selections.filter(s=>s.col === undefined && s.row === index+1 ).length ?
-                     'equipamentos__mapa__equipamentos-selecionados' : 'equipamentos__mapa__equipamentos'}
+                 className={this.state.selections.filter(s => s.col === undefined && s.row === index + 1 ).length ?
+                     "equipamentos__mapa__equipamentos-selecionados" : "equipamentos__mapa__equipamentos"}
 
-                 onClick={()=>this.addSelection({row:index+1,col:undefined})}
+                 onClick={() => this.addSelection({row: index + 1, col: undefined})}
             >
-            {count ? times(count).map((_,k)=><span
-                key={k} className="equipamentos__mapa__equipamento"></span>): null}
+            {count ? times(count).map((_, k) => <span
+                key={k} className="equipamentos__mapa__equipamento"></span>) : null}
             </div>
                 : null }
-            <div style={{display:'flex'}}>
-            {mapa[index].map((row,col)=><div
+            <div style={{display: "flex"}}>
+            {mapa[index].map((row, col) => <div
                 key={col}
-                onClick={()=>this.addSelection({row:index+1,col:col+1})}
-                className={"equipamentos__mapa__celula "+(this.state.selections.filter(s=>s.col === col+1 && s.row === index+1 ).length ?
-                    'equipamentos__mapa__equipamentos-selecionados' : 'equipamentos__mapa__equipamentos')}
+                onClick={() => this.addSelection({row: index + 1, col: col + 1})}
+                className={"equipamentos__mapa__celula " + (this.state.selections.filter(s => s.col === col + 1 && s.row === index + 1 ).length ?
+                    "equipamentos__mapa__equipamentos-selecionados" : "equipamentos__mapa__equipamentos")}
                 style={{ opacity: row ? 1 : 0.25}}
 
             >
-              { row ? times(row).map((_,k)=><span
+              { row ? times(row).map((_, k) => <span
                   key={k} className="equipamentos__mapa__equipamento"
-              ></span>): '' }
+              ></span>) : "" }
             </div>)}
             </div>
           </div>)}
@@ -249,9 +248,9 @@ export class Equipamentos extends React.Component<
               key={g.uid}
               onClick={() => {
                 if ( this.state.selected.indexOf(g.uid) == -1 )
-                  this.setState({ ...this.state, selected: [...this.state.selected,g.uid] });
+                  this.setState({ ...this.state, selected: [...this.state.selected, g.uid] });
                 else
-                  this.setState({ ...this.state, selected: this.state.selected.filter(uid=>uid != g.uid) });
+                  this.setState({ ...this.state, selected: this.state.selected.filter(uid => uid != g.uid) });
               }}
             >
               <i className="fa fa-cubes" />{" "}
@@ -272,9 +271,9 @@ export class Equipamentos extends React.Component<
               key={g.uid}
               onClick={() => {
                 if ( this.state.selected.indexOf(g.uid) == -1 )
-                  this.setState({ ...this.state, selected: [...this.state.selected,g.uid] });
+                  this.setState({ ...this.state, selected: [...this.state.selected, g.uid] });
                 else
-                  this.setState({ ...this.state, selected: this.state.selected.filter(uid=>uid != g.uid) });
+                  this.setState({ ...this.state, selected: this.state.selected.filter(uid => uid != g.uid) });
               }}
             >
               {g.nome.replace(/\s*![0-9],[0-9]\s*$/gi, "")}
@@ -294,7 +293,7 @@ export class Equipamentos extends React.Component<
               ) as EquipamentoSimplesIS[]
             }
             equipamentoTipos={this.props.equipamentoTipos}
-            onSubmitSimples={(nome: string, tipo: Tipo, inicio: number, row?:number, col?: number
+            onSubmitSimples={(nome: string, tipo: Tipo, inicio: number, row?: number, col?: number
             ) => {
               action({
                 type: "create-equipamento",
@@ -306,7 +305,7 @@ export class Equipamentos extends React.Component<
               this.setState({ ...this.state, add: false });
             }}
             onCancelar={() => this.setState({ ...this.state, add: false })}
-            onSubmitGrupo={(nome: string, equipamentos: Uid[], row?:number, col?: number) => {
+            onSubmitGrupo={(nome: string, equipamentos: Uid[], row?: number, col?: number) => {
               action({
                 type: "create-equipamento-grupo",
                 nome,
@@ -333,16 +332,16 @@ export class Equipamentos extends React.Component<
     );
   }
 
-  addSelection( {col,row}: { col?: number; row?: number} ) {
-    if ( this.state.selections.filter(s=>s.col===col && s.row === row ).length ) {
+  addSelection( {col, row}: { col?: number; row?: number} ) {
+    if ( this.state.selections.filter(s => s.col === col && s.row === row ).length ) {
       this.setState({
         ...this.state,
-        selections: this.state.selections.filter(s => !(s.col===col && s.row === row ) )
+        selections: this.state.selections.filter(s => !(s.col === col && s.row === row ) )
       });
     } else {
       this.setState({
         ...this.state,
-        selections: [...this.state.selections,{col,row}]
+        selections: [...this.state.selections, {col, row}]
       });
     }
 

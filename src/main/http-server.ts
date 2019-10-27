@@ -4,10 +4,10 @@ import { AppInternalState } from "../types/internal-state";
 import { AppAction } from "../types/types";
 
 const express = require("express");
-var bodyParser = require("body-parser");
+let bodyParser = require("body-parser");
 
 const app = express();
-var expressWs = require("express-ws")(app) as any;
+let expressWs = require("express-ws")(app) as any;
 
 app.get("/state", (_: any, res: any) => {
   res.json(currentState());

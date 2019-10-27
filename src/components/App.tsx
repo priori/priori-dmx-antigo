@@ -1,11 +1,11 @@
 import * as React from "react";
-// import {Monitor} from './Monitor'
+import {Monitor} from "./Monitor";
 import { Server } from "./Server";
-import { ConexaoDMX } from "./ConexaoDMX";
-import { Mesa } from "./Mesa";
-import { Equipamentos } from "./equipamentos/Equipamentos";
+// import { ConexaoDMX } from "./ConexaoDMX";
+// import { Mesa } from "./Mesa";
+// import { Equipamentos } from "./equipamentos/Equipamentos";
 import { AppInternalState, Arquivo } from "../types/internal-state";
-import { Cenas } from "./Cenas";
+// import { Cenas } from "./Cenas";
 import { action } from "../util/action";
 import { listen, close } from "../util/listeners";
 import { deepFreeze } from "../util/equals";
@@ -26,7 +26,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
       deepFreeze(data[key]);
     }
     this.setState(data);
-  };
+  }
 
   componentWillUnmount() {
     close(this.stateListener);
@@ -82,8 +82,9 @@ export class App extends React.Component<{}, AppInternalState | {}> {
             }}
           />
         ) : null}
+        <Monitor telas={state.telas} />
         <Server port={state.httpServer.port} open={state.httpServer.open} />
-        <ConexaoDMX {...state.dmx} />
+        {/* <ConexaoDMX {...state.dmx} />
         <Cenas {...state} />
         <div style={{ textAlign: "right", paddingBottom: "5px" }}>
           <input type="text" ref={el => (this.inputEl = el)} />{" "}
@@ -95,7 +96,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
           equipamentos={state.equipamentos}
           canais={state.canais}
           cenas={state.cenas}
-        />
+        /> */}
         <Arquivos
           player={state.player}
           arquivos={state.arquivos}

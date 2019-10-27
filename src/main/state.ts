@@ -1,4 +1,4 @@
-﻿import { BrowserWindow, ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import {
   AppInternalState,
   Tipo,
@@ -16,6 +16,10 @@ import { abrirTela, moverTela, telasDisponiveis } from "./telas";
 
 let state: AppInternalState | undefined;
 let closing = false;
+let screen: BrowserWindow | null,
+  appSender: IpcSender | null = null;
+let screenSender: IpcSender | null;
+
 const file = getFile();
 
 export function start() {
@@ -62,9 +66,6 @@ export function onCloseTela() {
     }
   });
 }
-
-let screen: BrowserWindow | null,
-  appSender: IpcSender | null = null;
 
 const emptyCanais = {} as CanaisDmx;
 for (let c = 1; c <= 255; c++) (emptyCanais as any)[c] = 0;
@@ -188,7 +189,6 @@ export function saveState(file: string, state: AppInternalState) {
   fs.writeFileSync(file, JSON.stringify(state));
 }
 
-let screenSender: IpcSender | null;
 // ipcMain.on('state',(_:IpcEvent,newState:any)=>{
 //     state = newState;
 //     if ( screenSender )

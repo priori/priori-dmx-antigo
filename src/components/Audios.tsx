@@ -2,32 +2,32 @@ import {Arquivo, PlayerState} from "../types/internal-state";
 import * as React from "react";
 import {action} from "../util/action";
 
-export interface AudiosProps{
-    arquivos: Arquivo[],
+export interface AudiosProps {
+    arquivos: Arquivo[];
     player: {
         repeat: boolean,
         arquivo: string | null;
         state: PlayerState;
         volume: number;
-    }
+    };
 }
-export interface AudiosState{}
+export interface AudiosState {}
 
-export class Audios extends React.Component<AudiosProps,AudiosState> {
+export class Audios extends React.Component<AudiosProps, AudiosState> {
 
     private els: any = {};
-    private oldProps:AudiosProps|null = null;
+    private oldProps: AudiosProps|null = null;
     private current: any;
 
-    newProps(){
-        if ( !this.oldProps ){
+    newProps() {
+        if ( !this.oldProps ) {
             if ( this.props.player.arquivo && this.els[this.props.player.arquivo] && this.props.player.state == "play" ) {
                 this.els[this.props.player.arquivo].play();
                 this.current = this.els[this.props.player.arquivo];
             }
             if ( this.props.player.arquivo && this.els[this.props.player.arquivo] && this.props.player.state == "pause" ) {
                 this.els[this.props.player.arquivo].pause();
-            } else if(this.current && this.props.player.state == "pause" ) {
+            } else if (this.current && this.props.player.state == "pause" ) {
                 this.current.pause();
             }
             if ( this.props.player.arquivo && this.els[this.props.player.arquivo] && this.props.player.state == "stop" ) {
@@ -91,27 +91,27 @@ export class Audios extends React.Component<AudiosProps,AudiosState> {
             this.els[arquivo].play();
     }
 
-    render(){
-        setTimeout(()=>{
+    render() {
+        setTimeout(() => {
             this.newProps();
-        },10);
-        return <span style={{display:'none'}}>
+        }, 10);
+        return <span style={{display: "none"}}>
         {
-            this.props.arquivos.filter(a=>a.type == "audio")
-                .map(a=><audio
+            this.props.arquivos.filter(a => a.type == "audio")
+                .map(a => <audio
                     key={a.path}
-                    ref={el=>this.els[a.path] = el}
-                    onEnded={()=>{
+                    ref={el => this.els[a.path] = el}
+                    onEnded={() => {
                         if ( this.props.player.repeat && this.props.player.arquivo == a.path )
                             this.els[a.path].play();
                         else
-                            action({type:"arquivo-stop"})
+                            action({type: "arquivo-stop"});
                     }}
                 >
                     <source src={a.path}
                             type={a.path.match(/\.mp3$/) ? "audio/mpeg" : "audio/ogg"} />
                 </audio>)
         }
-    </span>
+    </span>;
     }
 }

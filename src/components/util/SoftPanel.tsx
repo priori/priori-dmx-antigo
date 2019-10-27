@@ -13,22 +13,22 @@ export class SoftPanel extends React.Component<SoftPanelProps, {}> {
     ) {
       this.props.onBlur();
     }
-  };
+  }
 
   ref = (el: any) => {
     if (el) {
       el.focus();
       this.el = el;
     }
-  };
+  }
 
   mouseDown = (e: any) => {
     e.stopPropagation();
-  };
+  }
 
   keyDown = (e: any) => {
     if (e.key == "Escape") this.props.onBlur();
-  };
+  }
   private el: HTMLDivElement;
 
   render() {
