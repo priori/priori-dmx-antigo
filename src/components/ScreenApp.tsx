@@ -62,7 +62,7 @@ export class ScreenApp extends React.Component<undefined, ScreenAppState> {
     this.setState({
       state
     });
-  }
+  };
 
   stop(path: string) {
     if (this.videos[path]) {
@@ -125,7 +125,7 @@ export class ScreenApp extends React.Component<undefined, ScreenAppState> {
                   "url('" +
                   a.path.replace(/\\/g, "\\\\") +
                   "') no-repeat 50% 50%",
-                  backgroundSize: "contain",
+                backgroundSize: "contain",
                 top: "0",
                 left: "0",
                 right: "0",

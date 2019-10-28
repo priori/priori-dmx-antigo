@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { FastInput } from "../util/FastInput";
 import {
@@ -46,12 +45,19 @@ export interface EquipamentoComponentState {
   editPosicao: boolean;
 }
 
-interface PosicaoFormProps {row?: number; col?: number; onOk: (row?: number, col?: number) => void; onCancel: () => void; }
-class PosicaoForm extends React.Component<PosicaoFormProps, {
-  row?: number,
-  col?: number
-}> {
-
+interface PosicaoFormProps {
+  row?: number;
+  col?: number;
+  onOk: (row?: number, col?: number) => void;
+  onCancel: () => void;
+}
+class PosicaoForm extends React.Component<
+  PosicaoFormProps,
+  {
+    row?: number;
+    col?: number;
+  }
+> {
   constructor(props: PosicaoFormProps) {
     super(props);
     this.state = {
@@ -61,39 +67,60 @@ class PosicaoForm extends React.Component<PosicaoFormProps, {
   }
 
   render() {
-    return <div style={{
-      position: "absolute",
-      right: "10px",
-      background: "#fff",
-      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
-      padding: "10px",
-      lineHeight: "1.5em",
-      marginTop: "5px",
-      zIndex: 1
-    }}>
-      Linha: <input type="number"
-                    value={this.state.row}
-                    onChange={(e: any) => this.setState({...this.state,
-                      row: e.target.value ? parseInt(e.target.value) : undefined })}
-    /><br/>
-      Coluna: <input
-        type="number"
-        value={this.state.col}
-        onChange={(e: any) => this.setState({...this.state,
-          col: e.target.value ? parseInt(e.target.value) : undefined })}
-    />
-      <div style={{marginTop: "5px"}}>
-        <button onClick={() => {
-          this.props.onOk(this.state.row, this.state.col);
-        }}>Ok
-        </button>
-        {" "}
-        <button onClick={() => {
-          this.props.onCancel();
-        }}>Cancelar
-        </button>
+    return (
+      <div
+        style={{
+          position: "absolute",
+          right: "10px",
+          background: "#fff",
+          boxShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
+          padding: "10px",
+          lineHeight: "1.5em",
+          marginTop: "5px",
+          zIndex: 1
+        }}
+      >
+        Linha:{" "}
+        <input
+          type="number"
+          value={this.state.row}
+          onChange={(e: any) =>
+            this.setState({
+              ...this.state,
+              row: e.target.value ? parseInt(e.target.value) : undefined
+            })
+          }
+        />
+        <br />
+        Coluna:{" "}
+        <input
+          type="number"
+          value={this.state.col}
+          onChange={(e: any) =>
+            this.setState({
+              ...this.state,
+              col: e.target.value ? parseInt(e.target.value) : undefined
+            })
+          }
+        />
+        <div style={{ marginTop: "5px" }}>
+          <button
+            onClick={() => {
+              this.props.onOk(this.state.row, this.state.col);
+            }}
+          >
+            Ok
+          </button>{" "}
+          <button
+            onClick={() => {
+              this.props.onCancel();
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
       </div>
-    </div>;
+    );
   }
 }
 
@@ -242,26 +269,30 @@ export class EquipamentoComponent extends React.Component<
 
     return (
       <div className="equipamento">
-
-        {this.state.editPosicao ?
-            <PosicaoForm
-                row={e.row}
-                col={e.col}
-                onCancel={() => {
-                  this.setState({
-                    ...this.state,
-                    editPosicao: false
-                  });
-                }}
-                onOk={(row?: number, col?: number) => {
-                  action({type: "editar-equipamento-posicao", uid: e.uid, row, col});
-                  this.setState({
-                    ...this.state,
-                    editPosicao: false
-                  });
-                }}
-            /> : null
-        }
+        {this.state.editPosicao ? (
+          <PosicaoForm
+            row={e.row}
+            col={e.col}
+            onCancel={() => {
+              this.setState({
+                ...this.state,
+                editPosicao: false
+              });
+            }}
+            onOk={(row?: number, col?: number) => {
+              action({
+                type: "editar-equipamento-posicao",
+                uid: e.uid,
+                row,
+                col
+              });
+              this.setState({
+                ...this.state,
+                editPosicao: false
+              });
+            }}
+          />
+        ) : null}
 
         <div className="equipamento__nome">
           {this.state.editNome ? (
@@ -282,15 +313,23 @@ export class EquipamentoComponent extends React.Component<
               {e.nome.replace(/\s*![0-9],[0-9]\s*$/gi, "")}{" "}
               <i className="fa fa-pencil" onClick={() => this.editNome()} />{" "}
               <span
-                  style={{ display: "inline-block", fontSize: "13px", lineHeight: "11px", position: "relative",
-                    top: "1px", fontWeight: "bold"}}
-                  onClick={() => {
-                    this.setState({
-                        ...this.state,
-                      editPosicao: true
-                    });
-                  }}
-              >linha: {typeof e.row == "undefined" ? "-" : e.row}<br/>
+                style={{
+                  display: "inline-block",
+                  fontSize: "13px",
+                  lineHeight: "11px",
+                  position: "relative",
+                  top: "1px",
+                  fontWeight: "bold"
+                }}
+                onClick={() => {
+                  this.setState({
+                    ...this.state,
+                    editPosicao: true
+                  });
+                }}
+              >
+                linha: {typeof e.row == "undefined" ? "-" : e.row}
+                <br />
                 coluna: {typeof e.col == "undefined" ? "-" : e.col}
               </span>
               <i

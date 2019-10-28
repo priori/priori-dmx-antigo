@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Monitor} from "./Monitor";
+import { Monitor } from "./Monitor";
 import { Server } from "./Server";
 // import { ConexaoDMX } from "./ConexaoDMX";
 // import { Mesa } from "./Mesa";
@@ -11,6 +11,7 @@ import { listen, close } from "../util/listeners";
 import { deepFreeze } from "../util/equals";
 import "../util/prevent-selection";
 import { Arquivos } from "./Arquivos";
+import { Tampa } from "./Tampa";
 
 const empty = {};
 export class App extends React.Component<{}, AppInternalState | {}> {
@@ -26,7 +27,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
       deepFreeze(data[key]);
     }
     this.setState(data);
-  }
+  };
 
   componentWillUnmount() {
     close(this.stateListener);
@@ -56,9 +57,27 @@ export class App extends React.Component<{}, AppInternalState | {}> {
             paddingBottom: "10px"
           }}
         >
-          <button onClick={() => action({ type: "novo" })}>Novo</button>{" "}
-          <button onClick={() => action({ type: "abrir" })}>Abrir</button>{" "}
-          <button onClick={() => action({ type: "salvar" })}>Salvar</button>{" "}
+          <button onClick={() => action({ type: "novo" })}>
+            <i className="fa fa-file-o"></i>
+            <span
+              style={{
+                fontSize: "22px",
+                lineHeight: "0",
+                position: "relative",
+                top: "3px",
+                width: "4px",
+                display: "inline-block"
+              }}
+            >
+              *
+            </span>
+          </button>{" "}
+          <button onClick={() => action({ type: "abrir" })}>
+            <i className="fa fa-folder-open-o"></i>
+          </button>{" "}
+          <button onClick={() => action({ type: "salvar" })}>
+            <i className="fa fa-save"></i>
+          </button>{" "}
         </div>
         {state.animacao ? (
           <div
@@ -82,6 +101,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
             }}
           />
         ) : null}
+        <Tampa {...state.tampa} />
         <Monitor telas={state.telas} />
         <Server port={state.httpServer.port} open={state.httpServer.open} />
         {/* <ConexaoDMX {...state.dmx} />

@@ -1,7 +1,7 @@
 import { AppInternalState } from "../types/internal-state";
 import * as fs from "fs";
 import { deepFreeze } from "../util/equals";
-import { initialTipos } from "./state";
+import { initialTipos, defaultTampa } from "./state";
 import { telasDisponiveis } from "./telas";
 
 export function readState(file: string): AppInternalState | undefined {
@@ -34,6 +34,18 @@ export function readState(file: string): AppInternalState | undefined {
         aberta: null
       };
     }
+    if (!json.tampa) {
+      (json as any).tampa = defaultTampa;
+    } else {
+      if ((json as any).tampa.abrindo) {
+        (json as any).tampa.aberto = true;
+      } else if ((json as any).tampa.fechando) {
+        (json as any).tampa.aberto = false;
+      }
+      (json as any).tampa.abrindo = false;
+      (json as any).tampa.fechando = false;
+    }
+
     // if (!json.player) {
     (json as any).player = {
       arquivo: null,

@@ -5,6 +5,21 @@ body {
   cursor: default;
 }
 
+.tampa {
+  position: absolute;
+  right: 11px;
+  margin-top: 9px;
+}
+
+.tampa__state {
+  background: #eee;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: solid 1px #059;
+  color: #059;
+  font-weight: bold;
+}
+
 /* form */
 input,
 button,
@@ -42,9 +57,6 @@ button:focus {
   box-shadow: 1px 1px 0 #556, -1px 1px 0 #555, 1px -1px 0 #555, -1px -1px 0 #555;
 }
 
-.arquivos {
-  /* position: relative; */
-}
 .arquivos.over {
   background: #ccc;
 }
@@ -64,12 +76,25 @@ button:focus {
   width: 200px;
 }
 .servidor-http input {
-  width: 50px;
+  width: 35px;
 }
 
 .servidor-http {
   padding-top: 10px;
   padding-bottom: 10px;
+  border-bottom: 1px solid rgb(221, 221, 221);
+}
+.servidor-http .fa-link,
+.servidor-http .fa-unlink {
+  width: 14px;
+  text-align: center;
+  display: inline-block;
+}
+.servidor-http .fa-link {
+  color: #006600;
+}
+.servidor-http .fa-unlink {
+  color: #aaa;
 }
 .conexao-dmx {
   padding-top: 10px;
@@ -486,6 +511,15 @@ input.cena__nome {
   color: #03b;
 }
 
+.over-frame {
+  position: absolute;
+  background: white;
+  padding: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.33);
+  margin-top: -6px;
+  z-index: 2;
+}
+
 .arquivo.na-tela .arquivo__state {
   animation: blinkingText 0.5s infinite;
 }
@@ -626,6 +660,13 @@ input.cena__nome {
   font-size: 12px;
   vertical-align: top;
 }
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  /* display: none; <- Crashes Chrome on hover */
+  -webkit-appearance: none;
+  margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
 .volume input {
   vertical-align: middle;
 }
@@ -638,6 +679,25 @@ input.cena__nome {
   text-align: right;
   padding-bottom: 5px;
 }
+
+.arquivos__controles.disabled {
+  opacity: 0.3;
+}
+.arquivos__message {
+  position: absolute;
+  right: 0;
+  font-size: 19px;
+  width: 250px;
+  text-align: center;
+  left: 50%;
+  margin-left: -125px;
+  background: rgba(256, 256, 256, 0.5);
+  z-index: 1;
+  border: solid 1px #555;
+  color: #333;
+  margin-top: 13px;
+}
+
 @media only screen and (max-width: 600px) {
   .mesa > div {
     margin-top: 100px;
@@ -724,7 +784,7 @@ input.cena__nome {
     left: 0;
     right: 0;
     top: 60px;
-    padding: 10px 20px 10 20px;
+    padding-top: 10px;
   }
   .arquivos__itens {
     position: absolute;

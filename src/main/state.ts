@@ -3,7 +3,8 @@ import {
   AppInternalState,
   Tipo,
   Uid,
-  CanaisDmx
+  CanaisDmx,
+  TampaState
 } from "../types/internal-state";
 import { IpcSender, IpcEvent, AppAction } from "../types/types";
 import * as path from "path";
@@ -31,10 +32,7 @@ export function start() {
     if (json) {
       state = json;
       if (state.dmx.conectado) {
-        dmx.connect(
-          state.dmx.driver,
-          state.dmx.deviceId
-        );
+        dmx.connect(state.dmx.driver, state.dmx.deviceId);
         dmx.update(state.canais);
       }
       if (state.httpServer.open) {
@@ -119,8 +117,22 @@ export const initialTipos = [
     canais: [{ tipo: "master" }]
   }
 ] as Tipo[];
+
+export const defaultTampa: TampaState = {
+  abrirEndPoint: "http://192.168.137.60/move/1024",
+  fecharEndPoint: "http://192.168.137.60/move/-1024",
+  tampaPlayDelay: 500,
+  tampaTime: 2500,
+  aberto: false,
+  abrindo: false,
+  fechando: false,
+  teste1: "http://192.168.137.60/move/512",
+  teste2: "http://192.168.137.60/move/-512"
+};
+
 export function emptyState() {
   const emptyState: AppInternalState = {
+    tampa: defaultTampa,
     window: {
       criando: false,
       criada: false
