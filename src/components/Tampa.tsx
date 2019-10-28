@@ -34,7 +34,7 @@ export class Tampa extends React.Component<
             : this.props.fechando
             ? " (Fechando)"
             : ""}{" "}
-          <i className="fa fa-cog"></i>
+          <i className="fa fa-cog" />
         </button>
         {this.state.open ? (
           <div

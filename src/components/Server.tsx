@@ -84,12 +84,12 @@ export class Server extends React.Component<ServerProps, ServerState> {
         />{" "}
         {this.props.open ? (
           <span>
-            <i className="fa fa-link"></i>{" "}
+            <i className="fa fa-link" />{" "}
             <button onClick={() => this.parar()}>Parar</button>
           </span>
         ) : (
           <span>
-            <i className="fa fa-unlink"></i>{" "}
+            <i className="fa fa-unlink" />{" "}
             <button onClick={() => this.iniciar()}>Iniciar</button>
           </span>
         )}{" "}

@@ -148,11 +148,11 @@ export class Equipamentos extends React.Component<
     const rowsCount =
       equipamentos
         .map(e => e.row)
-        .reduce((a, b) => (!a ? b : !b ? a : a > b ? a : b), false) || 0;
+        .reduce((a, b) => (!a ? b : !b ? a : a > b ? a : b), 0) || 0;
     const colsCount =
       equipamentos
         .map(e => e.col)
-        .reduce((a, b) => (!a ? b : !b ? a : a > b ? a : b), false) || 0;
+        .reduce((a, b) => (!a ? b : !b ? a : a > b ? a : b), 0) || 0;
     const semPosicaoCount = this.props.equipamentos.filter(
       e => typeof e.row == "undefined" && typeof e.col == "undefined"
     ).length;
@@ -215,10 +215,7 @@ export class Equipamentos extends React.Component<
             >
               {semPosicaoCount
                 ? times(semPosicaoCount).map((_, k) => (
-                    <span
-                      key={k}
-                      className="equipamentos__mapa__equipamento"
-                    ></span>
+                    <span key={k} className="equipamentos__mapa__equipamento" />
                   ))
                 : null}
             </div>
@@ -252,7 +249,7 @@ export class Equipamentos extends React.Component<
                         <span
                           key={k}
                           className="equipamentos__mapa__equipamento"
-                        ></span>
+                        />
                       ))
                     : null}
                 </div>
@@ -279,7 +276,7 @@ export class Equipamentos extends React.Component<
                           <span
                             key={k}
                             className="equipamentos__mapa__equipamento"
-                          ></span>
+                          />
                         ))
                       : ""}
                   </div>

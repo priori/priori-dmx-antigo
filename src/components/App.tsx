@@ -58,7 +58,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
           }}
         >
           <button onClick={() => action({ type: "novo" })}>
-            <i className="fa fa-file-o"></i>
+            <i className="fa fa-file-o" />
             <span
               style={{
                 fontSize: "22px",
@@ -73,10 +73,10 @@ export class App extends React.Component<{}, AppInternalState | {}> {
             </span>
           </button>{" "}
           <button onClick={() => action({ type: "abrir" })}>
-            <i className="fa fa-folder-open-o"></i>
+            <i className="fa fa-folder-open-o" />
           </button>{" "}
           <button onClick={() => action({ type: "salvar" })}>
-            <i className="fa fa-save"></i>
+            <i className="fa fa-save" />
           </button>{" "}
         </div>
         {state.animacao ? (
