@@ -146,8 +146,8 @@ export class Equipamentos extends React.Component<
     }
 
 
-    const rowsCount = equipamentos.map(e=>e.row).reduce((a,b)=>!a ? b : !b? a : a > b ? a : b ) || 0;
-    const colsCount = equipamentos.map(e=>e.col).reduce((a,b)=>!a ? b : !b? a : a > b ? a : b ) || 0;
+    const rowsCount = equipamentos.map(e=>e.row).reduce((a,b)=>!a ? b : !b? a : a > b ? a : b, 0 ) || 0;
+    const colsCount = equipamentos.map(e=>e.col).reduce((a,b)=>!a ? b : !b? a : a > b ? a : b, 0 ) || 0;
     const semPosicaoCount = this.props.equipamentos.filter(e=>typeof e.row == 'undefined' && typeof e.col == 'undefined').length;
 
     const mapa:(number[])[] = [];
