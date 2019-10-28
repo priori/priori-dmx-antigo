@@ -4,11 +4,9 @@ const abrirEndPoint = "http://192.168.137.60/move/1024";
 const fecharEndPoint = "http://192.168.137.60/move/-1024";
 const tampaPlayDelay = 500;
 const tampaTime = 2500;
-
+let aberto: boolean | undefined = undefined;
 let abrindo = false;
 let fechando = false;
-
-let aberto: boolean | undefined = undefined;
 
 export function abrirTampa(func: () => void) {
   if (abrindo || fechando) throw new Error("Aguarde a movimentação da tampa.");

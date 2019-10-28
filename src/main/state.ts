@@ -1,9 +1,10 @@
-﻿import { BrowserWindow, ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import {
   AppInternalState,
   Tipo,
   Uid,
-  CanaisDmx
+  CanaisDmx,
+  TampaState
 } from "../types/internal-state";
 import { IpcSender, IpcEvent, AppAction } from "../types/types";
 import * as path from "path";
@@ -16,6 +17,10 @@ import { abrirTela, moverTela, telasDisponiveis } from "./telas";
 
 let state: AppInternalState | undefined;
 let closing = false;
+let screen: BrowserWindow | null,
+  appSender: IpcSender | null = null;
+let screenSender: IpcSender | null;
+
 const file = getFile();
 
 export function start() {
@@ -27,10 +32,7 @@ export function start() {
     if (json) {
       state = json;
       if (state.dmx.conectado) {
-        dmx.connect(
-          state.dmx.driver,
-          state.dmx.deviceId
-        );
+        dmx.connect(state.dmx.driver, state.dmx.deviceId);
         dmx.update(state.canais);
       }
       if (state.httpServer.open) {
@@ -62,9 +64,6 @@ export function onCloseTela() {
     }
   });
 }
-
-let screen: BrowserWindow | null,
-  appSender: IpcSender | null = null;
 
 const emptyCanais = {} as CanaisDmx;
 for (let c = 1; c <= 255; c++) (emptyCanais as any)[c] = 0;
@@ -118,8 +117,22 @@ export const initialTipos = [
     canais: [{ tipo: "master" }]
   }
 ] as Tipo[];
+
+export const defaultTampa: TampaState = {
+  abrirEndPoint: "http://192.168.137.60/move/1024",
+  fecharEndPoint: "http://192.168.137.60/move/-1024",
+  tampaPlayDelay: 500,
+  tampaTime: 2500,
+  aberto: false,
+  abrindo: false,
+  fechando: false,
+  teste1: "http://192.168.137.60/move/512",
+  teste2: "http://192.168.137.60/move/-512"
+};
+
 export function emptyState() {
   const emptyState: AppInternalState = {
+    tampa: defaultTampa,
     window: {
       criando: false,
       criada: false
@@ -188,7 +201,6 @@ export function saveState(file: string, state: AppInternalState) {
   fs.writeFileSync(file, JSON.stringify(state));
 }
 
-let screenSender: IpcSender | null;
 // ipcMain.on('state',(_:IpcEvent,newState:any)=>{
 //     state = newState;
 //     if ( screenSender )

@@ -120,8 +120,17 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
           <h2 style={{ margin: "0", paddingBottom: "20px" }}>Arquivos</h2>
         )}
 
+        {this.props.telas.aberta === null ? (
+          <div className="arquivos__message">Não há tela criada.</div>
+        ) : null}
+
         {this.props.arquivos.length ? (
-          <div className="arquivos__controles">
+          <div
+            className={
+              "arquivos__controles" +
+              (this.props.telas.aberta === null ? " disabled" : "")
+            }
+          >
             <button
               style={{
                 opacity: !audio && !telaAberta ? 0.5 : 1

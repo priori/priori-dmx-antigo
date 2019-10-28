@@ -38,10 +38,7 @@ import { abrirTampa, fecharTampa } from "./tampa";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
-  dmx.connect(
-    e.driver,
-    e.deviceId
-  );
+  dmx.connect(e.driver, e.deviceId);
   dmx.update(state.canais);
   setState({
     ...state,
@@ -57,11 +54,15 @@ function dmxConectar(e: { driver: string; deviceId: string }): void {
 function createEquipamento({
   nome,
   inicio,
-  tipoUid
+  tipoUid,
+  row,
+  col
 }: {
   nome: string;
   inicio: number;
   tipoUid: Uid;
+  row?: number;
+  col?: number;
 }): void {
   const state = currentState();
   setState({
@@ -71,6 +72,8 @@ function createEquipamento({
       {
         uid: generateUid(),
         grupo: false,
+        row,
+        col,
         nome,
         inicio,
         tipoUid,
@@ -588,10 +591,7 @@ function abrir() {
     }
     setState(json);
     if (json.dmx.conectado) {
-      dmx.connect(
-        json.dmx.driver,
-        json.dmx.deviceId
-      );
+      dmx.connect(json.dmx.driver, json.dmx.deviceId);
       dmx.update(json.canais);
     }
   }
@@ -631,13 +631,11 @@ function editarEquipamentoNome({ uid, nome }: { uid: Uid; nome: string }) {
   });
 }
 
-function editarArquivoNome({path,nome}:{path:string,nome:string}) {
+function editarArquivoNome({ path, nome }: { path: string; nome: string }) {
   const state = currentState();
   setState({
     ...state,
-    arquivos: state.arquivos.map(e =>
-      e.path == path ? { ...e, nome } : e
-    )
+    arquivos: state.arquivos.map(e => (e.path == path ? { ...e, nome } : e))
   });
 }
 
@@ -649,7 +647,7 @@ function removeCena({ uid }: { uid: Uid }) {
   });
 }
 
-function removeArquivo({path }: { path: string }) {
+function removeArquivo({ path }: { path: string }) {
   const state = currentState();
   setState({
     ...state,
@@ -747,14 +745,14 @@ function cenasSort({ sort }: { sort: Uid[] }) {
   });
 }
 
-function arquivosSort({sort}:{sort:string[]}) {
- const state = currentState(),
+function arquivosSort({ sort }: { sort: string[] }) {
+  const state = currentState(),
     arquivos = [...state.arquivos];
   arquivos.sort((a, b) => sort.indexOf(a.path) - sort.indexOf(b.path));
   setState({
     ...state,
     arquivos
-  }); 
+  });
 }
 
 function extractCanais(
@@ -1135,10 +1133,14 @@ function slideCena({ uid, value }: { uid: Uid; value: number }) {
 
 function createEquipamentoGrupo({
   nome,
-  equipamentos
+  equipamentos,
+  row,
+  col
 }: {
   nome: string;
   equipamentos: Uid[];
+  row?: number;
+  col?: number;
 }) {
   const state = currentState();
   setState({
@@ -1150,7 +1152,9 @@ function createEquipamentoGrupo({
         uid: generateUid(),
         nome,
         equipamentos,
-        configuracoes: []
+        configuracoes: [],
+        row,
+        col
       }
     ]
   });
@@ -1288,17 +1292,24 @@ function volume({ volume }: { volume: number }) {
   });
 }
 
-function editarEquipamentoPosicao({uid,row,col}: { type: "editar-equipamento-posicao"; uid: Uid; row?: number; col?: number }) {
-
+function editarEquipamentoPosicao({
+  uid,
+  row,
+  col
+}: {
+  type: "editar-equipamento-posicao";
+  uid: Uid;
+  row?: number;
+  col?: number;
+}) {
   const state = currentState();
   setState({
     ...state,
     equipamentos: state.equipamentos.map(e =>
-        e.uid == uid ? { ...e, row, col } : e
+      e.uid == uid ? { ...e, row, col } : e
     )
   });
 }
-
 
 on(action => {
   if (action.type == "abrir") abrir();
@@ -1326,8 +1337,7 @@ on(action => {
   else if (action.type == "remove-equipamento") removeEquipamento(action);
   else if (action.type == "editar-equipamento-nome")
     editarEquipamentoNome(action);
-  else if (action.type == "editar-arquivo-nome")
-    editarArquivoNome(action);
+  else if (action.type == "editar-arquivo-nome") editarArquivoNome(action);
   else if (action.type == "editar-equipamento-posicao")
     editarEquipamentoPosicao(action);
   else if (action.type == "remove-cena") removeCena(action);

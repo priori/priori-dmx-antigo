@@ -1,7 +1,7 @@
 import * as React from "react";
 import { action } from "../util/action";
 
-const os = require("os");
+const os = (window as any).require("os");
 const ifaces = os.networkInterfaces();
 
 export interface ServerState {
@@ -32,6 +32,10 @@ export class Server extends React.Component<ServerProps, ServerState> {
     const el = this.port;
     if (!el) return;
     const port = parseInt(el.value);
+    if (!port || port < 0 || port > 65536) {
+      alert("Porta inválida " + port + ".");
+      return;
+    }
     action({ type: "http-open", port });
     this.setState({
       ...this.state,
@@ -80,11 +84,14 @@ export class Server extends React.Component<ServerProps, ServerState> {
         />{" "}
         {this.props.open ? (
           <span>
-            <strong>Executando...</strong>{" "}
+            <i className="fa fa-link" />{" "}
             <button onClick={() => this.parar()}>Parar</button>
           </span>
         ) : (
-          <button onClick={() => this.iniciar()}>Iniciar</button>
+          <span>
+            <i className="fa fa-unlink" />{" "}
+            <button onClick={() => this.iniciar()}>Iniciar</button>
+          </span>
         )}{" "}
         {networkAddress.length > 1
           ? "ou " +

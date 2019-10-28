@@ -1,10 +1,20 @@
-
 import * as React from "react";
 import { EquipamentoSimplesIS, Tipo, Uid } from "../../types/internal-state";
 
 export interface AddFormProps {
-  onSubmitSimples: (nome: string, tipo: Tipo, inicio: number, row?: number, col?: number) => void;
-  onSubmitGrupo: (nome: string, equipamentos: Uid[], row?: number, col?: number ) => void;
+  onSubmitSimples: (
+    nome: string,
+    tipo: Tipo,
+    inicio: number,
+    row?: number,
+    col?: number
+  ) => void;
+  onSubmitGrupo: (
+    nome: string,
+    equipamentos: Uid[],
+    row?: number,
+    col?: number
+  ) => void;
   onCancelar: () => void;
   equipamentoTipos: Tipo[];
   equipamentos: EquipamentoSimplesIS[];
@@ -15,8 +25,8 @@ export interface AddFormState {
   inicio: number;
   grupo: boolean;
   selecionados: Uid[];
-  col?: number,
-  row?: number
+  col?: number;
+  row?: number;
 }
 export class AddForm extends React.Component<AddFormProps, AddFormState> {
   constructor(props: any) {
@@ -48,19 +58,32 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
           onChange={e =>
             this.setState({ ...this.state, nome: (e.target as any).value })
           }
-        /><br/>
+        />
+        <br />
         Posição: linha:
         <input
-            type="number"
-            style={{width:'25px'}}
-            value={this.state.row}
-            onChange={(e:any)=>this.setState({...this.state,row:e.target.value?parseInt(e.target.value):undefined})}
-        /> coluna: <input
           type="number"
-          style={{width:'25px'}}
+          style={{ width: "25px" }}
+          value={this.state.row}
+          onChange={(e: any) =>
+            this.setState({
+              ...this.state,
+              row: e.target.value ? parseInt(e.target.value) : undefined
+            })
+          }
+        />{" "}
+        coluna:{" "}
+        <input
+          type="number"
+          style={{ width: "25px" }}
           value={this.state.col}
-          onChange={(e:any)=>this.setState({...this.state,col:e.target.value?parseInt(e.target.value):undefined})}
-      />
+          onChange={(e: any) =>
+            this.setState({
+              ...this.state,
+              col: e.target.value ? parseInt(e.target.value) : undefined
+            })
+          }
+        />
         <br />
         Tipo:{" "}
         <select
@@ -160,11 +183,15 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
           e => e.uid == this.state.tipoUid
         ) as Tipo,
         this.state.inicio,
-          this.state.row,
-          this.state.col
-      );
-    else this.props.onSubmitGrupo(this.state.nome, this.state.selecionados,
         this.state.row,
-        this.state.col);
+        this.state.col
+      );
+    else
+      this.props.onSubmitGrupo(
+        this.state.nome,
+        this.state.selecionados,
+        this.state.row,
+        this.state.col
+      );
   }
 }
