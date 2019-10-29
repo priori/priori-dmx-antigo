@@ -5,6 +5,10 @@ body {
   cursor: default;
 }
 
+[lock="locked"] {
+  opacity: 0.33;
+}
+
 .tampa {
   position: absolute;
   right: 11px;
@@ -686,16 +690,18 @@ input::-webkit-inner-spin-button {
 .arquivos__message {
   position: absolute;
   right: 0;
-  font-size: 19px;
-  width: 250px;
+  font-size: 17px;
+  width: 205px;
   text-align: center;
   left: 50%;
-  margin-left: -125px;
-  background: rgba(256, 256, 256, 0.5);
+  margin-left: -139px;
+  background: rgba(256, 256, 256, 0.7);
   z-index: 1;
-  border: solid 1px #555;
-  color: #333;
-  margin-top: 13px;
+  color: #444;
+  margin-top: 10px;
+  font-weight: bold;
+  padding: 15px 0;
+  text-shadow: 0 0 10px white;
 }
 
 @media only screen and (max-width: 600px) {

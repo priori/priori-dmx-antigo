@@ -9,8 +9,13 @@ export interface IpcSender {
 }
 
 export type AppAction =
-  | { type: "app-start" }
+    | { type: "app-start" }
+    | { type: "fechar-tampa" }
+    | { type: "abrir-tampa" }
   | { type: "repeat" }
+  | { type: "configurar-tampa", abrirEndPoint: string; fecharEndPoint: string; tampaPlayDelay: number; tampaTime: number }
+  | { type: "executar1", teste1: string }
+  | { type: "executar2", teste2: string }
   | { type: "volume"; volume: number }
   | { type: "http-open"; port: number }
   | { type: "novos-arquivos"; arquivos: string[] }

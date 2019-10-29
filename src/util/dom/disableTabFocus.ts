@@ -3,15 +3,16 @@ const focusableSelector =
   'input:not([tabindex="-1"]):not([disabled]), textarea:not([tabindex="-1"]):not([disabled]), ' +
   'select:not([tabindex="-1"]):not([disabled]), [tabindex]:not([disabled]):not([tabindex="-1"])';
 
-export function disableTabFocus(matcher) {
-  let all;
+export function disableTabFocus(matcher:((v:any)=>boolean)|HTMLElement) {
+  let all:Element[];
   if (typeof matcher == "function") {
-    all = document.querySelectorAll(focusableSelector);
+    all = [...document.querySelectorAll(focusableSelector)];
     all = [...all].filter(el2 => matcher(el2));
   } else {
     all = [...matcher.querySelectorAll(focusableSelector)];
   }
-  all.forEach(el2 => {
+  all.forEach(el => {
+    const el2 = el as any;
     if (!el2._lockCount) {
       el2._tabIndex = el2.getAttribute("tabIndex");
       el2._lockCount = 1;
@@ -21,7 +22,8 @@ export function disableTabFocus(matcher) {
     }
   });
   return () => {
-    all.forEach(el2 => {
+    all.forEach(el => {
+      const el2 = el as any;
       el2._lockCount--;
       if (!el2._lockCount) {
         const tabIndex = el2._tabIndex;

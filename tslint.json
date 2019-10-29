@@ -1,4 +1,7 @@
 {
+  "linterOptions": {
+    "exclude": ["node_modules", "node_modules/**/*", "out", "out/**/*"]
+  },
   "rules": {
     "curly": false,
     "eofline": false,

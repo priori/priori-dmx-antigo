@@ -15,7 +15,7 @@ export interface WebAppState {
   selected: "cenas" | "player" | "equipamentos" | "mesa" | "conf" | "arquivos";
 }
 
-export class WebApp extends React.Component<{ closed: boolean }, WebAppState> {
+export class WebApp extends React.Component<{}, WebAppState> {
   private socket: WebSocket;
   constructor(props: {}) {
     super(props);

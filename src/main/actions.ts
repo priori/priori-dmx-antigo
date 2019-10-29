@@ -1,4 +1,5 @@
 import { dialog } from "electron";
+import * as http from "http";
 import {
   AppInternalState,
   CenaIS,
@@ -34,7 +35,6 @@ import {
 import { Animacao } from "../types/types";
 import { httpClose, httpOpen } from "./http-server";
 import { readState } from "./state-util";
-import { abrirTampa, fecharTampa } from "./tampa";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
@@ -1212,26 +1212,99 @@ function isAudio(state: AppInternalState, selected: string | null) {
   return !!audio;
 }
 
+function fecharTampa() {
+  const state = currentState();
+  if (state.tampa.abrindo || state.tampa.fechando) throw new Error("Aguarde a movimentação da tampa.");
+  if (state.tampa.aberto === false) throw new Error("Tampa já fechada.");
+
+  http.get(state.tampa.fecharEndPoint).on("error", (e: any) => {
+    console.error("GET error", state.tampa.fecharEndPoint, e && e.stack ? e.stack : e);
+  })
+
+  setState({
+    ...state,
+    tampa: {
+      ...state.tampa,
+      fechando: true,
+      aberto: false
+    }
+  });
+  console.log("fechando tampa...");
+
+  setTimeout(() => {
+    const state2 = currentState();
+    console.log("fechada...")
+    setState({
+      ...state2,
+      tampa: {
+        ...state2.tampa,
+        fechando: false,
+        aberto: false
+      }
+    });
+  }, state.tampa.tampaTime);
+
+}
+
+
 function arquivoPlay({ path }: { path: string }) {
   const state = currentState();
   if (state.telas.aberta === null && !isAudio(state, path)) return;
-  const func = () => {
-    const state = currentState();
-    setState({
-      ...state,
-      player: {
-        ...state.player,
-        arquivo: path,
-        state: "play"
-      }
-    });
-  };
   if (
+    !state.tampa.aberto &&
     (state.player.state == "stop" ||
       (state.player.arquivo && isAudio(state, state.player.arquivo))) &&
     !isAudio(state, path)
   ) {
-    abrirTampa(func);
+
+    if (state.tampa.abrindo || state.tampa.fechando) throw new Error("Aguarde a movimentação da tampa.");
+
+    console.log("abrindo tampa...");
+
+    http.get(state.tampa.abrirEndPoint).on("error", (e: any) => {
+      console.error("GET error", state.tampa.abrirEndPoint, e && e.stack ? e.stack : e);
+    });
+
+    setTimeout(() => {
+      const state2 = currentState();
+      setTimeout(() => {
+
+        const state3 = currentState();
+        setState({
+          ...state3,
+          player: {
+            ...state3.player,
+            arquivo: path,
+            state: "play"
+          },
+          tampa: {
+            ...state3.tampa,
+            abrindo: false
+          }
+        });
+
+      }, state2.tampa.tampaTime - state2.tampa.tampaPlayDelay);
+
+      setState({
+        ...state2,
+        player: {
+          ...state2.player,
+          arquivo: path,
+          state: "play"
+        }
+      });
+
+    }, state.tampa.tampaPlayDelay);
+
+    setState({
+      ...state,
+      tampa: {
+        ...state.tampa,
+        aberto: true,
+        abrindo: true
+      }
+    });
+
   } else {
     if (
       isAudio(state, path) &&
@@ -1239,7 +1312,16 @@ function arquivoPlay({ path }: { path: string }) {
       !isAudio(state, state.player.arquivo)
     )
       fecharTampa();
-    func();
+
+    const state4 = currentState();
+    setState({
+      ...state4,
+      player: {
+        ...state4.player,
+        arquivo: path,
+        state: "play"
+      }
+    });
   }
 }
 
@@ -1249,10 +1331,12 @@ function arquivoStop() {
     return;
   if (state.player.state != "stop" && !isAudio(state, state.player.arquivo))
     fecharTampa();
+
+  const state2 = currentState()
   setState({
-    ...state,
+    ...state2,
     player: {
-      ...state.player,
+      ...state2.player,
       state: "stop",
       arquivo: null
     }
@@ -1311,9 +1395,77 @@ function editarEquipamentoPosicao({
   });
 }
 
+function configurarTampa({abrirEndPoint,fecharEndPoint,tampaPlayDelay,tampaTime}: { abrirEndPoint: string; fecharEndPoint: string; tampaPlayDelay: number; tampaTime: number }) {
+  const state = currentState();
+  setState({
+    ...state,
+    tampa: {
+      ...state.tampa,
+      abrirEndPoint,fecharEndPoint,tampaPlayDelay,tampaTime
+    }
+  });
+}
+
+function executar1({teste1}:{teste1:string}){
+  http.get(teste1).on("error", (e: any) => {
+    console.error("GET error", teste1, e && e.stack ? e.stack : e);
+  });
+  const state = currentState();
+  setState({
+    ...state,
+    tampa: {
+      ...state.tampa,
+      teste1
+    }
+  });
+}
+function executar2({teste2}:{teste2:string}){
+  http.get(teste2).on("error", (e: any) => {
+    console.error("GET error", teste2, e && e.stack ? e.stack : e);
+  });
+  const state = currentState();
+  setState({
+    ...state,
+    tampa: {
+      ...state.tampa,
+      teste2
+    }
+  });
+}
+function marcarTampaComoAberta(){
+  const state = currentState();
+  setState({
+    ...state,
+    tampa: {
+      ...state.tampa,
+      aberto: true,
+      abrindo: false,
+      fechando: false
+    }
+  });
+
+}
+function marcarTampaComoFechada(){
+  const state = currentState();
+  setState({
+    ...state,
+    tampa: {
+      ...state.tampa,
+      aberto: false,
+      abrindo: false,
+      fechando: false
+    }
+  });
+}
+
 on(action => {
   if (action.type == "abrir") abrir();
   else if (action.type == "aplicar-cena-agora") aplicarCenaAgora(action);
+  else if (action.type == "abrir-tampa") marcarTampaComoAberta();
+  else if (action.type == "fechar-tampa") marcarTampaComoFechada();
+  else if (action.type == "configurar-tampa") configurarTampa(action);
+  else if (action.type == "executar1") executar1(action);
+  else if (action.type == "executar2") executar2(action);
   else if (action.type == "change-color") changeColor(action);
   else if (action.type == "create-equipamento") createEquipamento(action);
   else if (action.type == "create-equipamento-grupo")

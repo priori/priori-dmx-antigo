@@ -98,11 +98,13 @@ export type PlayerState = "play" | "stop" | "pause";
 export interface TampaState {
   abrirEndPoint: string;
   fecharEndPoint: string;
+
   tampaPlayDelay: number;
   tampaTime: number;
   aberto: boolean;
   abrindo: boolean;
   fechando: boolean;
+
   teste1: string;
   teste2: string;
 }

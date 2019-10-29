@@ -2,10 +2,8 @@ import * as React from "react";
 import { FastInput } from "./util/FastInput";
 import { action } from "../util/action";
 import { Arquivo, PlayerState } from "../types/internal-state";
-import { Monitor } from "./Monitor";
 import { Audios } from "./Audios";
 import Timer = NodeJS.Timer;
-import { Cenas } from "./Cenas";
 
 export interface ArquivosState {
   over: boolean;
@@ -92,8 +90,8 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
 
   isAudio() {
     const selected = this.state.selected
-      ? this.props.arquivos.filter(a => a.path == this.state.selected)[0]
-      : undefined;
+        ? this.props.arquivos.filter(a => a.path == this.state.selected)[0]
+        : undefined;
     const audio = selected && selected.type == "audio";
     return audio;
   }
@@ -110,6 +108,8 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
 
     const telaAberta = this.props.telas.aberta !== null;
     const audio = this.isAudio();
+    const naoHaTela = this.state.selected && !audio && this.props.telas.aberta === null;
+    const naoHaArquivoSelecionado = this.state.selected === null;
 
     return (
       <div
@@ -120,17 +120,17 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
           <h2 style={{ margin: "0", paddingBottom: "20px" }}>Arquivos</h2>
         )}
 
-        {this.props.telas.aberta === null ? (
-          <div className="arquivos__message">Não há tela criada.</div>
+        {naoHaArquivoSelecionado ? (
+            <div className="arquivos__message">Não há arquivo selecionado.</div>
+        ): naoHaTela ? (
+          <div className="arquivos__message" style={{lineHeight: "40px"}}>Não há tela criada.</div>
         ) : null}
 
         {this.props.arquivos.length ? (
           <div
-            className={
-              "arquivos__controles" +
-              (this.props.telas.aberta === null ? " disabled" : "")
-            }
+            className="arquivos__controles"
           >
+            <span style={{opacity: naoHaTela || naoHaArquivoSelecionado ? 0.33 : undefined}}>
             <button
               style={{
                 opacity: !audio && !telaAberta ? 0.5 : 1
@@ -140,24 +140,16 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
               <i className="fa fa-stop" />
             </button>{" "}
             <button
-              style={{
-                opacity:
-                  this.state.selected === null || (!audio && !telaAberta)
-                    ? 0.5
-                    : 1
-              }}
               onClick={() => this.play()}
             >
               <i className="fa fa-play" />
             </button>{" "}
             <button
-              style={{
-                opacity: !audio && !telaAberta ? 0.5 : 1
-              }}
               onClick={() => this.pause()}
             >
               <i className="fa fa-pause" />
-            </button>{" "}
+            </button>
+            </span>{" "}
             <button onClick={() => this.repeat()}>
               <i
                 className="fa fa-repeat"
@@ -270,7 +262,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
 
   private removeArquivo(f: Arquivo) {
     if (!confirm("Tem certeza que deseja remover o arquivo?")) return;
-    action({ type: "remove-arquivo", arquivo: f.path });
+    action({ type: "remove-arquivo", path: f.path });
   }
 
   private select(f: Arquivo) {

@@ -1,8 +1,7 @@
-import React from "react";
+import * as React from "react";
 import { disableTabFocus } from "../../util/dom/disableTabFocus";
-import PropTypes from "prop-types";
 
-const stop = e => {
+const stop = (e:any) => {
   if (e.key === "Tab") return;
   e.preventDefault();
   e.stopPropagation();
@@ -14,50 +13,56 @@ const lockedListeners = {
   onClickCapture: stop,
   onKeyPressCapture: stop,
   onKeyDownCapture: stop,
-  onFocusCapture(e) {
+  onFocusCapture(e:any) {
     e.target.blur();
   }
 };
 
-export class Lock extends React.Component {
-  constructor(props) {
+export interface LockProps {
+  type?: string;
+  containerRef?: (v:HTMLElement) => void;
+  locked: boolean;
+}
+
+export class Lock extends React.Component<LockProps,{count?:number}> {
+  constructor(props:LockProps) {
     super(props);
     this.state = {};
     this.whait = this.whait.bind(this);
   }
 
-  whait(promise) {
+  whait(promise:Promise<any>) {
     this.setState({ count: (this.state.count || 0) + 1 });
     return promise
       .then(() => {
-        this.setState({ count: this.state.count - 1 });
+        this.setState({ count: (this.state.count||0) - 1 });
       })
       .catch(() => {
-        this.setState({ count: this.state.count - 1 });
+        this.setState({ count: (this.state.count||0) - 1 });
       });
   }
 
   render() {
     const type = this.props.type || "div";
     let children = this.props.children || null;
-    let stopFix;
+    let stopFix:(undefined|(() => void)) = undefined;
     const locked = this.props.locked || this.state.count;
     const props2 = {
       ...this.props,
       ...(locked ? lockedListeners : {}),
       ref: locked
-        ? el => {
+        ? (el:HTMLElement) => {
             if (locked) {
               if (el) {
                 el.setAttribute("lock", "locked");
                 stopFix = disableTabFocus(el);
-              } else {
+              } else if (stopFix) {
                 stopFix();
               }
             }
             if (this.props.containerRef) this.props.containerRef(el);
           }
-        : el => {
+        : (el:HTMLElement) => {
             if (el) {
               el.setAttribute("lock", "open");
             }
@@ -67,14 +72,7 @@ export class Lock extends React.Component {
     };
     delete props2.containerRef;
     delete props2.locked;
-    delete props2.error;
     delete props2.type;
     return React.createElement(type, props2);
   }
 }
-Lock.propTypes = {
-  type: PropTypes.string,
-  children: PropTypes.node,
-  locked: PropTypes.bool,
-  containerRef: PropTypes.func
-};
