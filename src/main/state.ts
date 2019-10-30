@@ -14,6 +14,7 @@ import { deepFreeze } from "../util/equals";
 import { httpOpen, httpServerListener } from "./http-server";
 import { readState } from "./state-util";
 import { abrirTela, moverTela, telasDisponiveis } from "./telas";
+import {telaFoiFechada} from "./actions";
 
 let state: AppInternalState | undefined;
 let closing = false;
@@ -48,21 +49,8 @@ export function start() {
 
 export function onCloseTela() {
   screen = null;
-  const state = currentState();
   screenSender = null;
-  setState({
-    ...state,
-    telas: {
-      ...state.telas,
-      aberta: null
-    },
-    player: {
-      state: "stop",
-      arquivo: null,
-      volume: state.player.volume,
-      repeat: state.player.repeat
-    }
-  });
+  telaFoiFechada();
 }
 
 const emptyCanais = {} as CanaisDmx;

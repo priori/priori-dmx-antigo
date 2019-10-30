@@ -5,6 +5,34 @@ body {
   cursor: default;
 }
 
+.arquivos {
+  position: absolute;
+  top: 90px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.arquivo__state:empty {
+  width: 10px;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.14);
+  border-radius: 5px;
+  margin-top: 3px;
+}
+.arquivo__state {
+  margin-left: -3px;
+}
+.arquivo img {
+  position: absolute;
+  right: 75px;
+  max-width: 40px;
+  max-height: 28px;
+  top: 2px;
+}
+.arquivo.selected img {
+  transform: scale(2);
+}
+
 [lock="locked"] {
   opacity: 0.33;
 }
@@ -12,7 +40,7 @@ body {
 .tampa {
   position: absolute;
   right: 11px;
-  margin-top: 9px;
+  top: 55px;
 }
 
 .tampa__state {
@@ -40,7 +68,7 @@ button {
   outline: none;
   padding: 4px 7px;
   background: rgba(0, 0, 0, 0.05);
-  border: solid 1px rgba(0, 0, 0, 0.22);
+  border: solid 1px rgba(0, 0, 0, 0.05);
 }
 button:focus,
 button:active {
@@ -64,13 +92,22 @@ button:focus {
 .arquivos.over {
   background: #ccc;
 }
-.arquivos img {
-  max-width: 100px;
-  max-height: 100px;
-  vertical-align: middle;
-}
 .arquivos h2 {
   padding: 20px;
+}
+.fa.playing {
+  animation: blinkingText 0.5s infinite;
+  color: #006;
+}
+
+.arquivo i.fa.fa-picture-o,
+.arquivo i.fa.fa-video-camera,
+.arquivo i.fa.fa-music {
+  position: absolute;
+  top: 9px;
+  font-size: 13px;
+  margin-left: 3px;
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .conexao-dmx input {
@@ -471,12 +508,18 @@ input.cena__nome {
 }
 
 .arquivo {
-  padding: 6px 16px 6px 24px;
+  padding: 7px 16px 7px 24px;
   border: 2px transparent solid;
   position: relative;
+  border-bottom: solid 1px rgba(0, 0, 0, 0.1);
 }
+.arquivo:first-of-type {
+  border-top: solid 1px rgba(0, 0, 0, 0.1);
+}
+
 .arquivo.selected {
   background: #fe0;
+  z-index: 2;
 }
 .arquivo.active {
   border: dashed #060 2px;
@@ -485,7 +528,10 @@ input.cena__nome {
 
 .arquivo strong {
   font-size: 16px;
-  margin-right: 5px;
+  display: block;
+  font-weight: normal;
+  margin-right: 122px;
+  margin-left: 20px;
 }
 
 .arquivos__controles {
@@ -521,7 +567,17 @@ input.cena__nome {
   padding: 10px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.33);
   margin-top: -6px;
-  z-index: 2;
+  z-index: 10;
+}
+.arquivo textarea {
+  margin: 0px;
+  width: 288px;
+  height: 85px;
+  position: absolute;
+  padding: 4px 6px;
+  outline: none;
+  border: 0;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
 }
 
 .arquivo.na-tela .arquivo__state {
@@ -647,15 +703,30 @@ input.cena__nome {
 .volume input[type="range"]:focus::-ms-fill-upper {
   background: rgba(13, 13, 13, 0.5);
 }
-.arquivos .fa-close {
+.arquivo__controle {
   opacity: 0.5;
-  position: relative;
-  top: -4px;
-  left: 3px;
   cursor: pointer;
 }
-.arquivos .fa-close:hover {
+.arquivo__controle:hover {
   opacity: 1;
+}
+*::-webkit-scrollbar {
+  width: 15px;
+}
+/* line 6, sass/C:\Users\Leonardo\apps\priori-db\src\style\left-nav.scss */
+*::-webkit-scrollbar-thumb {
+  background-color: #eee;
+}
+/* line 7, sass/C:\Users\Leonardo\apps\priori-db\src\style\left-nav.scss */
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #ddd;
+}
+
+.arquivo__controles {
+  position: absolute;
+  right: 2px;
+  top: 3px;
+  font-size: 23px;
 }
 .volume {
   float: right;
@@ -691,16 +762,16 @@ input::-webkit-inner-spin-button {
   position: absolute;
   right: 0;
   font-size: 17px;
-  width: 205px;
+  width: 245px;
   text-align: center;
   left: 50%;
-  margin-left: -139px;
+  margin-left: -164px;
   background: rgba(256, 256, 256, 0.7);
   z-index: 1;
   color: #444;
   margin-top: 10px;
   font-weight: bold;
-  padding: 15px 0;
+  padding: 25px 0;
   text-shadow: 0 0 10px white;
 }
 
@@ -787,14 +858,11 @@ input::-webkit-inner-spin-button {
     font-size: 18px;
   }
   .arquivos__controles {
-    left: 0;
-    right: 0;
-    top: 60px;
-    padding-top: 10px;
+    padding: 10px 15px 0 15px;
   }
   .arquivos__itens {
     position: absolute;
-    top: 230px;
+    top: 140px;
     left: 0;
     right: 0;
     bottom: 0;
@@ -832,17 +900,23 @@ input::-webkit-inner-spin-button {
 .volume {
   text-align: left;
 }
-
-.arquivo strong {
-  font-size: 16px;
-  margin-right: 15px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  display: block;
-  font-weight: normal;
-}
 .equipamento-option {
   padding: 6px 7px;
   font-size: 14px;
+}
+
+.arquivos__controles button {
+  border-radius: 12px;
+  width: 70px;
+  height: 70px;
+  text-align: center;
+  display: inline-block;
+  border: 0;
+  background: #eee;
+}
+.arquivos__controles button:hover {
+  background: #e8e8e8;
+}
+.arquivos__controles button:active {
+  background: #e4e4e4;
 }

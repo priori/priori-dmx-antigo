@@ -49,6 +49,10 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
   onDrop(e: any) {
     e.preventDefault();
     e.stopPropagation();
+    this.setState({
+      ...this.state,
+      over: false
+    });
     const fs = e.dataTransfer.files as { path: string }[];
     const files: string[] = [];
     const invalids: string[] = [];
@@ -142,7 +146,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
             <button
               onClick={() => this.play()}
             >
-              <i className="fa fa-play" />
+              <i className={"fa fa-play"+(this.props.player.state == "play" ? " playing" : "")} />
             </button>{" "}
             <button
               onClick={() => this.pause()}
@@ -195,9 +199,18 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
                   ) : null
                 ) : null}
               </span>
+              {
+                f.type == "audio" ?
+                    <i className="fa fa-music" />
+                    :
+                    f.type == "img" ?
+                    <i className="fa fa-picture-o" />
+                    : <i className="fa fa-video-camera" />
+              }
               <strong>
                 {f.path == this.state.editandoNome ? (
                   <FastInput
+                      type="textarea"
                     className="cena__nome"
                     initialValue={f.nome}
                     onMouseDown={(e: any) => {
@@ -218,9 +231,8 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
                       this.setState({ ...this.state, editandoNome: undefined })
                     }
                   />
-                ) : (
-                  f.nome
-                )}
+                ) : null }
+                {f.nome}
               </strong>{" "}
               {f.type == "img" && this.props.showThumbs ? (
                 <img src={f.path} />
@@ -228,14 +240,10 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
               {/* {f.path} */}
               {f.path == this.state.selected && !this.state.editandoNome ? (
                 <span
-                  style={{
-                    position: "absolute",
-                    right: "10px",
-                    top: "12px"
-                  }}
+                    className="arquivo__controles"
                 >
                   <i
-                    className="fa fa-pencil"
+                    className="fa fa-pencil arquivo__controle"
                     onClick={(e: any) => {
                       this.renameArquivo(f);
                       e.stopPropagation();
@@ -243,7 +251,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
                     }}
                   />{" "}
                   <i
-                    className="fa fa-close"
+                    className="fa fa-close arquivo__controle"
                     onClick={() => this.removeArquivo(f)}
                   />
                 </span>

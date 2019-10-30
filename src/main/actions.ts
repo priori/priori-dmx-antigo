@@ -1406,6 +1406,29 @@ function configurarTampa({abrirEndPoint,fecharEndPoint,tampaPlayDelay,tampaTime}
   });
 }
 
+export function telaFoiFechada(){
+  const state = currentState();
+  if ( state.tampa.abrindo ) {
+    console.log("ERROR: Tela fechada com a tampa do projetor fechando.");
+  }
+  setState({
+    ...state,
+    telas: {
+      ...state.telas,
+      aberta: null
+    },
+    player: {
+      state: "stop",
+      arquivo: null,
+      volume: state.player.volume,
+      repeat: state.player.repeat
+    }
+  });
+  if ( state.tampa.aberto && !state.tampa.fechando && !state.tampa.abrindo ) {
+    fecharTampa();
+  }
+}
+
 function executar1({teste1}:{teste1:string}){
   http.get(teste1).on("error", (e: any) => {
     console.error("GET error", teste1, e && e.stack ? e.stack : e);

@@ -15,6 +15,7 @@ import { Tampa } from "./Tampa";
 
 const empty = {};
 export class App extends React.Component<{}, AppInternalState | {}> {
+
   constructor(props: {}) {
     super(props);
     this.state = empty;
@@ -22,6 +23,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
     // this.stateListener = this.stateListener.bind(this);
     listen(this.stateListener);
   }
+
   stateListener = (data: AppInternalState) => {
     for (const key in data) {
       deepFreeze(data[key]);
@@ -101,9 +103,9 @@ export class App extends React.Component<{}, AppInternalState | {}> {
             }}
           />
         ) : null}
-        <Tampa {...state.tampa} />
         <Monitor telas={state.telas} />
         <Server port={state.httpServer.port} open={state.httpServer.open} />
+      <Tampa {...state.tampa} />
         {/* <ConexaoDMX {...state.dmx} />
         <Cenas {...state} />
         <div style={{ textAlign: "right", paddingBottom: "5px" }}>
