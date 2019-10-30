@@ -14,7 +14,7 @@ import { deepFreeze } from "../util/equals";
 import { httpOpen, httpServerListener } from "./http-server";
 import { readState } from "./state-util";
 import { abrirTela, moverTela, telasDisponiveis } from "./telas";
-import {telaFoiFechada} from "./actions";
+import { telaFoiFechada } from "./actions";
 
 let state: AppInternalState | undefined;
 let closing = false;
@@ -33,7 +33,10 @@ export function start() {
     if (json) {
       state = json;
       if (state.dmx.conectado) {
-        dmx.connect(state.dmx.driver, state.dmx.deviceId);
+        dmx.connect(
+          state.dmx.driver,
+          state.dmx.deviceId
+        );
         dmx.update(state.canais);
       }
       if (state.httpServer.open) {

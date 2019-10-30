@@ -214,8 +214,8 @@ export class Cenas extends React.Component<AppInternalState, CenasState> {
                 typeof this.state.cenaSlide != "undefined"
                   ? this.state.cenaSlide
                   : this.props.cenaSlide && this.props.cenaSlide.uid == cena.uid
-                  ? this.props.cenaSlide.value
-                  : "0"
+                    ? this.props.cenaSlide.value
+                    : "0"
               }
             />{" "}
             <button onClick={() => this.salvarCena(cena.uid)}>

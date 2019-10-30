@@ -38,7 +38,10 @@ import { readState } from "./state-util";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
-  dmx.connect(e.driver, e.deviceId);
+  dmx.connect(
+    e.driver,
+    e.deviceId
+  );
   dmx.update(state.canais);
   setState({
     ...state,
@@ -105,13 +108,14 @@ function changeColor(e: { cor: string; equipamento: Uid }): void {
       ...state.canais,
       ...canais
     },
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == uid
-        ? {
-            ...e,
-            cor
-          }
-        : e
+    equipamentos: state.equipamentos.map(
+      e =>
+        e.uid == uid
+          ? {
+              ...e,
+              cor
+            }
+          : e
     ),
     cenaSlide: null
   });
@@ -591,7 +595,10 @@ function abrir() {
     }
     setState(json);
     if (json.dmx.conectado) {
-      dmx.connect(json.dmx.driver, json.dmx.deviceId);
+      dmx.connect(
+        json.dmx.driver,
+        json.dmx.deviceId
+      );
       dmx.update(json.canais);
     }
   }
@@ -625,8 +632,8 @@ function editarEquipamentoNome({ uid, nome }: { uid: Uid; nome: string }) {
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == uid ? { ...e, nome } : e
+    equipamentos: state.equipamentos.map(
+      e => (e.uid == uid ? { ...e, nome } : e)
     )
   });
 }
@@ -665,8 +672,8 @@ function equipamentoEditarInicio({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == uid ? { ...e, inicio } : e
+    equipamentos: state.equipamentos.map(
+      e => (e.uid == uid ? { ...e, inicio } : e)
     )
   });
 }
@@ -794,13 +801,14 @@ function salvarEquipamentoConfiguracao({
     };
     setState({
       ...state,
-      equipamentos: state.equipamentos.map(e =>
-        e.uid == uid
-          ? ({
-              ...e,
-              configuracoes: [...e.configuracoes, novaConfiguracao]
-            } as EquipamentoSimplesIS)
-          : e
+      equipamentos: state.equipamentos.map(
+        e =>
+          e.uid == uid
+            ? ({
+                ...e,
+                configuracoes: [...e.configuracoes, novaConfiguracao]
+              } as EquipamentoSimplesIS)
+            : e
       )
     });
   }
@@ -820,13 +828,14 @@ function salvarTipoConfiguracao({ uid, nome }: { uid: Uid; nome: string }) {
   };
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(t =>
-      t.uid != equipamento.tipoUid
-        ? t
-        : {
-            ...t,
-            configuracoes: [...t.configuracoes, novaConfiguracao]
-          }
+    equipamentoTipos: state.equipamentoTipos.map(
+      t =>
+        t.uid != equipamento.tipoUid
+          ? t
+          : {
+              ...t,
+              configuracoes: [...t.configuracoes, novaConfiguracao]
+            }
     )
   });
 }
@@ -883,20 +892,21 @@ function adicionarEquipamentoACena({
   const canais = extractCanais(state, equipamento, tipo);
   setState({
     ...state,
-    cenas: state.cenas.map(c =>
-      c.uid != cenaUid || c.tipo != "equipamentos"
-        ? c
-        : {
-            ...c,
-            equipamentos: [
-              ...c.equipamentos,
-              {
-                canais,
-                uid,
-                cor: null
-              }
-            ]
-          }
+    cenas: state.cenas.map(
+      c =>
+        c.uid != cenaUid || c.tipo != "equipamentos"
+          ? c
+          : {
+              ...c,
+              equipamentos: [
+                ...c.equipamentos,
+                {
+                  canais,
+                  uid,
+                  cor: null
+                }
+              ]
+            }
     )
   });
 }
@@ -911,15 +921,16 @@ function removeEquipamentoCena({
   const state = currentState();
   setState({
     ...state,
-    cenas: state.cenas.map(c =>
-      c.uid == cenaUid
-        ? {
-            ...(c as EquipamentosCenaIS),
-            equipamentos: (c as EquipamentosCenaIS).equipamentos.filter(
-              e => e.uid != equipamentoUid
-            )
-          }
-        : c
+    cenas: state.cenas.map(
+      c =>
+        c.uid == cenaUid
+          ? {
+              ...(c as EquipamentosCenaIS),
+              equipamentos: (c as EquipamentosCenaIS).equipamentos.filter(
+                e => e.uid != equipamentoUid
+              )
+            }
+          : c
     )
   });
 }
@@ -934,15 +945,16 @@ function removeEquipamentoConfiguracao({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == equipamentoUid
-        ? ({
-            ...(e as EquipamentoIS),
-            configuracoes: (e as any).configuracoes.filter(
-              (_: any, i: number) => i != index
-            )
-          } as EquipamentoIS)
-        : e
+    equipamentos: state.equipamentos.map(
+      e =>
+        e.uid == equipamentoUid
+          ? ({
+              ...(e as EquipamentoIS),
+              configuracoes: (e as any).configuracoes.filter(
+                (_: any, i: number) => i != index
+              )
+            } as EquipamentoIS)
+          : e
     )
   });
 }
@@ -957,13 +969,14 @@ function removeTipoConfiguracao({
   const state = currentState();
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(e =>
-      e.uid == equipamentoTipoUid
-        ? {
-            ...e,
-            configuracoes: e.configuracoes.filter((_, i) => i != index)
-          }
-        : e
+    equipamentoTipos: state.equipamentoTipos.map(
+      e =>
+        e.uid == equipamentoTipoUid
+          ? {
+              ...e,
+              configuracoes: e.configuracoes.filter((_, i) => i != index)
+            }
+          : e
     )
   });
 }
@@ -1072,8 +1085,8 @@ function slideCena({ uid, value }: { uid: Uid; value: number }) {
     state.cenaSlide && state.cenaSlide.uid == uid
       ? state.cenaSlide.canaisAnterior
       : cena.tipo == "mesa"
-      ? ({ ...state.canais } as any)
-      : cenaCanaisSlice(state, cena);
+        ? ({ ...state.canais } as any)
+        : cenaCanaisSlice(state, cena);
   const canais: { [key: number]: number } = {};
   const perc = value / 100;
   if (cena.tipo == "mesa") {
@@ -1196,8 +1209,8 @@ function novosArquivos({ arquivos }: { arquivos: string[] }) {
         type: (a.match(/\.(mp4)$/i)
           ? "video"
           : a.match(/\.(ogg|mp3)$/i)
-          ? "audio"
-          : "img") as ArquivoType,
+            ? "audio"
+            : "img") as ArquivoType,
         nome: a.replace(/.*(\/|\\)([^\\\/]+)\.[a-zA-Z0-9]+/, "$2")
       }))
     ]
@@ -1214,12 +1227,17 @@ function isAudio(state: AppInternalState, selected: string | null) {
 
 function fecharTampa() {
   const state = currentState();
-  if (state.tampa.abrindo || state.tampa.fechando) throw new Error("Aguarde a movimentação da tampa.");
+  if (state.tampa.abrindo || state.tampa.fechando)
+    throw new Error("Aguarde a movimentação da tampa.");
   if (state.tampa.aberto === false) throw new Error("Tampa já fechada.");
 
   http.get(state.tampa.fecharEndPoint).on("error", (e: any) => {
-    console.error("GET error", state.tampa.fecharEndPoint, e && e.stack ? e.stack : e);
-  })
+    console.error(
+      "GET error",
+      state.tampa.fecharEndPoint,
+      e && e.stack ? e.stack : e
+    );
+  });
 
   setState({
     ...state,
@@ -1233,7 +1251,7 @@ function fecharTampa() {
 
   setTimeout(() => {
     const state2 = currentState();
-    console.log("fechada...")
+    console.log("fechada...");
     setState({
       ...state2,
       tampa: {
@@ -1243,9 +1261,7 @@ function fecharTampa() {
       }
     });
   }, state.tampa.tampaTime);
-
 }
-
 
 function arquivoPlay({ path }: { path: string }) {
   const state = currentState();
@@ -1256,19 +1272,22 @@ function arquivoPlay({ path }: { path: string }) {
       (state.player.arquivo && isAudio(state, state.player.arquivo))) &&
     !isAudio(state, path)
   ) {
-
-    if (state.tampa.abrindo || state.tampa.fechando) throw new Error("Aguarde a movimentação da tampa.");
+    if (state.tampa.abrindo || state.tampa.fechando)
+      throw new Error("Aguarde a movimentação da tampa.");
 
     console.log("abrindo tampa...");
 
     http.get(state.tampa.abrirEndPoint).on("error", (e: any) => {
-      console.error("GET error", state.tampa.abrirEndPoint, e && e.stack ? e.stack : e);
+      console.error(
+        "GET error",
+        state.tampa.abrirEndPoint,
+        e && e.stack ? e.stack : e
+      );
     });
 
     setTimeout(() => {
       const state2 = currentState();
       setTimeout(() => {
-
         const state3 = currentState();
         setState({
           ...state3,
@@ -1282,7 +1301,6 @@ function arquivoPlay({ path }: { path: string }) {
             abrindo: false
           }
         });
-
       }, state2.tampa.tampaTime - state2.tampa.tampaPlayDelay);
 
       setState({
@@ -1293,7 +1311,6 @@ function arquivoPlay({ path }: { path: string }) {
           state: "play"
         }
       });
-
     }, state.tampa.tampaPlayDelay);
 
     setState({
@@ -1304,7 +1321,6 @@ function arquivoPlay({ path }: { path: string }) {
         abrindo: true
       }
     });
-
   } else {
     if (
       isAudio(state, path) &&
@@ -1332,7 +1348,7 @@ function arquivoStop() {
   if (state.player.state != "stop" && !isAudio(state, state.player.arquivo))
     fecharTampa();
 
-  const state2 = currentState()
+  const state2 = currentState();
   setState({
     ...state2,
     player: {
@@ -1389,26 +1405,39 @@ function editarEquipamentoPosicao({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(e =>
-      e.uid == uid ? { ...e, row, col } : e
+    equipamentos: state.equipamentos.map(
+      e => (e.uid == uid ? { ...e, row, col } : e)
     )
   });
 }
 
-function configurarTampa({abrirEndPoint,fecharEndPoint,tampaPlayDelay,tampaTime}: { abrirEndPoint: string; fecharEndPoint: string; tampaPlayDelay: number; tampaTime: number }) {
+function configurarTampa({
+  abrirEndPoint,
+  fecharEndPoint,
+  tampaPlayDelay,
+  tampaTime
+}: {
+  abrirEndPoint: string;
+  fecharEndPoint: string;
+  tampaPlayDelay: number;
+  tampaTime: number;
+}) {
   const state = currentState();
   setState({
     ...state,
     tampa: {
       ...state.tampa,
-      abrirEndPoint,fecharEndPoint,tampaPlayDelay,tampaTime
+      abrirEndPoint,
+      fecharEndPoint,
+      tampaPlayDelay,
+      tampaTime
     }
   });
 }
 
-export function telaFoiFechada(){
+export function telaFoiFechada() {
   const state = currentState();
-  if ( state.tampa.abrindo ) {
+  if (state.tampa.abrindo) {
     console.log("ERROR: Tela fechada com a tampa do projetor fechando.");
   }
   setState({
@@ -1424,12 +1453,12 @@ export function telaFoiFechada(){
       repeat: state.player.repeat
     }
   });
-  if ( state.tampa.aberto && !state.tampa.fechando && !state.tampa.abrindo ) {
+  if (state.tampa.aberto && !state.tampa.fechando && !state.tampa.abrindo) {
     fecharTampa();
   }
 }
 
-function executar1({teste1}:{teste1:string}){
+function executar1({ teste1 }: { teste1: string }) {
   http.get(teste1).on("error", (e: any) => {
     console.error("GET error", teste1, e && e.stack ? e.stack : e);
   });
@@ -1442,7 +1471,7 @@ function executar1({teste1}:{teste1:string}){
     }
   });
 }
-function executar2({teste2}:{teste2:string}){
+function executar2({ teste2 }: { teste2: string }) {
   http.get(teste2).on("error", (e: any) => {
     console.error("GET error", teste2, e && e.stack ? e.stack : e);
   });
@@ -1455,7 +1484,7 @@ function executar2({teste2}:{teste2:string}){
     }
   });
 }
-function marcarTampaComoAberta(){
+function marcarTampaComoAberta() {
   const state = currentState();
   setState({
     ...state,
@@ -1466,9 +1495,8 @@ function marcarTampaComoAberta(){
       fechando: false
     }
   });
-
 }
-function marcarTampaComoFechada(){
+function marcarTampaComoFechada() {
   const state = currentState();
   setState({
     ...state,

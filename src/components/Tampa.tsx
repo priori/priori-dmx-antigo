@@ -40,37 +40,46 @@ export class Tampa extends React.Component<
     });
   }
 
-  executar1(){
-    action({type: "executar1", teste1: this.state.teste1});
+  executar1() {
+    action({ type: "executar1", teste1: this.state.teste1 });
   }
 
-  executar2(){
-    action({type: "executar2", teste2: this.state.teste2});
+  executar2() {
+    action({ type: "executar2", teste2: this.state.teste2 });
   }
 
-  fecharTampa(){
-    action({type: "fechar-tampa" } );
-
+  fecharTampa() {
+    action({ type: "fechar-tampa" });
   }
 
-  abrirTampa(){
-    action({type: "abrir-tampa" } );
+  abrirTampa() {
+    action({ type: "abrir-tampa" });
   }
 
-  salvar(){
-    if ( this.state.tampaPlayDelay < 1 || this.state.tampaPlayDelay > 30000 ) {
-      alert("Delay para o vídeo abrir inválido "+this.state.tampaPlayDelay+"." + (this.state.tampaPlayDelay>30000?"\nValor muito alto.":""))
+  salvar() {
+    if (this.state.tampaPlayDelay < 1 || this.state.tampaPlayDelay > 30000) {
+      alert(
+        "Delay para o vídeo abrir inválido " +
+          this.state.tampaPlayDelay +
+          "." +
+          (this.state.tampaPlayDelay > 30000 ? "\nValor muito alto." : "")
+      );
       return;
     }
-    if ( this.state.tampaTime < 1 || this.state.tampaTime > 30000 ) {
-      alert("Tempo de Abrir / Fechar a Tampa inválido "+this.state.tampaTime+"." + (this.state.tampaTime>30000?"\nValor muito alto.":""))
+    if (this.state.tampaTime < 1 || this.state.tampaTime > 30000) {
+      alert(
+        "Tempo de Abrir / Fechar a Tampa inválido " +
+          this.state.tampaTime +
+          "." +
+          (this.state.tampaTime > 30000 ? "\nValor muito alto." : "")
+      );
       return;
     }
-    if ( !this.state.abrirEndPoint ) {
+    if (!this.state.abrirEndPoint) {
       alert("Endpoint para abertura inválido.");
       return;
     }
-    if ( !this.state.fecharEndPoint ) {
+    if (!this.state.fecharEndPoint) {
       alert("Endpoint para fechar inválido.");
       return;
     }
@@ -82,19 +91,25 @@ export class Tampa extends React.Component<
       tampaTime: this.state.tampaTime
     });
     this.setState({
-        ...this.state,
+      ...this.state,
       open: false
-    })
+    });
   }
 
   render() {
     return (
       <div className="tampa">
         <button onClick={() => this.openClose()}>
-          Tampa {
-            this.props.abrindo ? <strong>Abrindo...</strong> :
-            this.props.fechando ? <strong>Fechando...</strong> :
-            this.props.aberto ? "Aberta" : "Fechada"}{" "}
+          Tampa{" "}
+          {this.props.abrindo ? (
+            <strong>Abrindo...</strong>
+          ) : this.props.fechando ? (
+            <strong>Fechando...</strong>
+          ) : this.props.aberto ? (
+            "Aberta"
+          ) : (
+            "Fechada"
+          )}{" "}
           <i className="fa fa-cog" />
         </button>
         {this.state.open ? (
@@ -107,48 +122,56 @@ export class Tampa extends React.Component<
               lineHeight: "2.4em"
             }}
           >
-            <div style={{overflow:"hidden"}}>
-            Abrir Endpoint:{" "}
-            <span style={{float: "right"}}>
-            <input
-              type="text"
-              style={{ width: "260px" }}
-              defaultValue={this.state.abrirEndPoint}
-              onChange={(e:any) => {
-                this.setState({
-                  ...this.state,
-                  abrirEndPoint: e.target.value
-                })}
-              }
-            /><div style={{
-              lineHeight: "1em",
-              marginBottom: "6px",
-              textAlign: "right"}}>
-              <i className="fa fa-arrow-right" style={{color:"#888"}} />{" "}
-              {this.props.abrirEndPoint}
+            <div style={{ overflow: "hidden" }}>
+              Abrir Endpoint:{" "}
+              <span style={{ float: "right" }}>
+                <input
+                  type="text"
+                  style={{ width: "260px" }}
+                  defaultValue={this.state.abrirEndPoint}
+                  onChange={(e: any) => {
+                    this.setState({
+                      ...this.state,
+                      abrirEndPoint: e.target.value
+                    });
+                  }}
+                />
+                <div
+                  style={{
+                    lineHeight: "1em",
+                    marginBottom: "6px",
+                    textAlign: "right"
+                  }}
+                >
+                  <i className="fa fa-arrow-right" style={{ color: "#888" }} />{" "}
+                  {this.props.abrirEndPoint}
+                </div>
+              </span>
             </div>
-            </span>
-          </div>
-            <div style={{overflow:"hidden"}}>
-            Fechar Endpoint:{" "}
-              <span style={{float: "right"}}>
-            <input
-              type="text"
-              style={{ width: "260px" }}
-              defaultValue={this.state.fecharEndPoint}
-              onChange={(e:any) => {
-                this.setState({
-                    ...this.state,
-                  fecharEndPoint: e.target.value
-                })}
-              }
-            /><div style={{
-                lineHeight: "1em",
-                marginBottom: "6px",
-                textAlign: "right"}}>
-              <i className="fa fa-arrow-right" style={{color:"#888"}} />{" "}
-                {this.props.fecharEndPoint}
-              </div>
+            <div style={{ overflow: "hidden" }}>
+              Fechar Endpoint:{" "}
+              <span style={{ float: "right" }}>
+                <input
+                  type="text"
+                  style={{ width: "260px" }}
+                  defaultValue={this.state.fecharEndPoint}
+                  onChange={(e: any) => {
+                    this.setState({
+                      ...this.state,
+                      fecharEndPoint: e.target.value
+                    });
+                  }}
+                />
+                <div
+                  style={{
+                    lineHeight: "1em",
+                    marginBottom: "6px",
+                    textAlign: "right"
+                  }}
+                >
+                  <i className="fa fa-arrow-right" style={{ color: "#888" }} />{" "}
+                  {this.props.fecharEndPoint}
+                </div>
               </span>
             </div>
             Delay Para Vídeo ao Abrir:{" "}
@@ -159,9 +182,8 @@ export class Tampa extends React.Component<
                 this.setState({
                   ...this.state,
                   tampaPlayDelay: parseInt(e.target.value)
-                })
-              }
-              }
+                });
+              }}
               style={{ width: "50px" }}
             />
             <br />
@@ -173,13 +195,12 @@ export class Tampa extends React.Component<
                 this.setState({
                   ...this.state,
                   tampaTime: parseInt(e.target.value)
-                })
-              }
-              }
+                });
+              }}
               style={{ width: "50px" }}
             />
-            <br/>
-            <button onClick={()=>this.salvar()}>Salvar</button>{" "}
+            <br />
+            <button onClick={() => this.salvar()}>Salvar</button>{" "}
             <button onClick={() => this.openClose()}>Cancelar</button>
             <div
               style={{
@@ -190,13 +211,15 @@ export class Tampa extends React.Component<
                 marginTop: "8px"
               }}
             >
-              <button style={{ float: "right" }} onClick={()=>{
-                if ( this.props.aberto )
-                  this.fecharTampa();
-                else
-                  this.abrirTampa();
-              }}>
-                Sobrescrever Situação como {this.props.aberto ? "Fechada" : "Aberta"}
+              <button
+                style={{ float: "right" }}
+                onClick={() => {
+                  if (this.props.aberto) this.fecharTampa();
+                  else this.abrirTampa();
+                }}
+              >
+                Sobrescrever Situação como{" "}
+                {this.props.aberto ? "Fechada" : "Aberta"}
               </button>
               Situação Atual:
               <br />
@@ -205,10 +228,10 @@ export class Tampa extends React.Component<
                 {this.props.abrindo && this.props.fechando
                   ? " (Abrindo, Fechando)"
                   : this.props.abrindo
-                  ? " (Abrindo)"
-                  : this.props.fechando
-                  ? " (Fechando)"
-                  : ""}
+                    ? " (Abrindo)"
+                    : this.props.fechando
+                      ? " (Fechando)"
+                      : ""}
               </span>
             </div>
             <div style={{ lineHeight: "1.3em" }}>
@@ -217,26 +240,26 @@ export class Tampa extends React.Component<
                 type="text"
                 style={{ width: "250px" }}
                 defaultValue={this.state.teste1}
-                onChange={(e:any)=>{
+                onChange={(e: any) => {
                   this.setState({
-                      ...this.state,
+                    ...this.state,
                     teste1: e.target.value
                   });
                 }}
               />{" "}
-              <button onClick={()=>this.executar1()}>Executar</button>
+              <button onClick={() => this.executar1()}>Executar</button>
               <input
                 type="text"
                 style={{ width: "250px", marginTop: "3px" }}
                 defaultValue={this.state.teste2}
-                onChange={(e:any)=>{
+                onChange={(e: any) => {
                   this.setState({
                     ...this.state,
                     teste2: e.target.value
                   });
                 }}
               />{" "}
-              <button onClick={()=>this.executar2()}>Executar</button>
+              <button onClick={() => this.executar2()}>Executar</button>
             </div>
           </div>
         ) : null}

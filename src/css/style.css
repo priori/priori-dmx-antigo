@@ -63,8 +63,9 @@ select {
 }
 select {
   padding: 3px;
-  border: solid 1px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 3px;
+  background: rgba(0, 0, 0, 0.04);
 }
 button {
   border-radius: 4px;
@@ -825,7 +826,6 @@ input::-webkit-inner-spin-button {
   .volume {
     float: none;
     margin: 0;
-    margin-top: 10px;
   }
   .arquivos__controles {
     font-size: 50px;

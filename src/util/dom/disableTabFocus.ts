@@ -3,8 +3,8 @@ const focusableSelector =
   'input:not([tabindex="-1"]):not([disabled]), textarea:not([tabindex="-1"]):not([disabled]), ' +
   'select:not([tabindex="-1"]):not([disabled]), [tabindex]:not([disabled]):not([tabindex="-1"])';
 
-export function disableTabFocus(matcher:((v:any)=>boolean)|HTMLElement) {
-  let all:Element[];
+export function disableTabFocus(matcher: ((v: any) => boolean) | HTMLElement) {
+  let all: Element[];
   if (typeof matcher == "function") {
     all = [...document.querySelectorAll(focusableSelector)];
     all = [...all].filter(el2 => matcher(el2));

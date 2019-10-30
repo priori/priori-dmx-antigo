@@ -15,7 +15,6 @@ import { Tampa } from "./Tampa";
 
 const empty = {};
 export class App extends React.Component<{}, AppInternalState | {}> {
-
   constructor(props: {}) {
     super(props);
     this.state = empty;
@@ -105,7 +104,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
         ) : null}
         <Monitor telas={state.telas} />
         <Server port={state.httpServer.port} open={state.httpServer.open} />
-      <Tampa {...state.tampa} />
+        <Tampa {...state.tampa} />
         {/* <ConexaoDMX {...state.dmx} />
         <Cenas {...state} />
         <div style={{ textAlign: "right", paddingBottom: "5px" }}>

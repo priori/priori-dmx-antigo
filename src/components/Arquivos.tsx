@@ -94,8 +94,8 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
 
   isAudio() {
     const selected = this.state.selected
-        ? this.props.arquivos.filter(a => a.path == this.state.selected)[0]
-        : undefined;
+      ? this.props.arquivos.filter(a => a.path == this.state.selected)[0]
+      : undefined;
     const audio = selected && selected.type == "audio";
     return audio;
   }
@@ -112,7 +112,8 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
 
     const telaAberta = this.props.telas.aberta !== null;
     const audio = this.isAudio();
-    const naoHaTela = this.state.selected && !audio && this.props.telas.aberta === null;
+    const naoHaTela =
+      this.state.selected && !audio && this.props.telas.aberta === null;
     const naoHaArquivoSelecionado = this.state.selected === null;
 
     return (
@@ -125,34 +126,66 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
         )}
 
         {naoHaArquivoSelecionado ? (
-            <div className="arquivos__message">Não há arquivo selecionado.</div>
-        ): naoHaTela ? (
+          <div className="arquivos__message">Não há arquivo selecionado.</div>
+        ) : naoHaTela ? (
           <div className="arquivos__message">Não há tela criada.</div>
         ) : null}
 
         {this.props.arquivos.length ? (
-          <div
-            className="arquivos__controles"
-          >
-            <span style={{opacity: naoHaTela || naoHaArquivoSelecionado ? 0.33 : undefined}}>
-            <button
+          <div className="arquivos__controles">
+            {/* <span className="v-tampa" style="*/}
+            {/*  width: 13px;*/}
+            {/*  height: 13px;*/}
+            {/*  display: inline-block;*/}
+            {/*  position: absolute;*/}
+            {/*  border: solid 3px black;*/}
+            {/*  top: 10px;*/}
+            {/*  right: 10px;*/}
+            {/*  border-radius: 4px;*/}
+            {/* ">*/}
+            {/* <i className="fa fa-check" style="*/}
+            {/*  font-size: 13px;*/}
+            {/*  position: absolute;*/}
+            {/*  left: 0px;*/}
+            {/*  opacity: 1;*/}
+            {/*  top: 0;*/}
+            {/*  transition: opacity 2s;*/}
+            {/* "></i>*/}
+            {/* <span className="v-tampa__dash" style="*/}
+            {/*  position: absolute;*/}
+            {/*  width: 9px;*/}
+            {/*  height: 3px;*/}
+            {/*  background: black;*/}
+            {/*  left: 2px;*/}
+            {/*  top: 5px;*/}
+            {/*  transition: 2s opacity;*/}
+            {/*  opacity: 0;*/}
+            {/* "></span>*/}
+            {/* </span>*/}
+            <span
               style={{
-                opacity: !audio && !telaAberta ? 0.5 : 1
+                opacity: naoHaTela || naoHaArquivoSelecionado ? 0.33 : undefined
               }}
-              onClick={() => this.stop()}
             >
-              <i className="fa fa-stop" />
-            </button>{" "}
-            <button
-              onClick={() => this.play()}
-            >
-              <i className={"fa fa-play"+(this.props.player.state == "play" ? " playing" : "")} />
-            </button>{" "}
-            <button
-              onClick={() => this.pause()}
-            >
-              <i className="fa fa-pause" />
-            </button>
+              <button
+                style={{
+                  opacity: !audio && !telaAberta ? 0.5 : 1
+                }}
+                onClick={() => this.stop()}
+              >
+                <i className="fa fa-stop" />
+              </button>{" "}
+              <button onClick={() => this.play()}>
+                <i
+                  className={
+                    "fa fa-play" +
+                    (this.props.player.state == "play" ? " playing" : "")
+                  }
+                />
+              </button>{" "}
+              <button onClick={() => this.pause()}>
+                <i className="fa fa-pause" />
+              </button>
             </span>{" "}
             <button onClick={() => this.repeat()}>
               <i
@@ -164,7 +197,16 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
               />
             </button>
             <div className="volume">
-              <strong>Volume:</strong>
+              <strong>
+                <i
+                  className="fa fa-volume-up"
+                  style={{
+                    fontSize: "21px",
+                    margin: "0",
+                    lineHeight: "0"
+                  }}
+                />
+              </strong>
               <input
                 type="range"
                 value={
@@ -199,18 +241,17 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
                   ) : null
                 ) : null}
               </span>
-              {
-                f.type == "audio" ?
-                    <i className="fa fa-music" />
-                    :
-                    f.type == "img" ?
-                    <i className="fa fa-picture-o" />
-                    : <i className="fa fa-video-camera" />
-              }
+              {f.type == "audio" ? (
+                <i className="fa fa-music" />
+              ) : f.type == "img" ? (
+                <i className="fa fa-picture-o" />
+              ) : (
+                <i className="fa fa-video-camera" />
+              )}
               <strong>
                 {f.path == this.state.editandoNome ? (
                   <FastInput
-                      type="textarea"
+                    type="textarea"
                     className="cena__nome"
                     initialValue={f.nome}
                     onMouseDown={(e: any) => {
@@ -231,7 +272,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
                       this.setState({ ...this.state, editandoNome: undefined })
                     }
                   />
-                ) : null }
+                ) : null}
                 {f.nome}
               </strong>{" "}
               {f.type == "img" && this.props.showThumbs ? (
@@ -239,9 +280,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
               ) : null}{" "}
               {/* {f.path} */}
               {f.path == this.state.selected && !this.state.editandoNome ? (
-                <span
-                    className="arquivo__controles"
-                >
+                <span className="arquivo__controles">
                   <i
                     className="fa fa-pencil arquivo__controle"
                     onClick={(e: any) => {

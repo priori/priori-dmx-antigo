@@ -46,20 +46,21 @@ export class FastInput extends React.Component<FastInputProps, {}> {
   onBlur = (e: any) => this.props.onChange(e.target.value);
   render() {
     const props = this.props;
-    if ( props.type == "textarea")
+    if (props.type == "textarea")
       return (
-          <textarea
-              className={props.className}
-              defaultValue={props.initialValue}
-              ref={this.inputRef}
-              onClick={props.onClick}
-              onMouseDown={props.onMouseDown}
-              min={props.min}
-              max={props.max}
-              style={props.style}
-              onBlur={this.onBlur}
-              onKeyDown={this.onKeyDown}
-          />);
+        <textarea
+          className={props.className}
+          defaultValue={props.initialValue}
+          ref={this.inputRef}
+          onClick={props.onClick}
+          onMouseDown={props.onMouseDown}
+          min={props.min}
+          max={props.max}
+          style={props.style}
+          onBlur={this.onBlur}
+          onKeyDown={this.onKeyDown}
+        />
+      );
     return (
       <input
         className={props.className}

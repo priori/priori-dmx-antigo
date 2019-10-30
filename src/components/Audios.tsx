@@ -111,27 +111,25 @@ export class Audios extends React.Component<AudiosProps, AudiosState> {
     }, 10);
     return (
       <span style={{ display: "none" }}>
-        {this.props.arquivos
-          .filter(a => a.type == "audio")
-          .map(a => (
-            <audio
-              key={a.path}
-              ref={el => (this.els[a.path] = el)}
-              onEnded={() => {
-                if (
-                  this.props.player.repeat &&
-                  this.props.player.arquivo == a.path
-                )
-                  this.els[a.path].play();
-                else action({ type: "arquivo-stop" });
-              }}
-            >
-              <source
-                src={a.path}
-                type={a.path.match(/\.mp3$/) ? "audio/mpeg" : "audio/ogg"}
-              />
-            </audio>
-          ))}
+        {this.props.arquivos.filter(a => a.type == "audio").map(a => (
+          <audio
+            key={a.path}
+            ref={el => (this.els[a.path] = el)}
+            onEnded={() => {
+              if (
+                this.props.player.repeat &&
+                this.props.player.arquivo == a.path
+              )
+                this.els[a.path].play();
+              else action({ type: "arquivo-stop" });
+            }}
+          >
+            <source
+              src={a.path}
+              type={a.path.match(/\.mp3$/) ? "audio/mpeg" : "audio/ogg"}
+            />
+          </audio>
+        ))}
       </span>
     );
   }
