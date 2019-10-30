@@ -570,6 +570,7 @@ input.cena__nome {
   z-index: 10;
 }
 .arquivo textarea {
+  z-index: 3;
   margin: 0px;
   width: 288px;
   height: 85px;

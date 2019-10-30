@@ -57,7 +57,7 @@ export class FastInput extends React.Component<FastInputProps, {}> {
               min={props.min}
               max={props.max}
               style={props.style}
-              // onBlur={this.onBlur}
+              onBlur={this.onBlur}
               onKeyDown={this.onKeyDown}
           />);
     return (
