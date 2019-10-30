@@ -32,6 +32,9 @@ body {
 .arquivo.selected img {
   transform: scale(2);
 }
+.selected2 {
+  background: #fff9bb;
+}
 
 [lock="locked"] {
   opacity: 0.33;

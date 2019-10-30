@@ -127,7 +127,7 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
         {naoHaArquivoSelecionado ? (
             <div className="arquivos__message">Não há arquivo selecionado.</div>
         ): naoHaTela ? (
-          <div className="arquivos__message" style={{lineHeight: "40px"}}>Não há tela criada.</div>
+          <div className="arquivos__message">Não há tela criada.</div>
         ) : null}
 
         {this.props.arquivos.length ? (
