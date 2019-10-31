@@ -17,8 +17,8 @@ export type AppAction =
       type: "configurar-tampa";
       abrirEndPoint: string;
       fecharEndPoint: string;
-      tampaPlayDelay: number;
-      tampaTime: number;
+      playDelayTime: number;
+      requestWhaitTime: number;
     }
   | { type: "executar1"; teste1: string }
   | { type: "executar2"; teste2: string }

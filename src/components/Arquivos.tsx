@@ -1,7 +1,7 @@
 import * as React from "react";
 import { FastInput } from "./util/FastInput";
 import { action } from "../util/action";
-import { Arquivo, PlayerState } from "../types/internal-state";
+import { Arquivo, PlayerState, TampaState } from "../types/internal-state";
 import { Audios } from "./Audios";
 import Timer = NodeJS.Timer;
 
@@ -12,6 +12,7 @@ export interface ArquivosState {
   editandoNome: undefined | string;
 }
 export interface ArquivosProps {
+  tampa: TampaState;
   arquivos: Arquivo[];
   showThumbs: boolean;
   telas: {
@@ -169,13 +170,29 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
             >
               <button
                 style={{
-                  opacity: !audio && !telaAberta ? 0.5 : 1
+                  opacity:
+                    this.props.tampa.requesting ||
+                    this.props.tampa.abrindo ||
+                    this.props.tampa.fechando ||
+                    (!audio && !telaAberta)
+                      ? 0.5
+                      : 1
                 }}
                 onClick={() => this.stop()}
               >
                 <i className="fa fa-stop" />
               </button>{" "}
-              <button onClick={() => this.play()}>
+              <button
+                onClick={() => this.play()}
+                style={{
+                  opacity:
+                    this.props.tampa.requesting ||
+                    this.props.tampa.abrindo ||
+                    this.props.tampa.fechando
+                      ? 0.5
+                      : undefined
+                }}
+              >
                 <i
                   className={
                     "fa fa-play" +
@@ -327,12 +344,24 @@ export class Arquivos extends React.Component<ArquivosProps, ArquivosState> {
   }
 
   private stop() {
+    if (
+      this.props.tampa.requesting ||
+      this.props.tampa.abrindo ||
+      this.props.tampa.fechando
+    )
+      return;
     if (!this.isAudio() && this.props.telas.aberta === null)
       throw "Não há tela aberta.";
     action({ type: "arquivo-stop" });
   }
 
   private play() {
+    if (
+      this.props.tampa.requesting ||
+      this.props.tampa.abrindo ||
+      this.props.tampa.fechando
+    )
+      return;
     if (!this.isAudio() && this.props.telas.aberta === null)
       throw "Não há tela aberta.";
     if (this.state.selected === null) throw "Arquivo não selecionado.";

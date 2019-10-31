@@ -8,6 +8,7 @@ import { Cenas } from "./Cenas";
 import { action } from "../util/action";
 import { deepFreeze } from "../util/equals";
 import { Arquivos } from "./Arquivos";
+import { Tampa } from "./Tampa";
 
 export interface WebAppState {
   appState: AppInternalState | null;
@@ -155,6 +156,7 @@ export class WebApp extends React.Component<{}, WebAppState> {
         >
           <ConexaoDMX {...state.dmx} />
           <Monitor telas={state.telas} />
+          <Tampa open={true} {...state.tampa} />
         </div>
         <div
           style={{
@@ -195,6 +197,7 @@ export class WebApp extends React.Component<{}, WebAppState> {
           }}
         >
           <Arquivos
+            tampa={state.tampa}
             player={state.player}
             arquivos={state.arquivos}
             showThumbs={false}

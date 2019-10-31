@@ -11,7 +11,8 @@ import {
   EquipamentoGrupoIS,
   EquipamentoIS,
   ArquivoType,
-  Arquivo
+  Arquivo,
+  UriWildcardsState
 } from "../types/internal-state";
 import {
   canaisMesaCor,
@@ -35,6 +36,8 @@ import {
 import { Animacao } from "../types/types";
 import { httpClose, httpOpen } from "./http-server";
 import { readState } from "./state-util";
+
+import * as request from "request";
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
@@ -601,6 +604,7 @@ function abrir() {
       );
       dmx.update(json.canais);
     }
+    checkTampaUriWildcards(json);
   }
 }
 
@@ -1225,42 +1229,187 @@ function isAudio(state: AppInternalState, selected: string | null) {
   return !!audio;
 }
 
+const hosts: { [k: string]: string | null | number } = {};
+
+function hostsUpdated() {
+  const state = currentState();
+  const { tampa } = state;
+  const urls = [
+    tampa.abrirEndPoint,
+    tampa.fecharEndPoint,
+    tampa.teste1,
+    tampa.teste2
+  ].filter(uri => uri);
+  const currentUriWildcardsState = tampa.uriWildcardsState;
+  let uriWildcardsState: UriWildcardsState = "ok";
+  const hosts2 = extractHosts(urls);
+  for (const host of hosts2) {
+    if (hosts[host] == 256) {
+      uriWildcardsState = "fail";
+      break;
+    }
+    if (typeof hosts[host] == "number") {
+      uriWildcardsState = "pending";
+    }
+  }
+  if (currentUriWildcardsState != uriWildcardsState) {
+    console.log("tampa", uriWildcardsState, hosts);
+    setState({
+      ...state,
+      tampa: {
+        ...tampa,
+        uriWildcardsState,
+        abrirEndPointFinal: replaceWildcard(tampa.abrirEndPoint, false),
+        fecharEndPointFinal: replaceWildcard(tampa.fecharEndPoint, false)
+      }
+    });
+    if (uriWildcardsState == "fail") {
+      setTimeout(() => {
+        const state2 = currentState();
+        console.log("checando novamente tampa");
+        setState({
+          ...state2,
+          tampa: {
+            ...state2.tampa,
+            uriWildcardsState: "pending",
+            abrirEndPointFinal: null,
+            fecharEndPointFinal: null
+          }
+        });
+        for (const h in hosts) {
+          if (hosts[h] === 256) {
+            delete hosts[h];
+          }
+        }
+        checkTampaUriWildcards(state2);
+      }, 10000);
+    }
+  }
+}
+
+function resolveHost(h: string) {
+  if (hosts[h]) return;
+  hosts[h] = null;
+  let erros = 0;
+  for (let c = 0; c < 256; c++) {
+    const h2 = h.replace(/\*/g, c + "");
+    request(h2 + "/", { timeout: 2000 }, (err: any) => {
+      if (!err) {
+        if (typeof hosts[h] == "string" && hosts[h] != h2) {
+          console.log("ERROR: resolvendo wildcards ", hosts[h], h2);
+        }
+        hosts[h] = h2;
+        hostsUpdated();
+      } else {
+        erros++;
+        if (typeof hosts[h] != "string") {
+          hosts[h] = erros;
+        }
+        if (erros == 256) {
+          hostsUpdated();
+        }
+      }
+    });
+  }
+}
+
+function extractHosts(urls: string[]) {
+  const hosts = [];
+  for (const url of urls) {
+    const basePart = url.replace(/^(https?:\/\/[0-9.*:]+)(.*)$/gi, "$1");
+    if (hosts.indexOf(basePart) == -1) {
+      hosts.push(basePart.indexOf(":") == -1 ? basePart + ":80" : basePart);
+    }
+  }
+  return hosts;
+}
+
+function resolve(urls: string[]) {
+  const hosts = extractHosts(urls);
+  for (const host of hosts) {
+    resolveHost(host);
+  }
+}
+
+export function checkTampaUriWildcards(json: AppInternalState) {
+  console.log("checando tampa", hosts);
+  const { tampa } = json;
+  const urls = [
+    tampa.abrirEndPoint,
+    tampa.fecharEndPoint,
+    tampa.teste1,
+    tampa.teste2
+  ].filter(uri => uri);
+  resolve(urls);
+}
+
+function replaceWildcard(url: string, grantValid: boolean) {
+  if (url.indexOf("*") == -1) return url;
+  const basePart = url.replace(/^(https?:\/\/[0-9.*:]+)(.*)$/gi, "$1");
+  let key = basePart;
+  if (key.indexOf(":") === -1) {
+    key = key + ":80";
+  }
+  if (typeof hosts[key] != "string") {
+    if (!grantValid) return null;
+    console.log("Error", url, hosts);
+    throw "não foi possível resolver url " + url;
+  }
+  return url.replace(basePart, hosts[key] as string);
+}
+
 function fecharTampa() {
   const state = currentState();
   if (state.tampa.abrindo || state.tampa.fechando)
     throw new Error("Aguarde a movimentação da tampa.");
+  if (state.tampa.requesting) throw new Error("Aguarde request.");
   if (state.tampa.aberto === false) throw new Error("Tampa já fechada.");
 
-  http.get(state.tampa.fecharEndPoint).on("error", (e: any) => {
-    console.error(
-      "GET error",
-      state.tampa.fecharEndPoint,
-      e && e.stack ? e.stack : e
-    );
-  });
+  if (state.tampa.fecharEndPoint) {
+    console.log("fechando tampa...");
+    http
+      .get(replaceWildcard(state.tampa.fecharEndPoint, true))
+      .on("error", (e: any) => {
+        console.error(
+          "GET error",
+          state.tampa.fecharEndPoint,
+          e && e.stack ? e.stack : e
+        );
+      });
 
-  setState({
-    ...state,
-    tampa: {
-      ...state.tampa,
-      fechando: true,
-      aberto: false
-    }
-  });
-  console.log("fechando tampa...");
+    setState({
+      ...state,
+      tampa: {
+        ...state.tampa,
+        fechando: true,
+        aberto: false
+      }
+    });
+    console.log("fechando tampa...");
 
-  setTimeout(() => {
-    const state2 = currentState();
+    setTimeout(() => {
+      const state2 = currentState();
+      console.log("fechada...");
+      setState({
+        ...state2,
+        tampa: {
+          ...state2.tampa,
+          fechando: false,
+          aberto: false
+        }
+      });
+    }, state.tampa.requestWhaitTime);
+  } else {
     console.log("fechada...");
     setState({
-      ...state2,
+      ...state,
       tampa: {
-        ...state2.tampa,
+        ...state.tampa,
         fechando: false,
         aberto: false
       }
     });
-  }, state.tampa.tampaTime);
+  }
 }
 
 function arquivoPlay({ path }: { path: string }) {
@@ -1272,18 +1421,24 @@ function arquivoPlay({ path }: { path: string }) {
       (state.player.arquivo && isAudio(state, state.player.arquivo))) &&
     !isAudio(state, path)
   ) {
-    if (state.tampa.abrindo || state.tampa.fechando)
+    if (state.tampa.abrindo || state.tampa.fechando) {
       throw new Error("Aguarde a movimentação da tampa.");
-
-    console.log("abrindo tampa...");
-
-    http.get(state.tampa.abrirEndPoint).on("error", (e: any) => {
-      console.error(
-        "GET error",
-        state.tampa.abrirEndPoint,
-        e && e.stack ? e.stack : e
-      );
-    });
+    }
+    if (state.tampa.requesting) {
+      throw new Error("Aguarde request.");
+    }
+    if (state.tampa.abrirEndPoint) {
+      console.log("abrindo tampa...");
+      http
+        .get(replaceWildcard(state.tampa.abrirEndPoint, true))
+        .on("error", (e: any) => {
+          console.error(
+            "GET error",
+            state.tampa.abrirEndPoint,
+            e && e.stack ? e.stack : e
+          );
+        });
+    }
 
     setTimeout(() => {
       const state2 = currentState();
@@ -1301,7 +1456,7 @@ function arquivoPlay({ path }: { path: string }) {
             abrindo: false
           }
         });
-      }, state2.tampa.tampaTime - state2.tampa.tampaPlayDelay);
+      }, state2.tampa.requestWhaitTime - state2.tampa.playDelayTime);
 
       setState({
         ...state2,
@@ -1311,7 +1466,7 @@ function arquivoPlay({ path }: { path: string }) {
           state: "play"
         }
       });
-    }, state.tampa.tampaPlayDelay);
+    }, state.tampa.playDelayTime);
 
     setState({
       ...state,
@@ -1414,13 +1569,13 @@ function editarEquipamentoPosicao({
 function configurarTampa({
   abrirEndPoint,
   fecharEndPoint,
-  tampaPlayDelay,
-  tampaTime
+  playDelayTime,
+  requestWhaitTime
 }: {
   abrirEndPoint: string;
   fecharEndPoint: string;
-  tampaPlayDelay: number;
-  tampaTime: number;
+  playDelayTime: number;
+  requestWhaitTime: number;
 }) {
   const state = currentState();
   setState({
@@ -1429,8 +1584,8 @@ function configurarTampa({
       ...state.tampa,
       abrirEndPoint,
       fecharEndPoint,
-      tampaPlayDelay,
-      tampaTime
+      playDelayTime,
+      requestWhaitTime
     }
   });
 }
@@ -1458,29 +1613,52 @@ export function telaFoiFechada() {
   }
 }
 
-function executar1({ teste1 }: { teste1: string }) {
-  http.get(teste1).on("error", (e: any) => {
-    console.error("GET error", teste1, e && e.stack ? e.stack : e);
-  });
+function requestAction(url: string) {
   const state = currentState();
+  if (state.tampa.abrindo || state.tampa.fechando) {
+    throw new Error("Aguarde a movimentação da tampa.");
+  }
+  if (state.tampa.requesting) {
+    throw new Error("Aguarde request.");
+  }
+  if (!url) {
+    throw new Error("URL em branco...");
+  }
+  http.get(replaceWildcard(url, true)).on("error", (e: any) => {
+    console.error("GET error", url, e && e.stack ? e.stack : e);
+  });
+  setTimeout(() => {
+    const state2 = currentState();
+    setState({
+      ...state2,
+      tampa: {
+        ...state2.tampa,
+        requesting: false
+      }
+    });
+  }, state.tampa.requestWhaitTime);
+  return state;
+}
+
+function executar1({ teste1 }: { teste1: string }) {
+  const state = requestAction(teste1);
   setState({
     ...state,
     tampa: {
       ...state.tampa,
-      teste1
+      teste1,
+      requesting: true
     }
   });
 }
 function executar2({ teste2 }: { teste2: string }) {
-  http.get(teste2).on("error", (e: any) => {
-    console.error("GET error", teste2, e && e.stack ? e.stack : e);
-  });
-  const state = currentState();
+  const state = requestAction(teste2);
   setState({
     ...state,
     tampa: {
       ...state.tampa,
-      teste2
+      teste2,
+      requesting: true
     }
   });
 }

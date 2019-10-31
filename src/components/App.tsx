@@ -102,9 +102,19 @@ export class App extends React.Component<{}, AppInternalState | {}> {
             }}
           />
         ) : null}
-        <Monitor telas={state.telas} />
+        <div style={{ position: "absolute", right: "10px", top: "10px" }}>
+          <Monitor telas={state.telas} />
+        </div>
         <Server port={state.httpServer.port} open={state.httpServer.open} />
-        <Tampa {...state.tampa} />
+        <div
+          style={{
+            position: "absolute",
+            right: "11px",
+            top: "55px"
+          }}
+        >
+          <Tampa {...state.tampa} />
+        </div>
         {/* <ConexaoDMX {...state.dmx} />
         <Cenas {...state} />
         <div style={{ textAlign: "right", paddingBottom: "5px" }}>
@@ -119,6 +129,7 @@ export class App extends React.Component<{}, AppInternalState | {}> {
           cenas={state.cenas}
         /> */}
         <Arquivos
+          tampa={state.tampa}
           player={state.player}
           arquivos={state.arquivos}
           showThumbs={true}

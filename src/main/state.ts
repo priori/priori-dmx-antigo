@@ -14,7 +14,7 @@ import { deepFreeze } from "../util/equals";
 import { httpOpen, httpServerListener } from "./http-server";
 import { readState } from "./state-util";
 import { abrirTela, moverTela, telasDisponiveis } from "./telas";
-import { telaFoiFechada } from "./actions";
+import { checkTampaUriWildcards, telaFoiFechada } from "./actions";
 
 let state: AppInternalState | undefined;
 let closing = false;
@@ -46,6 +46,7 @@ export function start() {
         const index = state.telas.aberta;
         screen = abrirTela(index);
       }
+      checkTampaUriWildcards(json);
     }
   }
 }
@@ -110,15 +111,17 @@ export const initialTipos = [
 ] as Tipo[];
 
 export const defaultTampa: TampaState = {
-  abrirEndPoint: "http://192.168.137.60/move/1024",
-  fecharEndPoint: "http://192.168.137.60/move/-1024",
-  tampaPlayDelay: 500,
-  tampaTime: 2500,
+  abrirEndPoint: "http://192.168.137.*/move/1024",
+  fecharEndPoint: "http://192.168.137.*/move/-1024",
+  playDelayTime: 500,
+  requestWhaitTime: 2500,
   aberto: false,
   abrindo: false,
   fechando: false,
-  teste1: "http://192.168.137.60/move/512",
-  teste2: "http://192.168.137.60/move/-512"
+  requesting: false,
+  uriWildcardsState: "pending",
+  teste1: "http://192.168.137.*/move/512",
+  teste2: "http://192.168.137.*/move/-512"
 };
 
 export function emptyState() {

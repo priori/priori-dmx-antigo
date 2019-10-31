@@ -95,18 +95,26 @@ export type EquipamentoIS = EquipamentoSimplesIS | EquipamentoGrupoIS;
 
 export type PlayerState = "play" | "stop" | "pause";
 
+export type UriWildcardsState = "ok" | "fail" | "pending";
+
 export interface TampaState {
   abrirEndPoint: string;
+  abrirEndPointFinal: string | null;
   fecharEndPoint: string;
+  fecharEndPointFinal: string | null;
 
-  tampaPlayDelay: number;
-  tampaTime: number;
+  playDelayTime: number;
+  requestWhaitTime: number;
+
   aberto: boolean;
   abrindo: boolean;
   fechando: boolean;
+  requesting: boolean;
 
   teste1: string;
   teste2: string;
+
+  uriWildcardsState: UriWildcardsState;
 }
 
 export interface AppInternalState {

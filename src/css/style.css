@@ -40,12 +40,6 @@ body {
   opacity: 0.33;
 }
 
-.tampa {
-  position: absolute;
-  right: 11px;
-  top: 55px;
-}
-
 .tampa__state {
   background: #eee;
   padding: 2px 4px;
@@ -192,11 +186,6 @@ input[type="range"]::-webkit-slider-thumb {
     width: 34px; height: 34px;
 }
 */
-.monitor {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-}
 input[type="range"].mesa__canal__input {
   height: 20px;
   transform: rotate(-90deg);

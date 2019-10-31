@@ -37,6 +37,10 @@ export function readState(file: string): AppInternalState | undefined {
     if (!json.tampa) {
       (json as any).tampa = defaultTampa;
     } else {
+      (json as any).tampa.uriWildcardsState = "pending";
+      (json as any).tampa.abrirEndPointFinal = null;
+      (json as any).tampa.fecharEndPointFinal = null;
+
       if ((json as any).tampa.abrindo) {
         (json as any).tampa.aberto = true;
       } else if ((json as any).tampa.fechando) {
@@ -44,6 +48,20 @@ export function readState(file: string): AppInternalState | undefined {
       }
       (json as any).tampa.abrindo = false;
       (json as any).tampa.fechando = false;
+      if (
+        (json as any).tampa.tampaTime &&
+        !(json as any).tampa.requestWhaitTime
+      ) {
+        (json as any).tampa.requestWhaitTime = (json as any).tampa.tampaTime;
+        delete (json as any).tampa.tampaTime;
+      }
+      if (
+        (json as any).tampa.tampaPlayDelay &&
+        !(json as any).tampa.playDelayTime
+      ) {
+        (json as any).tampa.playDelayTime = (json as any).tampa.tampaPlayDelay;
+        delete (json as any).tampa.tampaPlayDelay;
+      }
     }
 
     // if (!json.player) {
