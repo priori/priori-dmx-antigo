@@ -1368,9 +1368,10 @@ function fecharTampa() {
   if (state.tampa.aberto === false) throw new Error("Tampa já fechada.");
 
   if (state.tampa.fecharEndPoint) {
-    console.log("fechando tampa...");
+    const url = replaceWildcard(state.tampa.fecharEndPoint, true);
+    console.log("fechando tampa...",url);
     http
-      .get(replaceWildcard(state.tampa.fecharEndPoint, true))
+      .get(url)
       .on("error", (e: any) => {
         console.error(
           "GET error",
@@ -1430,9 +1431,10 @@ function arquivoPlay({ path }: { path: string }) {
       throw new Error("Aguarde request.");
     }
     if (state.tampa.abrirEndPoint) {
-      console.log("abrindo tampa...");
+      const url = replaceWildcard(state.tampa.abrirEndPoint, true);
+      console.log("abrindo tampa...",url);
       http
-        .get(replaceWildcard(state.tampa.abrirEndPoint, true))
+        .get(url)
         .on("error", (e: any) => {
           console.error(
             "GET error",
