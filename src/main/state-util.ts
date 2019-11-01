@@ -40,6 +40,7 @@ export function readState(file: string): AppInternalState | undefined {
       (json as any).tampa.uriWildcardsState = "pending";
       (json as any).tampa.abrirEndPointFinal = null;
       (json as any).tampa.fecharEndPointFinal = null;
+      (json as any).tampa.requesting = false;
 
       if ((json as any).tampa.abrindo) {
         (json as any).tampa.aberto = true;

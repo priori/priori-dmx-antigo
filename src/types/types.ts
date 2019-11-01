@@ -20,8 +20,10 @@ export type AppAction =
       playDelayTime: number;
       requestWhaitTime: number;
     }
-  | { type: "executar1"; teste1: string }
-  | { type: "executar2"; teste2: string }
+    | { type: "executar1"; teste1: string }
+    | { type: "executar2"; teste2: string }
+    | { type: "tampa-salvar1"; teste1: string }
+    | { type: "tampa-salvar2"; teste2: string }
   | { type: "volume"; volume: number }
   | { type: "http-open"; port: number }
   | { type: "novos-arquivos"; arquivos: string[] }

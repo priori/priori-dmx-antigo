@@ -608,8 +608,8 @@ export class EquipamentoComponent extends React.Component<
           typeof this.state.canais[index + e.inicio] != "undefined"
             ? this.state.canais[e.inicio + index] + ""
             : this.props.canais[index + e.inicio]
-              ? this.props.canais[index + e.inicio] + "" || "0"
-              : "0"
+            ? this.props.canais[index + e.inicio] + "" || "0"
+            : "0"
       }));
     }
     const tipos = this.props.tipos,

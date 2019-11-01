@@ -33,10 +33,7 @@ export function start() {
     if (json) {
       state = json;
       if (state.dmx.conectado) {
-        dmx.connect(
-          state.dmx.driver,
-          state.dmx.deviceId
-        );
+        dmx.connect(state.dmx.driver, state.dmx.deviceId);
         dmx.update(state.canais);
       }
       if (state.httpServer.open) {
@@ -113,6 +110,8 @@ export const initialTipos = [
 export const defaultTampa: TampaState = {
   abrirEndPoint: "http://192.168.137.*/move/1024",
   fecharEndPoint: "http://192.168.137.*/move/-1024",
+  abrirEndPointFinal: null,
+  fecharEndPointFinal: null,
   playDelayTime: 500,
   requestWhaitTime: 2500,
   aberto: false,

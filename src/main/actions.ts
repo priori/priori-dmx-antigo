@@ -36,15 +36,17 @@ import {
 import { Animacao } from "../types/types";
 import { httpClose, httpOpen } from "./http-server";
 import { readState } from "./state-util";
+import {telasDisponiveis} from "./telas";
 
-import * as request from "request";
+const request = require("request");
+const dg = require("default-gateway");
+
+const dgAux = dg.v4.sync();
+const gateway = dgAux ? dgAux.gateway : null;
 
 function dmxConectar(e: { driver: string; deviceId: string }): void {
   const state = currentState();
-  dmx.connect(
-    e.driver,
-    e.deviceId
-  );
+  dmx.connect(e.driver, e.deviceId);
   dmx.update(state.canais);
   setState({
     ...state,
@@ -111,14 +113,13 @@ function changeColor(e: { cor: string; equipamento: Uid }): void {
       ...state.canais,
       ...canais
     },
-    equipamentos: state.equipamentos.map(
-      e =>
-        e.uid == uid
-          ? {
-              ...e,
-              cor
-            }
-          : e
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid
+        ? {
+            ...e,
+            cor
+          }
+        : e
     ),
     cenaSlide: null
   });
@@ -598,10 +599,7 @@ function abrir() {
     }
     setState(json);
     if (json.dmx.conectado) {
-      dmx.connect(
-        json.dmx.driver,
-        json.dmx.deviceId
-      );
+      dmx.connect(json.dmx.driver, json.dmx.deviceId);
       dmx.update(json.canais);
     }
     checkTampaUriWildcards(json);
@@ -636,8 +634,8 @@ function editarEquipamentoNome({ uid, nome }: { uid: Uid; nome: string }) {
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e => (e.uid == uid ? { ...e, nome } : e)
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid ? { ...e, nome } : e
     )
   });
 }
@@ -676,8 +674,8 @@ function equipamentoEditarInicio({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e => (e.uid == uid ? { ...e, inicio } : e)
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid ? { ...e, inicio } : e
     )
   });
 }
@@ -805,14 +803,13 @@ function salvarEquipamentoConfiguracao({
     };
     setState({
       ...state,
-      equipamentos: state.equipamentos.map(
-        e =>
-          e.uid == uid
-            ? ({
-                ...e,
-                configuracoes: [...e.configuracoes, novaConfiguracao]
-              } as EquipamentoSimplesIS)
-            : e
+      equipamentos: state.equipamentos.map(e =>
+        e.uid == uid
+          ? ({
+              ...e,
+              configuracoes: [...e.configuracoes, novaConfiguracao]
+            } as EquipamentoSimplesIS)
+          : e
       )
     });
   }
@@ -832,14 +829,13 @@ function salvarTipoConfiguracao({ uid, nome }: { uid: Uid; nome: string }) {
   };
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(
-      t =>
-        t.uid != equipamento.tipoUid
-          ? t
-          : {
-              ...t,
-              configuracoes: [...t.configuracoes, novaConfiguracao]
-            }
+    equipamentoTipos: state.equipamentoTipos.map(t =>
+      t.uid != equipamento.tipoUid
+        ? t
+        : {
+            ...t,
+            configuracoes: [...t.configuracoes, novaConfiguracao]
+          }
     )
   });
 }
@@ -896,21 +892,20 @@ function adicionarEquipamentoACena({
   const canais = extractCanais(state, equipamento, tipo);
   setState({
     ...state,
-    cenas: state.cenas.map(
-      c =>
-        c.uid != cenaUid || c.tipo != "equipamentos"
-          ? c
-          : {
-              ...c,
-              equipamentos: [
-                ...c.equipamentos,
-                {
-                  canais,
-                  uid,
-                  cor: null
-                }
-              ]
-            }
+    cenas: state.cenas.map(c =>
+      c.uid != cenaUid || c.tipo != "equipamentos"
+        ? c
+        : {
+            ...c,
+            equipamentos: [
+              ...c.equipamentos,
+              {
+                canais,
+                uid,
+                cor: null
+              }
+            ]
+          }
     )
   });
 }
@@ -925,16 +920,15 @@ function removeEquipamentoCena({
   const state = currentState();
   setState({
     ...state,
-    cenas: state.cenas.map(
-      c =>
-        c.uid == cenaUid
-          ? {
-              ...(c as EquipamentosCenaIS),
-              equipamentos: (c as EquipamentosCenaIS).equipamentos.filter(
-                e => e.uid != equipamentoUid
-              )
-            }
-          : c
+    cenas: state.cenas.map(c =>
+      c.uid == cenaUid
+        ? {
+            ...(c as EquipamentosCenaIS),
+            equipamentos: (c as EquipamentosCenaIS).equipamentos.filter(
+              e => e.uid != equipamentoUid
+            )
+          }
+        : c
     )
   });
 }
@@ -949,16 +943,15 @@ function removeEquipamentoConfiguracao({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e =>
-        e.uid == equipamentoUid
-          ? ({
-              ...(e as EquipamentoIS),
-              configuracoes: (e as any).configuracoes.filter(
-                (_: any, i: number) => i != index
-              )
-            } as EquipamentoIS)
-          : e
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == equipamentoUid
+        ? ({
+            ...(e as EquipamentoIS),
+            configuracoes: (e as any).configuracoes.filter(
+              (_: any, i: number) => i != index
+            )
+          } as EquipamentoIS)
+        : e
     )
   });
 }
@@ -973,14 +966,13 @@ function removeTipoConfiguracao({
   const state = currentState();
   setState({
     ...state,
-    equipamentoTipos: state.equipamentoTipos.map(
-      e =>
-        e.uid == equipamentoTipoUid
-          ? {
-              ...e,
-              configuracoes: e.configuracoes.filter((_, i) => i != index)
-            }
-          : e
+    equipamentoTipos: state.equipamentoTipos.map(e =>
+      e.uid == equipamentoTipoUid
+        ? {
+            ...e,
+            configuracoes: e.configuracoes.filter((_, i) => i != index)
+          }
+        : e
     )
   });
 }
@@ -1089,8 +1081,8 @@ function slideCena({ uid, value }: { uid: Uid; value: number }) {
     state.cenaSlide && state.cenaSlide.uid == uid
       ? state.cenaSlide.canaisAnterior
       : cena.tipo == "mesa"
-        ? ({ ...state.canais } as any)
-        : cenaCanaisSlice(state, cena);
+      ? ({ ...state.canais } as any)
+      : cenaCanaisSlice(state, cena);
   const canais: { [key: number]: number } = {};
   const perc = value / 100;
   if (cena.tipo == "mesa") {
@@ -1213,8 +1205,8 @@ function novosArquivos({ arquivos }: { arquivos: string[] }) {
         type: (a.match(/\.(mp4)$/i)
           ? "video"
           : a.match(/\.(ogg|mp3)$/i)
-            ? "audio"
-            : "img") as ArquivoType,
+          ? "audio"
+          : "img") as ArquivoType,
         nome: a.replace(/.*(\/|\\)([^\\\/]+)\.[a-zA-Z0-9]+/, "$2")
       }))
     ]
@@ -1287,29 +1279,39 @@ function hostsUpdated() {
   }
 }
 
+console.log(gateway);
+
 function resolveHost(h: string) {
   if (hosts[h]) return;
   hosts[h] = null;
   let erros = 0;
   for (let c = 0; c < 256; c++) {
     const h2 = h.replace(/\*/g, c + "");
-    request(h2 + "/", { timeout: 2000 }, (err: any) => {
-      if (!err) {
-        if (typeof hosts[h] == "string" && hosts[h] != h2) {
-          console.log("ERROR: resolvendo wildcards ", hosts[h], h2);
-        }
-        hosts[h] = h2;
-        hostsUpdated();
-      } else {
-        erros++;
-        if (typeof hosts[h] != "string") {
-          hosts[h] = erros;
-        }
-        if (erros == 256) {
-          hostsUpdated();
-        }
+    const semPorta = h2.replace(/:[0-9]+/g, "");
+    if (semPorta === "http://"+gateway) {
+      erros++;
+      if (typeof hosts[h] != "string") {
+        hosts[h] = erros;
       }
-    });
+    } else {
+      request(h2 + "/", {timeout: 4000}, (err: any) => {
+        if (!err) {
+          if (typeof hosts[h] == "string" && hosts[h] != h2) {
+            console.log("ERROR: resolvendo wildcards ", hosts[h], h2);
+          }
+          hosts[h] = h2;
+          hostsUpdated();
+        } else {
+          erros++;
+          if (typeof hosts[h] != "string") {
+            hosts[h] = erros;
+          }
+          if (erros == 256) {
+            hostsUpdated();
+          }
+        }
+      });
+    }
   }
 }
 
@@ -1321,7 +1323,7 @@ function extractHosts(urls: string[]) {
       hosts.push(basePart.indexOf(":") == -1 ? basePart + ":80" : basePart);
     }
   }
-  return hosts;
+  return hosts.filter(url => url.indexOf("*") != -1);
 }
 
 function resolve(urls: string[]) {
@@ -1560,8 +1562,8 @@ function editarEquipamentoPosicao({
   const state = currentState();
   setState({
     ...state,
-    equipamentos: state.equipamentos.map(
-      e => (e.uid == uid ? { ...e, row, col } : e)
+    equipamentos: state.equipamentos.map(e =>
+      e.uid == uid ? { ...e, row, col } : e
     )
   });
 }
@@ -1627,6 +1629,40 @@ function requestAction(url: string) {
   http.get(replaceWildcard(url, true)).on("error", (e: any) => {
     console.error("GET error", url, e && e.stack ? e.stack : e);
   });
+  return state;
+}
+
+function tampaSalvar1({ teste1 }: { teste1: string }) {
+  const state = requestAction(teste1);
+  setState({
+    ...state,
+    tampa: {
+      ...state.tampa,
+      teste1
+    }
+  });
+}
+
+function tampaSalvar2({ teste2 }: { teste2: string }) {
+  const state = requestAction(teste2);
+  setState({
+    ...state,
+    tampa: {
+      ...state.tampa,
+      teste2
+    }
+  });
+}
+
+function executar1({ teste1 }: { teste1: string }) {
+  const state = requestAction(teste1);
+  setState({
+    ...state,
+    tampa: {
+      ...state.tampa,
+      requesting: true
+    }
+  });
   setTimeout(() => {
     const state2 = currentState();
     setState({
@@ -1637,19 +1673,6 @@ function requestAction(url: string) {
       }
     });
   }, state.tampa.requestWhaitTime);
-  return state;
-}
-
-function executar1({ teste1 }: { teste1: string }) {
-  const state = requestAction(teste1);
-  setState({
-    ...state,
-    tampa: {
-      ...state.tampa,
-      teste1,
-      requesting: true
-    }
-  });
 }
 function executar2({ teste2 }: { teste2: string }) {
   const state = requestAction(teste2);
@@ -1657,10 +1680,19 @@ function executar2({ teste2 }: { teste2: string }) {
     ...state,
     tampa: {
       ...state.tampa,
-      teste2,
       requesting: true
     }
   });
+  setTimeout(() => {
+    const state2 = currentState();
+    setState({
+      ...state2,
+      tampa: {
+        ...state2.tampa,
+        requesting: false
+      }
+    });
+  }, state.tampa.requestWhaitTime);
 }
 function marcarTampaComoAberta() {
   const state = currentState();
@@ -1695,6 +1727,8 @@ on(action => {
   else if (action.type == "configurar-tampa") configurarTampa(action);
   else if (action.type == "executar1") executar1(action);
   else if (action.type == "executar2") executar2(action);
+  else if (action.type == "tampa-salvar1") tampaSalvar1(action);
+  else if (action.type == "tampa-salvar2") tampaSalvar2(action);
   else if (action.type == "change-color") changeColor(action);
   else if (action.type == "create-equipamento") createEquipamento(action);
   else if (action.type == "create-equipamento-grupo")
@@ -1760,3 +1794,17 @@ on(action => {
   else if (action.type != "app-start" && action.type != "screen-started")
     console.log(action);
 });
+
+setInterval(() => {
+  const telas = telasDisponiveis();
+  const state = currentState();
+  if ( state.telas.disponiveis.length != telas.length ){
+    setState({
+      ...state,
+      telas: {
+        ...state.telas,
+        disponiveis: telas
+      }
+    });
+  }
+}, 2000 );

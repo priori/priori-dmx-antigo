@@ -88,7 +88,7 @@ class TampaForm extends React.Component<
               {this.props.fecharEndPointFinal ? (
                 <span>
                   <i className="fa fa-check" style={{ color: "#888" }} />{" "}
-                  {this.props.fecharEndPoint}
+                  {this.props.fecharEndPointFinal}
                 </span>
               ) : (
                 <span>
@@ -152,17 +152,17 @@ class TampaForm extends React.Component<
             {this.props.abrindo && this.props.fechando
               ? " (Abrindo, Fechando)"
               : this.props.abrindo
-                ? " (Abrindo)"
-                : this.props.fechando
-                  ? " (Fechando)"
-                  : ""}
+              ? " (Abrindo)"
+              : this.props.fechando
+              ? " (Fechando)"
+              : ""}
           </span>
         </div>
         <div style={{ lineHeight: "1.3em" }}>
           Chamar API Manualmente / Testar API: <br />
           <input
             type="text"
-            style={{ width: "250px" }}
+            style={{ width: "240px" }}
             defaultValue={this.state.teste1}
             onChange={(e: any) => {
               this.setState({
@@ -171,10 +171,11 @@ class TampaForm extends React.Component<
               });
             }}
           />{" "}
-          <button onClick={() => this.executar1()}>Executar</button>
+            <button onClick={() => this.executar1()}>Executar</button>{" "}
+            <button onClick={() => this.salvar1()}>Salvar</button><br/>
           <input
             type="text"
-            style={{ width: "250px", marginTop: "3px" }}
+            style={{ width: "240px", marginTop: "3px" }}
             defaultValue={this.state.teste2}
             onChange={(e: any) => {
               this.setState({
@@ -183,19 +184,28 @@ class TampaForm extends React.Component<
               });
             }}
           />{" "}
-          <button onClick={() => this.executar2()}>Executar</button>
+            <button onClick={() => this.executar2()}>Executar</button>{" "}
+            <button onClick={() => this.salvar2()}>Salvar</button>
         </div>
       </div>
     );
   }
 
-  executar1() {
-    action({ type: "executar1", teste1: this.state.teste1 });
-  }
+    executar1() {
+        action({ type: "executar1", teste1: this.state.teste1 });
+    }
 
-  executar2() {
-    action({ type: "executar2", teste2: this.state.teste2 });
-  }
+    executar2() {
+        action({ type: "executar2", teste2: this.state.teste2 });
+    }
+
+    salvar1() {
+        action({ type: "tampa-salvar1", teste1: this.state.teste1 });
+    }
+
+    salvar2() {
+        action({ type: "tampa-salvar2", teste2: this.state.teste2 });
+    }
 
   fecharTampa() {
     action({ type: "fechar-tampa" });
@@ -308,8 +318,9 @@ export class Tampa extends React.Component<
           {this.props.uriWildcardsState == "pending"
             ? "..."
             : this.props.uriWildcardsState == "fail"
-              ? "!"
-              : ""}{" "}
+            ? "!" :
+            this.props.requesting ? "*"
+            : ""}{" "}
           <i className="fa fa-cog" />
         </button>
         {this.state.open ? (
