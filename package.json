@@ -71,7 +71,7 @@
     "electron-compile": "^6.4.3",
     "electron-devtools-installer": "^2.1.0",
     "electron-squirrel-startup": "^1.0.0",
-    "express": "^4.16.3",
+    "express": "^4.17.3",
     "express-ws": "^4.0.0",
     "parcel": "^1.10.3",
     "prettier": "^1.14.3",
